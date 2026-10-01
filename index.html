@@ -25,7 +25,9 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .lib-text{font-size:14px;font-weight:700;color:var(--text)}
 .lib-count{font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;padding:2px 10px;margin-top:2px}
 .lib-requests .lib-count{background:var(--accent)}
-.backup{display:block;margin:0 auto;border:0;background:none;color:#cfd6c4;font-size:12px;text-decoration:underline;cursor:pointer}
+.footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.link-btn{border:0;background:none;color:#cfd6c4;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px}
+.owner-badge{font-size:12px;color:#ffe9c7;background:rgba(217,138,61,.25);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:8px}
 .lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:rgba(255,255,255,.92);border-radius:12px;padding:10px 14px}
 .lib-back{border:0;background:none;color:var(--primary-dark);font-size:14px;font-weight:700;cursor:pointer}
 .lib-title{margin:0;font-size:16px}
@@ -41,8 +43,9 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .location{color:var(--muted);font-size:13px;margin:0 0 6px}
 .location a{color:var(--primary-dark)}
 .desc{font-size:13.5px;color:#374151;line-height:1.6;margin:0 0 10px;white-space:pre-wrap}
-.card-actions{display:flex;gap:8px}
-.btn-small{flex:1;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
+.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-small{flex:1;min-width:90px;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
+.btn-edit{background:#eaf1fb;color:#1d4ed8;border:1px solid var(--border)}
 .btn-sold{background:#eef2f6;color:var(--text);border:1px solid var(--border)}
 .btn-delete{background:#fdecea;color:var(--danger)}
 .empty{text-align:center;color:#f2f2f2;background:rgba(0,0,0,.4);border-radius:14px;padding:50px 20px;font-size:14px}
@@ -53,7 +56,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .modal h2{margin:0 0 14px;font-size:18px}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
-.field input[type=text],.field textarea,.field select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);font-size:14px;font-family:inherit;background:#fafafa}
+.field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);font-size:14px;font-family:inherit;background:#fafafa}
 .field textarea{resize:vertical;min-height:70px}
 .img-preview{width:100%;height:140px;object-fit:cover;border-radius:9px;margin-top:8px;display:none;background:#eee}
 .modal-actions{display:flex;gap:8px;margin-top:16px}
@@ -79,7 +82,10 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
       <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
     </div>
-    <button class="backup" id="backupBtn">تنزيل نسخة احتياطية</button>
+    <div class="footer-row" id="footerRow">
+      <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
+      <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
+    </div>
   </div>
 
   <div id="libraryView" style="display:none">
@@ -91,9 +97,10 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
+<!-- نموذج إضافة/تعديل إعلان -->
 <div class="overlay" id="overlay">
   <div class="modal">
-    <h2>إضافة إعلان</h2>
+    <h2 id="modalTitle">إضافة إعلان</h2>
     <div class="field"><label>نوع الإعلان</label><select id="fListingType"><option>عرض</option><option>طلب</option></select></div>
     <div class="field"><label>نوع العقار</label><select id="fPropertyType"></select></div>
     <div class="field"><label>المدينة</label><select id="fCity"></select></div>
@@ -112,6 +119,19 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
+<!-- نموذج دخول المالك -->
+<div class="overlay" id="ownerOverlay">
+  <div class="modal">
+    <h2>دخول المالك</h2>
+    <div class="field"><label>البريد الإلكتروني</label><input type="email" id="ownerEmail" autocomplete="username"></div>
+    <div class="field"><label>كلمة المرور</label><input type="password" id="ownerPass" autocomplete="current-password"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="ownerCancelBtn">إلغاء</button>
+      <button class="btn-save" id="ownerSubmitBtn">دخول</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -123,11 +143,12 @@ const firebaseConfig = {
   messagingSenderId: "438101358213",
   appId: "1:438101358213:web:a013f7e4c6f02d7725dbec"
 };
+const OWNER_UID = "DRJcCRTXm9Y2HnVwIm5QkQV9vBw2";
 const COL = 'listings'; // كل إعلان مستند مستقل
 const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','محل تجاري','مستودع','مكتب','أخرى'];
 const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','الطائف','تبوك','بريدة','خميس مشيط','أبها','حائل','نجران','جازان','الجبيل','ينبع','القطيف','عرعر','سكاكا','الباحة','أخرى'];
 const $ = id => document.getElementById(id);
-let db, uid = null, listings = [], lib = null, pendingImage = null, saving = false;
+let db, uid = null, isOwner = false, listings = [], lib = null, pendingImage = null, existingImage = null, editingId = null, saving = false;
 
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
 function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
@@ -176,13 +197,22 @@ function render(){
   const offers = listings.filter(l => l.type !== 'طلب').length;
   $('offersCount').textContent = offers;
   $('requestsCount').textContent = listings.length - offers;
+  renderOwnerUI();
   if(!lib) return;
   const rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب'));
   const area = $('listArea'); area.className = '';
   if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد عناصر في هذه المكتبة حالياً 🏡<br>اضغط "إضافة جديد" لإضافة عنصر</div>'; return; }
   area.innerHTML = rows.map(it => {
     const map = safeUrl(it.mapLink), im = safeImg(it.image), ph = String(it.phone || '').replace(/[^\d+]/g, '');
-    const mine = uid && it.ownerId === uid, id = esc(it.id);
+    const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
+    let actions = '';
+    if(mine || canDelete){
+      actions = '<div class="card-actions">';
+      if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
+      if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
+      if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
+      actions += '</div>';
+    }
     return `<div class="card">${im ? `<img src="${im}" alt="صورة العقار">` : ''}<div class="card-body">
       <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
@@ -192,31 +222,60 @@ function render(){
       ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}</div>` : ''}
       ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
       ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
-      ${mine ? `<div class="card-actions"><button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع / الإتمام</button><button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button></div>` : ''}
+      ${actions}
     </div></div>`;
   }).join('');
 }
 
+function renderOwnerUI(){
+  const row = $('footerRow');
+  if(isOwner){
+    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span><button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
+    $('ownerLogoutBtn').addEventListener('click', ownerLogout);
+    $('backupBtn2').addEventListener('click', downloadBackup);
+  }else{
+    row.innerHTML = '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
+    $('backupBtn2').addEventListener('click', downloadBackup);
+    $('ownerLoginBtn2').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
+  }
+}
+
 $('listArea').addEventListener('click', async e => {
   const b = e.target.closest('button[data-act]'); if(!b) return;
-  const del = b.dataset.act === 'del';
+  const act = b.dataset.act, id = b.dataset.id;
+  if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
+  const del = act === 'del';
   if(!confirm(del ? 'حذف هذا الإعلان نهائياً؟' : 'تأكيد إتمام الصفقة وإزالة الإعلان؟')) return;
-  try{ await db.collection(COL).doc(b.dataset.id).delete(); toast(del ? 'تم الحذف' : 'تمت إزالة الإعلان بعد الإتمام ✅'); }
+  try{ await db.collection(COL).doc(id).delete(); toast(del ? 'تم الحذف' : 'تمت إزالة الإعلان بعد الإتمام ✅'); }
   catch(err){ fail('delete', err); }
 });
 
 function showHome(){ lib = null; $('homeButtons').style.display = 'block'; $('libraryView').style.display = 'none'; }
 function showLibrary(t){ lib = t; $('homeButtons').style.display = 'none'; $('libraryView').style.display = 'block'; $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض'; render(); }
 
-function openModal(){
+function openModal(edit){
   pendingImage = null;
-  $('fListingType').value = 'عرض'; $('fPropertyType').value = PROPS[0]; $('fCity').value = CITIES[0];
-  ['fNeighborhood','fArea','fMapLink','fPrice','fAgent','fPhone','fDesc','fImage'].forEach(id => $(id).value = '');
-  $('fImagePreview').style.display = 'none';
+  editingId = edit ? edit.id : null;
+  existingImage = edit ? (edit.image || null) : null;
+  $('modalTitle').textContent = edit ? 'تعديل الإعلان' : 'إضافة إعلان';
+  $('saveBtn').textContent = edit ? 'حفظ التعديلات' : 'حفظ';
+  $('fListingType').value = edit ? edit.type : 'عرض';
+  $('fPropertyType').value = edit ? (edit.propertyType || PROPS[0]) : PROPS[0];
+  $('fCity').value = edit ? (edit.city || CITIES[0]) : CITIES[0];
+  $('fNeighborhood').value = edit ? (edit.neighborhood || '') : '';
+  $('fArea').value = edit ? (edit.area || '') : '';
+  $('fMapLink').value = edit ? (edit.mapLink || '') : '';
+  $('fPrice').value = edit ? (edit.price || '') : '';
+  $('fAgent').value = edit ? (edit.agent || '') : '';
+  $('fPhone').value = edit ? (edit.phone || '') : '';
+  $('fDesc').value = edit ? (edit.desc || '') : '';
+  $('fImage').value = '';
+  const p = $('fImagePreview');
+  if(existingImage){ p.src = existingImage; p.style.display = 'block'; } else { p.style.display = 'none'; }
   $('overlay').classList.add('show');
 }
 function closeModal(){ $('overlay').classList.remove('show'); }
-$('openAddBtn').addEventListener('click', openModal);
+$('openAddBtn').addEventListener('click', () => openModal(null));
 $('openOffersBtn').addEventListener('click', () => showLibrary('عرض'));
 $('openRequestsBtn').addEventListener('click', () => showLibrary('طلب'));
 $('libBackBtn').addEventListener('click', showHome);
@@ -243,23 +302,73 @@ $('fImage').addEventListener('change', e => {
 
 $('saveBtn').addEventListener('click', async () => {
   if(saving) return;
-  if(!uid){ toast('تعذر التحقق من الجهاز. فعّل الدخول المجهول في Firebase ثم حدّث الصفحة'); return; }
+  if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   const mapLink = $('fMapLink').value.trim();
   if(mapLink && !safeUrl(mapLink)){ toast('رابط الخريطة يجب أن يبدأ بـ https://'); return; }
   const item = {
     type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
-    desc: $('fDesc').value.trim(), image: pendingImage || null, ownerId: uid, createdAt: Date.now()
+    desc: $('fDesc').value.trim(), image: pendingImage || existingImage || null
   };
   saving = true; $('saveBtn').disabled = true;
-  try{ await db.collection(COL).add(item); closeModal(); toast('تم الحفظ 🎉'); }
-  catch(e){ fail('save', e); }
+  try{
+    if(editingId){
+      await db.collection(COL).doc(editingId).update(item);
+      toast('تم حفظ التعديلات ✅');
+    }else{
+      item.ownerId = uid; item.createdAt = Date.now();
+      await db.collection(COL).add(item);
+      toast('تم الحفظ 🎉');
+    }
+    closeModal();
+  }catch(e){ fail('save', e); }
   finally{ saving = false; $('saveBtn').disabled = false; }
 });
 
+// دخول/خروج المالك
+$('ownerLoginBtn').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
+$('ownerCancelBtn').addEventListener('click', () => $('ownerOverlay').classList.remove('show'));
+$('ownerOverlay').addEventListener('click', e => { if(e.target === $('ownerOverlay')) $('ownerOverlay').classList.remove('show'); });
+
+$('ownerSubmitBtn').addEventListener('click', async () => {
+  const email = $('ownerEmail').value.trim(), pass = $('ownerPass').value;
+  if(!email || !pass){ toast('أدخل البريد وكلمة المرور'); return; }
+  $('ownerSubmitBtn').disabled = true;
+  try{
+    await firebase.auth().signOut();
+    const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
+    uid = cred.user.uid;
+    isOwner = uid === OWNER_UID;
+    if(!isOwner){
+      toast('هذا الحساب ليس حساب المالك');
+      await firebase.auth().signOut();
+      await firebase.auth().signInAnonymously();
+      uid = firebase.auth().currentUser.uid;
+      isOwner = false;
+    }else{
+      toast('تم تسجيل الدخول كمالك 👑');
+      $('ownerOverlay').classList.remove('show');
+      $('ownerEmail').value = ''; $('ownerPass').value = '';
+    }
+    render();
+  }catch(e){ fail('owner-login', e); }
+  finally{ $('ownerSubmitBtn').disabled = false; }
+});
+
+async function ownerLogout(){
+  try{
+    await firebase.auth().signOut();
+    await firebase.auth().signInAnonymously();
+    uid = firebase.auth().currentUser.uid;
+    isOwner = false;
+    toast('تم الخروج من وضع المالك');
+    render();
+  }catch(e){ fail('owner-logout', e); }
+}
+
 // نسخة احتياطية عند الطلب فقط
-$('backupBtn').addEventListener('click', () => {
+function downloadBackup(){
   const data = listings.map(it => ({
     "المعرف": it.id, "نوع الإعلان": it.type || 'عرض', "نوع العقار": it.propertyType || '', "المدينة": it.city || '',
     "الحي": it.neighborhood || '', "المساحة": it.area || '', "قوقل ماب": it.mapLink || '', "المطلوب": it.price || '',
@@ -270,7 +379,8 @@ $('backupBtn').addEventListener('click', () => {
   a.download = 'قاعدة-بيانات-وسطاء-المملكة.json';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-});
+}
+$('backupBtn').addEventListener('click', downloadBackup);
 
 init();
 </script>
