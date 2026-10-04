@@ -25,6 +25,11 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .lib-text{font-size:14px;font-weight:700;color:var(--text)}
 .lib-count{font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;padding:2px 10px;margin-top:2px}
 .lib-requests .lib-count{background:var(--accent)}
+.join-btn{width:100%;padding:12px;border:0;border-radius:12px;background:#1f8a4c;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.join-owner-btn{width:100%;padding:9px;border-radius:10px;border:1px solid var(--accent);background:rgba(217,138,61,.15);color:#ffe9c7;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px}
+.jcard{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.jcard div{font-size:13.5px;margin:2px 0}
+.jcard .jname{font-size:15px;font-weight:700;margin-bottom:4px}
 .footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
 .link-btn{border:0;background:none;color:#cfd6c4;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px}
 .owner-badge{font-size:12px;color:#ffe9c7;background:rgba(217,138,61,.25);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:8px}
@@ -42,6 +47,12 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .price{color:var(--primary-dark);font-weight:700;font-size:15px;margin:6px 0 2px}
 .location{color:var(--muted);font-size:13px;margin:0 0 6px}
 .location a{color:var(--primary-dark)}
+.map-embed{width:100%;height:190px;border:0;border-radius:10px;margin:4px 0 8px;display:block}
+.map-pick-btn{width:100%;padding:9px;border-radius:9px;border:1px dashed var(--primary);background:#eef7f2;color:var(--primary-dark);font-size:13px;font-weight:700;cursor:pointer;margin-top:6px}
+.picker-map{height:320px;border-radius:10px;margin-bottom:10px}
+.picker-hint{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.picker-actions{display:flex;gap:8px;margin-bottom:8px}
+.picker-actions button{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);background:#fafafa;font-size:13px;cursor:pointer;font-weight:600}
 .desc{font-size:13.5px;color:#374151;line-height:1.6;margin:0 0 10px;white-space:pre-wrap}
 .card-actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn-small{flex:1;min-width:90px;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
@@ -67,6 +78,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2430;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -82,6 +95,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
       <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
     </div>
+    <button class="join-btn" id="openJoinBtn">📱 طلب الانضمام لقروب واتساب</button>
+    <div id="ownerExtra"></div>
     <div class="footer-row" id="footerRow">
       <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
       <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
@@ -95,6 +110,14 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     </div>
     <div id="listArea" class="loading">جاري تحميل البيانات...</div>
   </div>
+
+  <div id="joinRequestsView" style="display:none">
+    <div class="lib-header">
+      <button class="lib-back" id="joinBackBtn">→ رجوع</button>
+      <h2 class="lib-title">طلبات الانضمام</h2>
+    </div>
+    <div id="joinListArea" class="loading">جاري التحميل...</div>
+  </div>
 </div>
 
 <!-- نموذج إضافة/تعديل إعلان -->
@@ -106,7 +129,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="field"><label>المدينة</label><select id="fCity"></select></div>
     <div class="field"><label>الحي</label><input type="text" id="fNeighborhood" placeholder="مثال: حي الملقا"></div>
     <div class="field"><label>المساحة</label><input type="text" id="fArea" placeholder="مثال: 350 م²"></div>
-    <div class="field"><label>قوقل ماب</label><input type="text" id="fMapLink" placeholder="الصق رابط الموقع من خرائط قوقل (يبدأ بـ https)"></div>
+    <div class="field"><label>قوقل ماب (للمعاينة التلقائية، افتح الموقع في خرائط قوقل وانسخ الرابط من شريط العنوان وليس رابط المشاركة المختصر)</label><input type="text" id="fMapLink" placeholder="مثال: https://www.google.com/maps/@24.7136,46.6753,15z"></div>
     <div class="field"><label>المطلوب</label><input type="text" id="fPrice" placeholder="مثال: 450,000 ريال أو حسب الاتفاق"></div>
     <div class="field"><label>الوسيط</label><input type="text" id="fAgent" placeholder="اسم الوسيط"></div>
     <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
@@ -132,6 +155,20 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
+<!-- نموذج طلب الانضمام لقروب واتساب -->
+<div class="overlay" id="joinOverlay">
+  <div class="modal">
+    <h2>طلب الانضمام لقروب واتساب</h2>
+    <div class="field"><label>الاسم</label><input type="text" id="jName"></div>
+    <div class="field"><label>رقم الجوال (يفضّل الرقم المرتبط بواتساب)</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
+    <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="joinCancelBtn">إلغاء</button>
+      <button class="btn-save" id="joinSubmitBtn">إرسال الطلب</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -148,13 +185,18 @@ const COL = 'listings'; // كل إعلان مستند مستقل
 const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','محل تجاري','مستودع','مكتب','أخرى'];
 const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','الطائف','تبوك','بريدة','خميس مشيط','أبها','حائل','نجران','جازان','الجبيل','ينبع','القطيف','عرعر','سكاكا','الباحة','أخرى'];
 const $ = id => document.getElementById(id);
-let db, uid = null, isOwner = false, listings = [], lib = null, pendingImage = null, existingImage = null, editingId = null, saving = false;
+let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', pendingImage = null, existingImage = null, editingId = null, saving = false, joinSaving = false;
 
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
 function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function safeUrl(u){ return /^https?:\/\//i.test(u || '') ? u : ''; }
 function safeImg(u){ return /^data:image\/(jpeg|png|webp);base64,/.test(u || '') ? u : ''; }
+function mapEmbedSrc(u){
+  const s = String(u || '');
+  const m = s.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) || s.match(/[?&]q=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/);
+  return m ? `https://www.google.com/maps?q=${m[1]},${m[2]}&z=16&output=embed` : '';
+}
 function fill(id, arr){ $(id).innerHTML = arr.map(v => '<option>' + v + '</option>').join(''); }
 
 async function init(){
@@ -204,6 +246,7 @@ function render(){
   if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد عناصر في هذه المكتبة حالياً 🏡<br>اضغط "إضافة جديد" لإضافة عنصر</div>'; return; }
   area.innerHTML = rows.map(it => {
     const map = safeUrl(it.mapLink), im = safeImg(it.image), ph = String(it.phone || '').replace(/[^\d+]/g, '');
+    const embed = map ? mapEmbedSrc(map) : '';
     const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
     let actions = '';
     if(mine || canDelete){
@@ -217,7 +260,8 @@ function render(){
       <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
       ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
-      ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">قوقل ماب</a></div>` : ''}
+      ${embed ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
+      ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">فتح في قوقل ماب</a></div>` : ''}
       ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
       ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}</div>` : ''}
       ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
@@ -228,17 +272,44 @@ function render(){
 }
 
 function renderOwnerUI(){
-  const row = $('footerRow');
+  const row = $('footerRow'), extra = $('ownerExtra');
   if(isOwner){
     row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span><button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
     $('ownerLogoutBtn').addEventListener('click', ownerLogout);
     $('backupBtn2').addEventListener('click', downloadBackup);
+    extra.innerHTML = `<button class="join-owner-btn" id="openJoinReqBtn">📋 طلبات الانضمام (${joinRequests.length})</button>`;
+    $('openJoinReqBtn').addEventListener('click', showJoinRequests);
   }else{
     row.innerHTML = '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
     $('backupBtn2').addEventListener('click', downloadBackup);
     $('ownerLoginBtn2').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
+    extra.innerHTML = '';
   }
 }
+
+function renderJoinRequests(){
+  if(view !== 'join') return;
+  const area = $('joinListArea');
+  if(!joinRequests.length){ area.innerHTML = '<div class="empty">لا توجد طلبات انضمام حالياً</div>'; return; }
+  area.innerHTML = joinRequests.map(r => {
+    const ph = String(r.phone || '').replace(/[^\d+]/g, '');
+    return `<div class="jcard">
+      <div class="jname">${esc(r.name || 'بدون اسم')}</div>
+      <div>📞 <a href="tel:${esc(ph)}">${esc(r.phone || '')}</a></div>
+      <div>🪪 رقم الرخصة: ${esc(r.license || '')}</div>
+      <div class="card-actions" style="margin-top:8px">
+        <button class="btn-small btn-delete" data-jid="${esc(r.id)}">🗑 حذف بعد المعالجة</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('joinListArea').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-jid]'); if(!b) return;
+  if(!confirm('حذف هذا الطلب من القائمة؟')) return;
+  try{ await db.collection('joinRequests').doc(b.dataset.jid).delete(); }
+  catch(err){ fail('delete-join', err); }
+});
 
 $('listArea').addEventListener('click', async e => {
   const b = e.target.closest('button[data-act]'); if(!b) return;
@@ -250,8 +321,28 @@ $('listArea').addEventListener('click', async e => {
   catch(err){ fail('delete', err); }
 });
 
-function showHome(){ lib = null; $('homeButtons').style.display = 'block'; $('libraryView').style.display = 'none'; }
-function showLibrary(t){ lib = t; $('homeButtons').style.display = 'none'; $('libraryView').style.display = 'block'; $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض'; render(); }
+function showHome(){
+  view = 'home'; lib = null;
+  $('homeButtons').style.display = 'block';
+  $('libraryView').style.display = 'none';
+  $('joinRequestsView').style.display = 'none';
+}
+function showLibrary(t){
+  view = 'library'; lib = t;
+  $('homeButtons').style.display = 'none';
+  $('libraryView').style.display = 'block';
+  $('joinRequestsView').style.display = 'none';
+  $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض';
+  render();
+}
+function showJoinRequests(){
+  view = 'join'; lib = null;
+  $('homeButtons').style.display = 'none';
+  $('libraryView').style.display = 'none';
+  $('joinRequestsView').style.display = 'block';
+  renderJoinRequests();
+}
+$('joinBackBtn').addEventListener('click', showHome);
 
 function openModal(edit){
   pendingImage = null;
@@ -350,6 +441,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       toast('تم تسجيل الدخول كمالك 👑');
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
+      subscribeJoinRequests();
     }
     render();
   }catch(e){ fail('owner-login', e); }
@@ -362,9 +454,46 @@ async function ownerLogout(){
     await firebase.auth().signInAnonymously();
     uid = firebase.auth().currentUser.uid;
     isOwner = false;
+    unsubscribeJoinRequests();
+    if(view === 'join') showHome();
     toast('تم الخروج من وضع المالك');
     render();
   }catch(e){ fail('owner-logout', e); }
+}
+
+// طلب الانضمام لقروب واتساب
+$('openJoinBtn').addEventListener('click', () => {
+  $('jName').value = ''; $('jPhone').value = ''; $('jLicense').value = '';
+  $('joinOverlay').classList.add('show');
+});
+$('joinCancelBtn').addEventListener('click', () => $('joinOverlay').classList.remove('show'));
+$('joinOverlay').addEventListener('click', e => { if(e.target === $('joinOverlay')) $('joinOverlay').classList.remove('show'); });
+
+$('joinSubmitBtn').addEventListener('click', async () => {
+  if(joinSaving) return;
+  const name = $('jName').value.trim(), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim();
+  if(!name || !phone || !license){ toast('يرجى تعبئة كل الحقول'); return; }
+  if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
+  joinSaving = true; $('joinSubmitBtn').disabled = true;
+  try{
+    await db.collection('joinRequests').add({ name, phone, license, createdAt: Date.now() });
+    $('joinOverlay').classList.remove('show');
+    toast('تم إرسال طلبك، سيتواصل معك المالك بعد المراجعة ✅');
+  }catch(e){ fail('join-submit', e); }
+  finally{ joinSaving = false; $('joinSubmitBtn').disabled = false; }
+});
+
+function subscribeJoinRequests(){
+  if(joinUnsub) return;
+  joinUnsub = db.collection('joinRequests').onSnapshot(s => {
+    joinRequests = s.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderOwnerUI();
+    renderJoinRequests();
+  }, e => fail('join-listen', e));
+}
+function unsubscribeJoinRequests(){
+  if(joinUnsub){ joinUnsub(); joinUnsub = null; }
+  joinRequests = [];
 }
 
 // نسخة احتياطية عند الطلب فقط
