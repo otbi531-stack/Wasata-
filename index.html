@@ -386,3 +386,27 @@ init();
 </script>
 </body>
 </html>
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /listings/{id} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+            || request.auth.uid == 'DRJcCRTXm9Y2HnVwIm5QkQV9vBw2');
+    }
+    match /joinRequests/{id} {
+      allow create: if request.auth != null;
+      allow read, delete: if request.auth != null
+        && request.auth.uid == 'DRJcCRTXm9Y2HnVwIm5QkQV9vBw2';
+    }
+    match /wasata/listings {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
