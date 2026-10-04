@@ -1,388 +1,144 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>وسطاء المملكة</title>
-<link rel="icon" type="image/png" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="وسطاء المملكة">
-<meta property="og:title" content="وسطاء المملكة">
-<meta property="og:description" content="عروض عقارية - وسطاء المملكة">
-<style>
-:root{--primary:#1f6f54;--primary-dark:#164f3c;--accent:#d98a3d;--text:#1f2430;--muted:#6b7280;--border:#e5e7eb;--danger:#c0392b}
-*{box-sizing:border-box}
-body{margin:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
-button{font-family:inherit}
-header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 100% no-repeat,linear-gradient(#1f6f54,#12160e);position:relative;z-index:1}
-.container{max-width:720px;margin:-30vw auto 0;padding:14px 16px;position:relative;z-index:2}
-.add-btn{width:100%;padding:12px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
-.lib-buttons{display:flex;gap:10px;margin-bottom:10px}
-.lib-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.96);cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.lib-icon{font-size:26px}
-.lib-text{font-size:14px;font-weight:700;color:var(--text)}
-.lib-count{font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;padding:2px 10px;margin-top:2px}
-.lib-requests .lib-count{background:var(--accent)}
-.footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
-.link-btn{border:0;background:none;color:#cfd6c4;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px}
-.owner-badge{font-size:12px;color:#ffe9c7;background:rgba(217,138,61,.25);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:8px}
-.lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:rgba(255,255,255,.92);border-radius:12px;padding:10px 14px}
-.lib-back{border:0;background:none;color:var(--primary-dark);font-size:14px;font-weight:700;cursor:pointer}
-.lib-title{margin:0;font-size:16px}
-.card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.card img{width:100%;height:170px;object-fit:cover;display:block;background:#eee}
-.card-body{padding:12px 14px}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.card-title{font-size:16px;font-weight:700;margin:0 0 2px}
-.badge{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700;white-space:nowrap}
-.badge.offer{background:#e3f3ec;color:var(--primary-dark)}
-.badge.request{background:#fdefe0;color:#9a5a13}
-.price{color:var(--primary-dark);font-weight:700;font-size:15px;margin:6px 0 2px}
-.location{color:var(--muted);font-size:13px;margin:0 0 6px}
-.location a{color:var(--primary-dark)}
-.desc{font-size:13.5px;color:#374151;line-height:1.6;margin:0 0 10px;white-space:pre-wrap}
-.card-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-small{flex:1;min-width:90px;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
-.btn-edit{background:#eaf1fb;color:#1d4ed8;border:1px solid var(--border)}
-.btn-sold{background:#eef2f6;color:var(--text);border:1px solid var(--border)}
-.btn-delete{background:#fdecea;color:var(--danger)}
-.empty{text-align:center;color:#f2f2f2;background:rgba(0,0,0,.4);border-radius:14px;padding:50px 20px;font-size:14px}
-.loading{text-align:center;padding:40px;color:#cfd6c4;font-size:14px}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
-.overlay.show{display:flex}
-.modal{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:18px 18px 22px;max-height:88vh;overflow-y:auto}
-.modal h2{margin:0 0 14px;font-size:18px}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
-.field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);font-size:14px;font-family:inherit;background:#fafafa}
-.field textarea{resize:vertical;min-height:70px}
-.img-preview{width:100%;height:140px;object-fit:cover;border-radius:9px;margin-top:8px;display:none;background:#eee}
-.modal-actions{display:flex;gap:8px;margin-top:16px}
-.modal-actions button{flex:1;padding:12px;border-radius:10px;border:0;font-size:14px;font-weight:700;cursor:pointer}
-.modal-actions button:disabled{opacity:.6}
-.btn-save{background:var(--primary);color:#fff}
-.btn-cancel{background:#eef2f6;color:var(--text)}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2430;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:90%;text-align:center}
-.toast.show{opacity:1}
-</style>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج بيانات شقق عمارة المعابدة</title>
+    <!-- استدعاء خط القاهرة الرسمي لجعله الخط الافتراضي -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; margin: 25px; background-color: #f4f7f6; color: #2c3e50; text-align: right; }
+        .form-container { max-width: 550px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+        h2 { text-align: center; color: #1a252f; font-weight: 700; margin-bottom: 30px; border-bottom: 3px solid #3498db; padding-bottom: 12px; font-size: 24px; }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 10px; font-weight: 700; color: #34495e; font-size: 18px; }
+        select, input[type="text"], input[type="tel"], textarea { width: 100%; padding: 14px; border: 2px solid #bdc3c7; border-radius: 8px; box-sizing: border-box; font-size: 18px; font-family: 'Cairo', sans-serif; font-weight: 700; color: #2c3e50; }
+        select:focus, input:focus { border-color: #3498db; outline: none; }
+        .btn-export { width: 100%; padding: 16px; background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 20px; font-family: 'Cairo', sans-serif; box-shadow: 0 4px 6px rgba(39,174,96,0.2); }
+        .btn-export:active { background-color: #219653; transform: scale(0.99); }
+        .output-container { margin-top: 25px; display: none; background: #eef9f2; padding: 20px; border-radius: 8px; border: 2px dashed #27ae60; }
+        .output-container label { color: #27ae60; font-size: 18px; }
+        textarea { background: white; font-size: 18px; height: 320px; resize: none; line-height: 1.6; color: #111; }
+    </style>
 </head>
 <body>
-<header aria-label="وسطاء المملكة"></header>
 
-<div class="container">
-  <button class="add-btn" id="openAddBtn">+ إضافة جديد</button>
+<div class="form-container">
+    <h2>عمارة المعابده - نموذج بيانات الشقق</h2>
+    
+    <div class="form-group">
+        <label>رقم الشقة:</label>
+        <select id="apartment_number" onchange="resetOutput()">
+            <option value="">-- اختر رقم الشقة --</option>
+            <option value="شقة ١">شقة ١</option>
+            <option value="شقة ٢">شقة ٢</option>
+            <option value="شقة ٣">شقة ٣</option>
+            <option value="شقة ٤">شقة ٤</option>
+            <option value="شقة ٥">شقة ٥</option>
+            <option value="شقة ٦">شقة ٦</option>
+            <option value="شقة ٧">شقة ٧</option>
+        </select>
+    </div>
 
-  <div id="homeButtons">
-    <div class="lib-buttons">
-      <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
-      <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
+    <div class="form-group">
+        <label>حالة الشقة:</label>
+        <select id="apartment_status">
+            <option value="">-- اختر حالة الشقة --</option>
+            <option value="مؤجرة">مؤجرة</option>
+            <option value="فارغة">فارغة</option>
+        </select>
     </div>
-    <div class="footer-row" id="footerRow">
-      <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
-      <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
-    </div>
-  </div>
 
-  <div id="libraryView" style="display:none">
-    <div class="lib-header">
-      <button class="lib-back" id="libBackBtn">→ رجوع</button>
-      <h2 class="lib-title" id="libTitle">مكتبة العروض</h2>
+    <div class="form-group">
+        <label>إسم المستأجر:</label>
+        <input type="text" id="tenant_name" placeholder="أدخل اسم المستأجر">
     </div>
-    <div id="listArea" class="loading">جاري تحميل البيانات...</div>
-  </div>
+
+    <div class="form-group">
+        <label>رقم الهوية أو الإقامة:</label>
+        <input type="text" id="id_number" placeholder="أدخل رقم الهوية أو الإقامة">
+    </div>
+
+    <div class="form-group">
+        <label>رقم الجوال:</label>
+        <input type="tel" id="mobile_number" placeholder="أدخل رقم الجوال">
+    </div>
+
+    <div class="form-group">
+        <label>رقم العداد:</label>
+        <select id="meter_number">
+            <option value="">-- اختر رقم العداد --</option>
+            <option value="LYE2020800438761">LYE2020800438761</option>
+            <option value="LYE2020800438766">LYE2020800438766</option>
+            <option value="LYE2020800438767">LYE2020800438767</option>
+            <option value="LYE2020800438765">LYE2020800438765</option>
+            <option value="LYE2020800438763">LYE2020800438763</option>
+            <option value="LYE2020800438764">LYE2020800438764</option>
+            <option value="GTR2320892254123">GTR2320892254123</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>رقم الحساب الرئيسي:</label>
+        <select id="main_account">
+            <option value="">-- اختر رقم الحساب الرئيسي --</option>
+            <option value="30095181890">30095181890</option>
+            <option value="30095181871">30095181871</option>
+            <option value="30095181853">30095181853</option>
+            <option value="30125660357">30125660357</option>
+            <option value="30095181915">30095181915</option>
+            <option value="30095181835">30095181835</option>
+            <option value="30095181942">30095181942</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>رقم الحساب الفرعي (إدخال يدوي):</label>
+        <input type="text" id="sub_account" placeholder="أدخل رقم الحساب الفرعي">
+    </div>
+
+    <button type="button" class="btn-export" onclick="generateText()">📊 تجهيز البيانات للنسخ</button>
+
+    <div id="outputSection" class="output-container">
+        <label>📋 انسخ النص المظلل بالأسفل وضعه في ملفك مباشرة:</label>
+        <textarea id="outputText" readonly></textarea>
+    </div>
 </div>
-
-<!-- نموذج إضافة/تعديل إعلان -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <h2 id="modalTitle">إضافة إعلان</h2>
-    <div class="field"><label>نوع الإعلان</label><select id="fListingType"><option>عرض</option><option>طلب</option></select></div>
-    <div class="field"><label>نوع العقار</label><select id="fPropertyType"></select></div>
-    <div class="field"><label>المدينة</label><select id="fCity"></select></div>
-    <div class="field"><label>الحي</label><input type="text" id="fNeighborhood" placeholder="مثال: حي الملقا"></div>
-    <div class="field"><label>المساحة</label><input type="text" id="fArea" placeholder="مثال: 350 م²"></div>
-    <div class="field"><label>قوقل ماب</label><input type="text" id="fMapLink" placeholder="الصق رابط الموقع من خرائط قوقل (يبدأ بـ https)"></div>
-    <div class="field"><label>المطلوب</label><input type="text" id="fPrice" placeholder="مثال: 450,000 ريال أو حسب الاتفاق"></div>
-    <div class="field"><label>الوسيط</label><input type="text" id="fAgent" placeholder="اسم الوسيط"></div>
-    <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
-    <div class="field"><label>التفاصيل</label><textarea id="fDesc" placeholder="عدد الغرف، ملاحظات إضافية..."></textarea></div>
-    <div class="field"><label>صورة (اختياري)</label><input type="file" id="fImage" accept="image/*"><img id="fImagePreview" class="img-preview" alt=""></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="cancelBtn">إلغاء</button>
-      <button class="btn-save" id="saveBtn">حفظ</button>
-    </div>
-  </div>
-</div>
-
-<!-- نموذج دخول المالك -->
-<div class="overlay" id="ownerOverlay">
-  <div class="modal">
-    <h2>دخول المالك</h2>
-    <div class="field"><label>البريد الإلكتروني</label><input type="email" id="ownerEmail" autocomplete="username"></div>
-    <div class="field"><label>كلمة المرور</label><input type="password" id="ownerPass" autocomplete="current-password"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="ownerCancelBtn">إلغاء</button>
-      <button class="btn-save" id="ownerSubmitBtn">دخول</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDSJxDhDUlDHmNOMsNJu5BEP9TxzifKux0",
-  authDomain: "wasata-almamlaka.firebaseapp.com",
-  projectId: "wasata-almamlaka",
-  storageBucket: "wasata-almamlaka.firebasestorage.app",
-  messagingSenderId: "438101358213",
-  appId: "1:438101358213:web:a013f7e4c6f02d7725dbec"
-};
-const OWNER_UID = "DRJcCRTXm9Y2HnVwIm5QkQV9vBw2";
-const COL = 'listings'; // كل إعلان مستند مستقل
-const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','محل تجاري','مستودع','مكتب','أخرى'];
-const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','الطائف','تبوك','بريدة','خميس مشيط','أبها','حائل','نجران','جازان','الجبيل','ينبع','القطيف','عرعر','سكاكا','الباحة','أخرى'];
-const $ = id => document.getElementById(id);
-let db, uid = null, isOwner = false, listings = [], lib = null, pendingImage = null, existingImage = null, editingId = null, saving = false;
-
-function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
-function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
-function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function safeUrl(u){ return /^https?:\/\//i.test(u || '') ? u : ''; }
-function safeImg(u){ return /^data:image\/(jpeg|png|webp);base64,/.test(u || '') ? u : ''; }
-function fill(id, arr){ $(id).innerHTML = arr.map(v => '<option>' + v + '</option>').join(''); }
-
-async function init(){
-  fill('fPropertyType', PROPS); fill('fCity', CITIES);
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    try{
-      await firebase.auth().signInAnonymously();
-      uid = firebase.auth().currentUser.uid;
-    }catch(e){ fail('auth', e); }
-    db.collection(COL).onSnapshot(s => {
-      listings = s.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      render();
-    }, e => fail('listen', e));
-    if(uid) migrate().catch(e => console.warn('migrate', e));
-  }catch(e){ fail('init', e); }
-}
-
-// نقل الإعلانات القديمة (مستند واحد) إلى النظام الجديد مرة واحدة
-async function migrate(){
-  const ref = db.collection('wasata').doc('listings');
-  const s = await ref.get();
-  const items = s.exists && Array.isArray(s.data().items) ? s.data().items : [];
-  if(!items.length) return;
-  for(let i = 0; i < items.length; i += 20){
-    const b = db.batch();
-    items.slice(i, i + 20).forEach((it, j) => {
-      const {id, ...rest} = it;
-      const k = String(id || ('old-' + (i + j)));
-      b.set(db.collection(COL).doc(k), {...rest, ownerId: uid, createdAt: parseInt(k.split('-')[1]) || Date.now()});
-    });
-    await b.commit();
-  }
-  await ref.set({items: [], migratedAt: Date.now()});
-  toast('تم نقل الإعلانات القديمة إلى النظام الجديد');
-}
-
-function render(){
-  const offers = listings.filter(l => l.type !== 'طلب').length;
-  $('offersCount').textContent = offers;
-  $('requestsCount').textContent = listings.length - offers;
-  renderOwnerUI();
-  if(!lib) return;
-  const rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب'));
-  const area = $('listArea'); area.className = '';
-  if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد عناصر في هذه المكتبة حالياً 🏡<br>اضغط "إضافة جديد" لإضافة عنصر</div>'; return; }
-  area.innerHTML = rows.map(it => {
-    const map = safeUrl(it.mapLink), im = safeImg(it.image), ph = String(it.phone || '').replace(/[^\d+]/g, '');
-    const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
-    let actions = '';
-    if(mine || canDelete){
-      actions = '<div class="card-actions">';
-      if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
-      if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
-      if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
-      actions += '</div>';
+    function resetOutput() {
+        document.getElementById("outputSection").style.display = "none";
     }
-    return `<div class="card">${im ? `<img src="${im}" alt="صورة العقار">` : ''}<div class="card-body">
-      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div>
-      ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
-      ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
-      ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">قوقل ماب</a></div>` : ''}
-      ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
-      ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}</div>` : ''}
-      ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
-      ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
-      ${actions}
-    </div></div>`;
-  }).join('');
-}
 
-function renderOwnerUI(){
-  const row = $('footerRow');
-  if(isOwner){
-    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span><button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
-    $('ownerLogoutBtn').addEventListener('click', ownerLogout);
-    $('backupBtn2').addEventListener('click', downloadBackup);
-  }else{
-    row.innerHTML = '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
-    $('backupBtn2').addEventListener('click', downloadBackup);
-    $('ownerLoginBtn2').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
-  }
-}
+    function generateText() {
+        const apt = document.getElementById("apartment_number").value;
+        if (!apt) { alert("الرجاء اختيار رقم الشقة أولاً!"); return; }
 
-$('listArea').addEventListener('click', async e => {
-  const b = e.target.closest('button[data-act]'); if(!b) return;
-  const act = b.dataset.act, id = b.dataset.id;
-  if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
-  const del = act === 'del';
-  if(!confirm(del ? 'حذف هذا الإعلان نهائياً؟' : 'تأكيد إتمام الصفقة وإزالة الإعلان؟')) return;
-  try{ await db.collection(COL).doc(id).delete(); toast(del ? 'تم الحذف' : 'تمت إزالة الإعلان بعد الإتمام ✅'); }
-  catch(err){ fail('delete', err); }
-});
+        let text = `* ${apt}\n\n`;
+        text += `  - حالة الشقة: ${document.getElementById("apartment_status").value || 'فارغة'}\n\n`;
+        text += `  - إسم المستأجر: ${document.getElementById("tenant_name").value || ''}\n\n`;
+        text += `  - رقم الهوية أو الإقامة: ${document.getElementById("id_number").value || ''}\n\n`;
+        text += `  - رقم الجوال: ${document.getElementById("mobile_number").value || ''}\n\n`;
+        text += `  - رقم العداد: ${document.getElementById("meter_number").value || ''}\n\n`;
+        text += `  - رقم الحساب الرئيسي: ${document.getElementById("main_account").value || ''}\n\n`;
+        text += `  - رقم الحساب الفرعي: ${document.getElementById("sub_account").value || ''}\n`;
 
-function showHome(){ lib = null; $('homeButtons').style.display = 'block'; $('libraryView').style.display = 'none'; }
-function showLibrary(t){ lib = t; $('homeButtons').style.display = 'none'; $('libraryView').style.display = 'block'; $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض'; render(); }
-
-function openModal(edit){
-  pendingImage = null;
-  editingId = edit ? edit.id : null;
-  existingImage = edit ? (edit.image || null) : null;
-  $('modalTitle').textContent = edit ? 'تعديل الإعلان' : 'إضافة إعلان';
-  $('saveBtn').textContent = edit ? 'حفظ التعديلات' : 'حفظ';
-  $('fListingType').value = edit ? edit.type : 'عرض';
-  $('fPropertyType').value = edit ? (edit.propertyType || PROPS[0]) : PROPS[0];
-  $('fCity').value = edit ? (edit.city || CITIES[0]) : CITIES[0];
-  $('fNeighborhood').value = edit ? (edit.neighborhood || '') : '';
-  $('fArea').value = edit ? (edit.area || '') : '';
-  $('fMapLink').value = edit ? (edit.mapLink || '') : '';
-  $('fPrice').value = edit ? (edit.price || '') : '';
-  $('fAgent').value = edit ? (edit.agent || '') : '';
-  $('fPhone').value = edit ? (edit.phone || '') : '';
-  $('fDesc').value = edit ? (edit.desc || '') : '';
-  $('fImage').value = '';
-  const p = $('fImagePreview');
-  if(existingImage){ p.src = existingImage; p.style.display = 'block'; } else { p.style.display = 'none'; }
-  $('overlay').classList.add('show');
-}
-function closeModal(){ $('overlay').classList.remove('show'); }
-$('openAddBtn').addEventListener('click', () => openModal(null));
-$('openOffersBtn').addEventListener('click', () => showLibrary('عرض'));
-$('openRequestsBtn').addEventListener('click', () => showLibrary('طلب'));
-$('libBackBtn').addEventListener('click', showHome);
-$('cancelBtn').addEventListener('click', closeModal);
-$('overlay').addEventListener('click', e => { if(e.target === $('overlay')) closeModal(); });
-
-// ضغط الصورة قبل الحفظ (تبقى أقل من حد المستند)
-$('fImage').addEventListener('change', e => {
-  const f = e.target.files[0]; if(!f) return;
-  const im = new Image(), url = URL.createObjectURL(f);
-  im.onload = () => {
-    const s = Math.min(1, 800 / im.width), c = document.createElement('canvas');
-    c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
-    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-    let q = .7, d = c.toDataURL('image/jpeg', q);
-    while(d.length > 400000 && q > .3){ q -= .1; d = c.toDataURL('image/jpeg', q); }
-    pendingImage = d;
-    const p = $('fImagePreview'); p.src = d; p.style.display = 'block';
-    URL.revokeObjectURL(url);
-  };
-  im.onerror = () => toast('تعذر قراءة الصورة');
-  im.src = url;
-});
-
-$('saveBtn').addEventListener('click', async () => {
-  if(saving) return;
-  if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
-  const mapLink = $('fMapLink').value.trim();
-  if(mapLink && !safeUrl(mapLink)){ toast('رابط الخريطة يجب أن يبدأ بـ https://'); return; }
-  const item = {
-    type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
-    neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
-    price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
-    desc: $('fDesc').value.trim(), image: pendingImage || existingImage || null
-  };
-  saving = true; $('saveBtn').disabled = true;
-  try{
-    if(editingId){
-      await db.collection(COL).doc(editingId).update(item);
-      toast('تم حفظ التعديلات ✅');
-    }else{
-      item.ownerId = uid; item.createdAt = Date.now();
-      await db.collection(COL).add(item);
-      toast('تم الحفظ 🎉');
+        const outputSection = document.getElementById("outputSection");
+        const outputText = document.getElementById("outputText");
+        
+        outputText.value = text;
+        outputSection.style.display = "block";
+        
+        outputText.select();
+        outputText.setSelectionRange(0, 99999);
+        
+        try {
+            navigator.clipboard.writeText(text);
+        } catch (err) {}
     }
-    closeModal();
-  }catch(e){ fail('save', e); }
-  finally{ saving = false; $('saveBtn').disabled = false; }
-});
-
-// دخول/خروج المالك
-$('ownerLoginBtn').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
-$('ownerCancelBtn').addEventListener('click', () => $('ownerOverlay').classList.remove('show'));
-$('ownerOverlay').addEventListener('click', e => { if(e.target === $('ownerOverlay')) $('ownerOverlay').classList.remove('show'); });
-
-$('ownerSubmitBtn').addEventListener('click', async () => {
-  const email = $('ownerEmail').value.trim(), pass = $('ownerPass').value;
-  if(!email || !pass){ toast('أدخل البريد وكلمة المرور'); return; }
-  $('ownerSubmitBtn').disabled = true;
-  try{
-    await firebase.auth().signOut();
-    const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
-    uid = cred.user.uid;
-    isOwner = uid === OWNER_UID;
-    if(!isOwner){
-      toast('هذا الحساب ليس حساب المالك');
-      await firebase.auth().signOut();
-      await firebase.auth().signInAnonymously();
-      uid = firebase.auth().currentUser.uid;
-      isOwner = false;
-    }else{
-      toast('تم تسجيل الدخول كمالك 👑');
-      $('ownerOverlay').classList.remove('show');
-      $('ownerEmail').value = ''; $('ownerPass').value = '';
-    }
-    render();
-  }catch(e){ fail('owner-login', e); }
-  finally{ $('ownerSubmitBtn').disabled = false; }
-});
-
-async function ownerLogout(){
-  try{
-    await firebase.auth().signOut();
-    await firebase.auth().signInAnonymously();
-    uid = firebase.auth().currentUser.uid;
-    isOwner = false;
-    toast('تم الخروج من وضع المالك');
-    render();
-  }catch(e){ fail('owner-logout', e); }
-}
-
-// نسخة احتياطية عند الطلب فقط
-function downloadBackup(){
-  const data = listings.map(it => ({
-    "المعرف": it.id, "نوع الإعلان": it.type || 'عرض', "نوع العقار": it.propertyType || '', "المدينة": it.city || '',
-    "الحي": it.neighborhood || '', "المساحة": it.area || '', "قوقل ماب": it.mapLink || '', "المطلوب": it.price || '',
-    "الوسيط": it.agent || '', "رقم الجوال": it.phone || '', "التفاصيل": it.desc || '', "يوجد صورة": it.image ? 'نعم' : 'لا'
-  }));
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
-  a.download = 'قاعدة-بيانات-وسطاء-المملكة.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-$('backupBtn').addEventListener('click', downloadBackup);
-
-init();
 </script>
+
 </body>
 </html>
