@@ -30,6 +30,11 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .jcard{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
 .jcard div{font-size:13.5px;margin:2px 0}
 .jcard .jname{font-size:15px;font-weight:700;margin-bottom:4px}
+.jstatus{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;margin-top:6px}
+.jstatus.accepted{background:#e3f3ec;color:var(--primary-dark)}
+.jstatus.rejected{background:#fdecea;color:var(--danger)}
+.btn-accept{background:#e3f3ec;color:var(--primary-dark)}
+.btn-reject{background:#fdecea;color:var(--danger)}
 .footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
 .link-btn{border:0;background:none;color:#cfd6c4;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px}
 .owner-badge{font-size:12px;color:#ffe9c7;background:rgba(217,138,61,.25);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;display:flex;align-items:center;gap:8px}
@@ -292,23 +297,39 @@ function renderJoinRequests(){
   const area = $('joinListArea');
   if(!joinRequests.length){ area.innerHTML = '<div class="empty">لا توجد طلبات انضمام حالياً</div>'; return; }
   area.innerHTML = joinRequests.map(r => {
-    const ph = String(r.phone || '').replace(/[^\d+]/g, '');
+    const ph = String(r.phone || '').replace(/[^\d+]/g, ''), id = esc(r.id);
+    let actions;
+    if(r.status === 'accepted'){
+      actions = `<span class="jstatus accepted">✅ مقبول</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:110px">🗑 حذف</button>`;
+    }else if(r.status === 'rejected'){
+      actions = `<span class="jstatus rejected">❌ مرفوض</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:110px">🗑 حذف</button>`;
+    }else{
+      actions = `<button class="btn-small btn-accept" data-jid="${id}" data-jact="accept">✅ قبول</button><button class="btn-small btn-reject" data-jid="${id}" data-jact="reject">❌ رفض</button>`;
+    }
     return `<div class="jcard">
       <div class="jname">${esc(r.name || 'بدون اسم')}</div>
       <div>📞 <a href="tel:${esc(ph)}">${esc(r.phone || '')}</a></div>
       <div>🪪 رقم الرخصة: ${esc(r.license || '')}</div>
-      <div class="card-actions" style="margin-top:8px">
-        <button class="btn-small btn-delete" data-jid="${esc(r.id)}">🗑 حذف بعد المعالجة</button>
-      </div>
+      <div class="card-actions" style="margin-top:8px">${actions}</div>
     </div>`;
   }).join('');
 }
 
 $('joinListArea').addEventListener('click', async e => {
   const b = e.target.closest('button[data-jid]'); if(!b) return;
-  if(!confirm('حذف هذا الطلب من القائمة؟')) return;
-  try{ await db.collection('joinRequests').doc(b.dataset.jid).delete(); }
-  catch(err){ fail('delete-join', err); }
+  const id = b.dataset.jid, act = b.dataset.jact;
+  try{
+    if(act === 'accept'){
+      await db.collection('joinRequests').doc(id).update({ status: 'accepted' });
+      toast('تم القبول — لا تنسَ إرسال رابط القروب للعضو عبر الجوال ✅');
+    }else if(act === 'reject'){
+      await db.collection('joinRequests').doc(id).update({ status: 'rejected' });
+      toast('تم رفض الطلب');
+    }else if(act === 'del'){
+      if(!confirm('حذف هذا الطلب نهائياً من القائمة؟')) return;
+      await db.collection('joinRequests').doc(id).delete();
+    }
+  }catch(err){ fail('join-action', err); }
 });
 
 $('listArea').addEventListener('click', async e => {
