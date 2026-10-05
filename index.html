@@ -33,6 +33,9 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .jstatus{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;margin-top:6px}
 .jstatus.accepted{background:#e3f3ec;color:var(--primary-dark)}
 .jstatus.rejected{background:#fdecea;color:var(--danger)}
+.oath-box{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.9;color:#1f2430;margin-bottom:12px}
+.oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
+.oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
 .btn-accept{background:#e3f3ec;color:var(--primary-dark)}
 .btn-reject{background:#fdecea;color:var(--danger)}
 .footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
@@ -167,6 +170,10 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="field"><label>الاسم</label><input type="text" id="jName"></div>
     <div class="field"><label>رقم الجوال (يفضّل الرقم المرتبط بواتساب)</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
     <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
+    <div class="oath-box">
+      أقسم بالله العظيم، أتعهد أنا الوسيط العقاري بأن أدفع لإدارة القروب حصتها بمقدار (0.5) نصف في المئة من قيمة السعي (2.5%).
+    </div>
+    <label class="oath-check"><input type="checkbox" id="jOath"> أقر وأوافق على هذا التعهد، وهو شرط أساسي للانضمام</label>
     <div class="modal-actions">
       <button class="btn-cancel" id="joinCancelBtn">إلغاء</button>
       <button class="btn-save" id="joinSubmitBtn">إرسال الطلب</button>
@@ -310,6 +317,7 @@ function renderJoinRequests(){
       <div class="jname">${esc(r.name || 'بدون اسم')}</div>
       <div>📞 <a href="tel:${esc(ph)}">${esc(r.phone || '')}</a></div>
       <div>🪪 رقم الرخصة: ${esc(r.license || '')}</div>
+      ${r.oathAgreed ? '<div style="color:var(--primary-dark)">☑️ وافق على تعهد نسبة 0.5% لإدارة القروب</div>' : ''}
       <div class="card-actions" style="margin-top:8px">${actions}</div>
     </div>`;
   }).join('');
@@ -484,7 +492,7 @@ async function ownerLogout(){
 
 // طلب الانضمام لقروب واتساب
 $('openJoinBtn').addEventListener('click', () => {
-  $('jName').value = ''; $('jPhone').value = ''; $('jLicense').value = '';
+  $('jName').value = ''; $('jPhone').value = ''; $('jLicense').value = ''; $('jOath').checked = false;
   $('joinOverlay').classList.add('show');
 });
 $('joinCancelBtn').addEventListener('click', () => $('joinOverlay').classList.remove('show'));
@@ -492,12 +500,13 @@ $('joinOverlay').addEventListener('click', e => { if(e.target === $('joinOverlay
 
 $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
-  const name = $('jName').value.trim(), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim();
+  const name = $('jName').value.trim(), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim(), oath = $('jOath').checked;
   if(!name || !phone || !license){ toast('يرجى تعبئة كل الحقول'); return; }
+  if(!oath){ toast('يجب الموافقة على التعهد قبل إرسال الطلب'); return; }
   if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   joinSaving = true; $('joinSubmitBtn').disabled = true;
   try{
-    await db.collection('joinRequests').add({ name, phone, license, createdAt: Date.now() });
+    await db.collection('joinRequests').add({ name, phone, license, oathAgreed: true, createdAt: Date.now() });
     $('joinOverlay').classList.remove('show');
     toast('تم إرسال طلبك، سيتواصل معك المالك بعد المراجعة ✅');
   }catch(e){ fail('join-submit', e); }
