@@ -71,6 +71,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .loading{text-align:center;padding:40px;color:#cfd6c4;font-size:14px}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .overlay.show{display:flex}
+.gate-overlay{z-index:999;background:#12160e}
+.gate-overlay .modal{max-width:460px}
 .modal{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:18px 18px 22px;max-height:88vh;overflow-y:auto}
 .modal h2{margin:0 0 14px;font-size:18px}
 .field{margin-bottom:12px}
@@ -103,9 +105,9 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
       <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
     </div>
-    <button class="join-btn" id="openJoinBtn">📱 طلب الانضمام لقروب واتساب</button>
     <div id="ownerExtra"></div>
     <div class="footer-row" id="footerRow">
+      <a class="link-btn" href="https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4" target="_blank" rel="noopener noreferrer">قروب واتساب</a>
       <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
       <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
     </div>
@@ -163,21 +165,31 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
-<!-- نموذج طلب الانضمام لقروب واتساب -->
-<div class="overlay" id="joinOverlay">
+<!-- بوابة الدخول الإلزامية: لا يُعرض التطبيق إلا بعد تعبئتها -->
+<div class="overlay show gate-overlay" id="joinOverlay">
   <div class="modal">
-    <h2>طلب الانضمام لقروب واتساب</h2>
+    <h2>الدخول إلى وسطاء المملكة</h2>
+    <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول مخصص للوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
     <div class="field"><label>الاسم</label><input type="text" id="jName"></div>
     <div class="field"><label>رقم الجوال (يفضّل الرقم المرتبط بواتساب)</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
     <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
     <div class="oath-box">
       أقسم بالله العظيم، أتعهد أنا الوسيط العقاري بأن أدفع لإدارة القروب حصته بمقدار (0.5) نصف في المئة من قيمة السعي (2.5%).
     </div>
-    <label class="oath-check"><input type="checkbox" id="jOath"> أقر وأوافق على هذا التعهد، وهو شرط أساسي للانضمام</label>
+    <label class="oath-check"><input type="checkbox" id="jOath"> أقر وأوافق على هذا التعهد، وهو شرط أساسي للدخول</label>
     <div class="modal-actions">
-      <button class="btn-cancel" id="joinCancelBtn">إلغاء</button>
-      <button class="btn-save" id="joinSubmitBtn">إرسال الطلب</button>
+      <button class="btn-save" id="joinSubmitBtn" style="flex:1">دخول</button>
     </div>
+  </div>
+</div>
+
+<!-- نافذة رابط قروب واتساب تظهر بعد الموافقة -->
+<div class="overlay" id="waOverlay">
+  <div class="modal" style="text-align:center">
+    <h2>تم تفعيل دخولك ✅</h2>
+    <p style="font-size:14px;color:var(--text);margin-bottom:16px">اضغط الزر أدناه للانضمام إلى قروب واتساب الخاص بوسطاء المملكة</p>
+    <a href="https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4" target="_blank" rel="noopener noreferrer" style="display:block;background:#1f8a4c;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;margin-bottom:10px">📲 فتح قروب واتساب</a>
+    <button class="btn-cancel" id="waContinueBtn" style="width:100%">متابعة إلى التطبيق</button>
   </div>
 </div>
 
@@ -490,13 +502,18 @@ async function ownerLogout(){
   }catch(e){ fail('owner-logout', e); }
 }
 
-// طلب الانضمام لقروب واتساب
-$('openJoinBtn').addEventListener('click', () => {
-  $('jName').value = ''; $('jPhone').value = ''; $('jLicense').value = ''; $('jOath').checked = false;
-  $('joinOverlay').classList.add('show');
-});
-$('joinCancelBtn').addEventListener('click', () => $('joinOverlay').classList.remove('show'));
-$('joinOverlay').addEventListener('click', e => { if(e.target === $('joinOverlay')) $('joinOverlay').classList.remove('show'); });
+// بوابة الدخول الإلزامية
+const GATE_KEY = 'wasata_gate_passed_v1';
+function checkGate(){
+  if(localStorage.getItem(GATE_KEY) === '1'){
+    $('joinOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }else{
+    $('joinOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+}
+checkGate();
 
 $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
@@ -507,11 +524,14 @@ $('joinSubmitBtn').addEventListener('click', async () => {
   joinSaving = true; $('joinSubmitBtn').disabled = true;
   try{
     await db.collection('joinRequests').add({ name, phone, license, oathAgreed: true, createdAt: Date.now() });
+    localStorage.setItem(GATE_KEY, '1');
     $('joinOverlay').classList.remove('show');
-    toast('تم إرسال طلبك، سيتواصل معك المالك بعد المراجعة ✅');
+    document.body.style.overflow = '';
+    $('waOverlay').classList.add('show');
   }catch(e){ fail('join-submit', e); }
   finally{ joinSaving = false; $('joinSubmitBtn').disabled = false; }
 });
+$('waContinueBtn').addEventListener('click', () => $('waOverlay').classList.remove('show'));
 
 function subscribeJoinRequests(){
   if(joinUnsub) return;
