@@ -36,6 +36,11 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .oath-box{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.9;color:#1f2430;margin-bottom:12px}
 .oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
 .oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
+.menu-dot{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+.member-card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.member-card .mname{font-size:15px;font-weight:700;margin-bottom:4px}
+.member-card div{font-size:13.5px;margin:2px 0}
+.btn-chat{display:inline-block;background:#1f8a4c;color:#fff;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;margin-top:8px}
 .btn-accept{background:#e3f3ec;color:var(--primary-dark)}
 .btn-reject{background:#fdecea;color:var(--danger)}
 .footer-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
@@ -96,6 +101,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 </head>
 <body>
 <header aria-label="وسطاء المملكة"></header>
+<button class="menu-dot" id="menuDotBtn" aria-label="القائمة">⋮</button>
 
 <div class="container">
   <button class="add-btn" id="openAddBtn">+ إضافة جديد</button>
@@ -171,7 +177,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <h2>الدخول إلى وسطاء المملكة</h2>
     <div id="gateForm">
       <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
-      <div class="field"><label>الاسم الكامل (الثلاثي أو الرباعي، لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد عبدالله السالم"></div>
+      <div class="field"><label>الاسم الكامل (لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد السالم"></div>
       <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
       <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
       <div class="oath-box">
@@ -200,6 +206,17 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <p style="font-size:14px;color:var(--text);margin-bottom:16px">اضغط الزر أدناه للانضمام إلى قروب واتساب الخاص بوسطاء المملكة</p>
     <a href="https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4" target="_blank" rel="noopener noreferrer" style="display:block;background:#1f8a4c;color:#fff;padding:13px;border-radius:10px;font-weight:700;text-decoration:none;margin-bottom:10px">📲 فتح قروب واتساب</a>
     <button class="btn-cancel" id="waContinueBtn" style="width:100%">متابعة إلى التطبيق</button>
+  </div>
+</div>
+
+<!-- قائمة الأعضاء المسجّلين (للمالك فقط) -->
+<div class="overlay" id="membersOverlay">
+  <div class="modal">
+    <h2>الأعضاء المسجّلون</h2>
+    <div id="membersList" class="loading">جاري التحميل...</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="membersCloseBtn" style="width:100%">إغلاق</button>
+    </div>
   </div>
 </div>
 
@@ -557,9 +574,8 @@ $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
   const name = $('jName').value.trim().replace(/\s+/g, ' '), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim(), oath = $('jOath').checked;
   if(!name || !phone || !license){ toast('يرجى تعبئة كل الحقول'); return; }
-  const nameWords = name.split(' ').filter(Boolean);
-  const nameOk = nameWords.length >= 2 && nameWords.every(w => w.length >= 2) && /^[\u0600-\u06FFa-zA-Z\s]+$/.test(name);
-  if(!nameOk){ toast('يرجى إدخال الاسم الكامل (ثلاثي على الأقل)، لا يُقبل اسم مستعار أو كلمة واحدة'); return; }
+  const nameOk = name.length >= 4 && /^[\u0600-\u06FFa-zA-Z\s]+$/.test(name);
+  if(!nameOk){ toast('يرجى إدخال الاسم الكامل الحقيقي، لا يُقبل اسم مستعار أو رموز/أرقام'); return; }
   if(!oath){ toast('يجب الموافقة على التعهد قبل إرسال الطلب'); return; }
   if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   joinSaving = true; $('joinSubmitBtn').disabled = true;
@@ -578,8 +594,36 @@ function subscribeJoinRequests(){
     joinRequests = s.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderOwnerUI();
     renderJoinRequests();
+    renderMembersList();
   }, e => fail('join-listen', e));
 }
+
+function waPhone(p){
+  let d = String(p || '').replace(/\D/g, '');
+  if(d.startsWith('0')) d = '966' + d.slice(1);
+  else if(!d.startsWith('966')) d = '966' + d;
+  return d;
+}
+
+function renderMembersList(){
+  const area = $('membersList'); if(!area) return;
+  const members = joinRequests.filter(r => r.status === 'accepted');
+  if(!members.length){ area.innerHTML = '<div class="empty">لا يوجد أعضاء مقبولون بعد</div>'; return; }
+  area.innerHTML = members.map(m => `<div class="member-card">
+    <div class="mname">${esc(m.name || '')}</div>
+    <div>📞 <a href="tel:${esc(waPhone(m.phone))}">${esc(m.phone || '')}</a></div>
+    <div>🪪 رقم الرخصة: ${esc(m.license || '')}</div>
+    <a class="btn-chat" href="https://wa.me/${esc(waPhone(m.phone))}" target="_blank" rel="noopener noreferrer">💬 محادثة فورية</a>
+  </div>`).join('');
+}
+
+$('menuDotBtn').addEventListener('click', () => {
+  if(!isOwner){ toast('هذه الميزة متاحة للمالك فقط'); return; }
+  renderMembersList();
+  $('membersOverlay').classList.add('show');
+});
+$('membersCloseBtn').addEventListener('click', () => $('membersOverlay').classList.remove('show'));
+$('membersOverlay').addEventListener('click', e => { if(e.target === $('membersOverlay')) $('membersOverlay').classList.remove('show'); });
 function unsubscribeJoinRequests(){
   if(joinUnsub){ joinUnsub(); joinUnsub = null; }
   joinRequests = [];
