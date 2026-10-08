@@ -169,16 +169,26 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 <div class="overlay show gate-overlay" id="joinOverlay">
   <div class="modal">
     <h2>الدخول إلى وسطاء المملكة</h2>
-    <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
-    <div class="field"><label>الاسم</label><input type="text" id="jName"></div>
-    <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
-    <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
-    <div class="oath-box">
-      أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة السعي في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
+    <div id="gateForm">
+      <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
+      <div class="field"><label>الاسم الكامل (الثلاثي أو الرباعي، لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد عبدالله السالم"></div>
+      <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
+      <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
+      <div class="oath-box">
+        أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة السعي في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
+      </div>
+      <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
+      <div class="modal-actions">
+        <button class="btn-save" id="joinSubmitBtn" style="flex:1">دخول</button>
+      </div>
     </div>
-    <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
-    <div class="modal-actions">
-      <button class="btn-save" id="joinSubmitBtn" style="flex:1">دخول</button>
+    <div id="gatePending" style="display:none;text-align:center">
+      <p style="font-size:15px;font-weight:700;margin-bottom:8px">⏳ طلبك قيد المراجعة</p>
+      <p style="font-size:13.5px;color:var(--muted)">سيتم فتح الموقع تلقائياً فور موافقة الإدارة على طلبك، لا حاجة لإعادة تحميل الصفحة.</p>
+    </div>
+    <div id="gateRejected" style="display:none;text-align:center">
+      <p style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:8px">❌ تم رفض طلبك</p>
+      <p style="font-size:13.5px;color:var(--muted)">يرجى التواصل مع إدارة المنصة لمعرفة السبب.</p>
     </div>
   </div>
 </div>
@@ -237,6 +247,7 @@ async function init(){
       render();
     }, e => fail('listen', e));
     if(uid) migrate().catch(e => console.warn('migrate', e));
+    checkGate();
   }catch(e){ fail('init', e); }
 }
 
@@ -502,32 +513,60 @@ async function ownerLogout(){
   }catch(e){ fail('owner-logout', e); }
 }
 
-// بوابة الدخول الإلزامية
+// بوابة الدخول الإلزامية — الدخول الفعلي مرتبط بموافقة المالك
 const GATE_KEY = 'wasata_gate_passed_v1';
+const REQ_KEY = 'wasata_gate_request_id';
+let gateUnsub = null;
+
+function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; }
+function showGatePending(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'block'; $('gateRejected').style.display = 'none'; }
+function showGateRejected(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'block'; }
+
+function openApp(){
+  localStorage.setItem(GATE_KEY, '1');
+  localStorage.removeItem(REQ_KEY);
+  $('joinOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  $('waOverlay').classList.add('show');
+}
+
+function watchRequest(reqId){
+  if(gateUnsub) gateUnsub();
+  showGatePending();
+  gateUnsub = db.collection('joinRequests').doc(reqId).onSnapshot(doc => {
+    if(!doc.exists) return;
+    const st = doc.data().status;
+    if(st === 'accepted'){ gateUnsub(); gateUnsub = null; openApp(); }
+    else if(st === 'rejected'){ gateUnsub(); gateUnsub = null; showGateRejected(); }
+  }, e => fail('gate-watch', e));
+}
+
 function checkGate(){
   if(localStorage.getItem(GATE_KEY) === '1'){
     $('joinOverlay').classList.remove('show');
     document.body.style.overflow = '';
-  }else{
-    $('joinOverlay').classList.add('show');
-    document.body.style.overflow = 'hidden';
+    return;
   }
+  $('joinOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  const pendingId = localStorage.getItem(REQ_KEY);
+  if(pendingId) watchRequest(pendingId); else showGateForm();
 }
-checkGate();
 
 $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
-  const name = $('jName').value.trim(), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim(), oath = $('jOath').checked;
+  const name = $('jName').value.trim().replace(/\s+/g, ' '), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim(), oath = $('jOath').checked;
   if(!name || !phone || !license){ toast('يرجى تعبئة كل الحقول'); return; }
+  const nameWords = name.split(' ').filter(Boolean);
+  const nameOk = nameWords.length >= 2 && nameWords.every(w => w.length >= 2) && /^[\u0600-\u06FFa-zA-Z\s]+$/.test(name);
+  if(!nameOk){ toast('يرجى إدخال الاسم الكامل (ثلاثي على الأقل)، لا يُقبل اسم مستعار أو كلمة واحدة'); return; }
   if(!oath){ toast('يجب الموافقة على التعهد قبل إرسال الطلب'); return; }
   if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   joinSaving = true; $('joinSubmitBtn').disabled = true;
   try{
-    await db.collection('joinRequests').add({ name, phone, license, oathAgreed: true, createdAt: Date.now() });
-    localStorage.setItem(GATE_KEY, '1');
-    $('joinOverlay').classList.remove('show');
-    document.body.style.overflow = '';
-    $('waOverlay').classList.add('show');
+    const ref = await db.collection('joinRequests').add({ name, phone, license, oathAgreed: true, ownerId: uid, status: 'pending', createdAt: Date.now() });
+    localStorage.setItem(REQ_KEY, ref.id);
+    watchRequest(ref.id);
   }catch(e){ fail('join-submit', e); }
   finally{ joinSaving = false; $('joinSubmitBtn').disabled = false; }
 });
