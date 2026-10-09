@@ -67,7 +67,12 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .picker-actions{display:flex;gap:8px;margin-bottom:8px}
 .picker-actions button{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);background:#fafafa;font-size:13px;cursor:pointer;font-weight:600}
 .desc{font-size:13.5px;color:#374151;line-height:1.6;margin:0 0 10px;white-space:pre-wrap}
+.filter-bar{margin-bottom:12px}
+.filter-bar input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;font-family:inherit;background:rgba(255,255,255,.95);margin-bottom:8px}
+.filter-row{display:flex;gap:8px}
+.filter-row select{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);font-size:13px;font-family:inherit;background:rgba(255,255,255,.95)}
 .card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-share{background:#dff5e6;color:#1f8a4c}
 .btn-small{flex:1;min-width:90px;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
 .btn-edit{background:#eaf1fb;color:#1d4ed8;border:1px solid var(--border)}
 .btn-sold{background:#eef2f6;color:var(--text);border:1px solid var(--border)}
@@ -123,6 +128,13 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="lib-header">
       <button class="lib-back" id="libBackBtn">→ رجوع</button>
       <h2 class="lib-title" id="libTitle">مكتبة العروض</h2>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="fltSearch" placeholder="🔍 ابحث عن حي، تفاصيل، وسيط...">
+      <div class="filter-row">
+        <select id="fltCity"><option value="">كل المدن</option></select>
+        <select id="fltType"><option value="">كل الأنواع</option></select>
+      </div>
     </div>
     <div id="listArea" class="loading">جاري تحميل البيانات...</div>
   </div>
@@ -252,6 +264,8 @@ function fill(id, arr){ $(id).innerHTML = arr.map(v => '<option>' + v + '</optio
 
 async function init(){
   fill('fPropertyType', PROPS); fill('fCity', CITIES);
+  $('fltCity').insertAdjacentHTML('beforeend', CITIES.map(c => `<option>${c}</option>`).join(''));
+  $('fltType').insertAdjacentHTML('beforeend', PROPS.map(p => `<option>${p}</option>`).join(''));
   try{
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
@@ -293,21 +307,24 @@ function render(){
   $('requestsCount').textContent = listings.length - offers;
   renderOwnerUI();
   if(!lib) return;
-  const rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب'));
+  let rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب'));
+  const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
+  if(fc) rows = rows.filter(l => l.city === fc);
+  if(ft) rows = rows.filter(l => l.propertyType === ft);
+  if(q) rows = rows.filter(l => [l.neighborhood, l.desc, l.agent, l.area, l.price].join(' ').toLowerCase().includes(q));
   const area = $('listArea'); area.className = '';
-  if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد عناصر في هذه المكتبة حالياً 🏡<br>اضغط "إضافة جديد" لإضافة عنصر</div>'; return; }
+  if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد نتائج مطابقة لبحثك 🔍</div>'; return; }
   area.innerHTML = rows.map(it => {
     const map = safeUrl(it.mapLink), im = safeImg(it.image), ph = String(it.phone || '').replace(/[^\d+]/g, '');
     const embed = map ? mapEmbedSrc(map) : '';
     const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
-    let actions = '';
-    if(mine || canDelete){
-      actions = '<div class="card-actions">';
-      if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
-      if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
-      if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
-      actions += '</div>';
-    }
+    const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+    let actions = '<div class="card-actions">';
+    actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
+    if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
+    if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
+    if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
+    actions += '</div>';
     return `<div class="card">${im ? `<img src="${im}" alt="صورة العقار">` : ''}<div class="card-body">
       <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
@@ -439,6 +456,9 @@ $('openAddBtn').addEventListener('click', () => openModal(null));
 $('openOffersBtn').addEventListener('click', () => showLibrary('عرض'));
 $('openRequestsBtn').addEventListener('click', () => showLibrary('طلب'));
 $('libBackBtn').addEventListener('click', showHome);
+$('fltSearch').addEventListener('input', render);
+$('fltCity').addEventListener('change', render);
+$('fltType').addEventListener('change', render);
 $('cancelBtn').addEventListener('click', closeModal);
 $('overlay').addEventListener('click', e => { if(e.target === $('overlay')) closeModal(); });
 
