@@ -89,7 +89,17 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
 .field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--border);font-size:14px;font-family:inherit;background:#fafafa}
 .field textarea{resize:vertical;min-height:70px}
-.img-preview{width:100%;height:140px;object-fit:cover;border-radius:9px;margin-top:8px;display:none;background:#eee}
+.img-preview-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.img-thumb{position:relative;width:76px;height:76px;border-radius:9px;overflow:hidden;background:#eee}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.img-thumb button{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:12px;cursor:pointer;line-height:1}
+.gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:0}
+.gallery img{width:100%;flex:0 0 100%;height:170px;object-fit:cover;scroll-snap-align:start;background:#eee}
+.gallery-count{position:absolute;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;top:8px;left:8px}
+.card{position:relative}
+.time-ago{font-size:11.5px;color:var(--muted)}
+.pinned-badge{background:#fff3da;color:#9a5a13;font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
+.btn-pin{background:#fff3da;color:#9a5a13}
 .modal-actions{display:flex;gap:8px;margin-top:16px}
 .modal-actions button{flex:1;padding:12px;border-radius:10px;border:0;font-size:14px;font-weight:700;cursor:pointer}
 .modal-actions button:disabled{opacity:.6}
@@ -162,7 +172,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="field"><label>الوسيط</label><input type="text" id="fAgent" placeholder="اسم الوسيط"></div>
     <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
     <div class="field"><label>التفاصيل</label><textarea id="fDesc" placeholder="عدد الغرف، ملاحظات إضافية..."></textarea></div>
-    <div class="field"><label>صورة (اختياري)</label><input type="file" id="fImage" accept="image/*"><img id="fImagePreview" class="img-preview" alt=""></div>
+    <div class="field"><label>الصور (حتى 4 صور)</label><input type="file" id="fImage" accept="image/*" multiple><div class="img-preview-row" id="fImagePreview"></div></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="cancelBtn">إلغاء</button>
       <button class="btn-save" id="saveBtn">حفظ</button>
@@ -248,13 +258,23 @@ const COL = 'listings'; // كل إعلان مستند مستقل
 const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','محل تجاري','مستودع','مكتب','أخرى'];
 const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','الطائف','تبوك','بريدة','خميس مشيط','أبها','حائل','نجران','جازان','الجبيل','ينبع','القطيف','عرعر','سكاكا','الباحة','أخرى'];
 const $ = id => document.getElementById(id);
-let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', pendingImage = null, existingImage = null, editingId = null, saving = false, joinSaving = false;
+const MAX_IMAGES = 4;
+let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', formImages = [], editingId = null, saving = false, joinSaving = false;
 
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
 function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function safeUrl(u){ return /^https?:\/\//i.test(u || '') ? u : ''; }
 function safeImg(u){ return /^data:image\/(jpeg|png|webp);base64,/.test(u || '') ? u : ''; }
+function timeAgo(ts){
+  if(!ts) return '';
+  const diff = Date.now() - ts, m = 60000, h = m * 60, d = h * 24;
+  if(diff < m) return 'الآن';
+  if(diff < h) return 'قبل ' + Math.round(diff / m) + ' دقيقة';
+  if(diff < d) return 'قبل ' + Math.round(diff / h) + ' ساعة';
+  if(diff < d * 30) return 'قبل ' + Math.round(diff / d) + ' يوم';
+  return 'قبل ' + Math.round(diff / (d * 30)) + ' شهر';
+}
 function mapEmbedSrc(u){
   const s = String(u || '');
   const m = s.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) || s.match(/[?&]q=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/);
@@ -312,10 +332,11 @@ function render(){
   if(fc) rows = rows.filter(l => l.city === fc);
   if(ft) rows = rows.filter(l => l.propertyType === ft);
   if(q) rows = rows.filter(l => [l.neighborhood, l.desc, l.agent, l.area, l.price].join(' ').toLowerCase().includes(q));
+  rows = rows.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   const area = $('listArea'); area.className = '';
   if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد نتائج مطابقة لبحثك 🔍</div>'; return; }
   area.innerHTML = rows.map(it => {
-    const map = safeUrl(it.mapLink), im = safeImg(it.image), ph = String(it.phone || '').replace(/[^\d+]/g, '');
+    const map = safeUrl(it.mapLink), imgs = imagesOf(it).map(safeImg).filter(Boolean), ph = String(it.phone || '').replace(/[^\d+]/g, '');
     const embed = map ? mapEmbedSrc(map) : '';
     const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
     const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
@@ -323,10 +344,15 @@ function render(){
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
     if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
+    if(isOwner) actions += `<button class="btn-small btn-pin" data-act="pin" data-id="${id}">${it.pinned ? '📌 إلغاء التثبيت' : '📌 تثبيت'}</button>`;
     if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
     actions += '</div>';
-    return `<div class="card">${im ? `<img src="${im}" alt="صورة العقار">` : ''}<div class="card-body">
-      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div>
+    const gallery = imgs.length > 1
+      ? `<div style="position:relative"><div class="gallery">${imgs.map(s => `<img src="${s}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">📷 ${imgs.length}</span></div>`
+      : (imgs[0] ? `<img src="${imgs[0]}" alt="صورة العقار">` : '');
+    return `<div class="card">${gallery}<div class="card-body">
+      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : ''}<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div></div>
+      <div class="time-ago">${timeAgo(it.createdAt)}</div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
       ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
       ${embed ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
@@ -401,6 +427,12 @@ $('listArea').addEventListener('click', async e => {
   const b = e.target.closest('button[data-act]'); if(!b) return;
   const act = b.dataset.act, id = b.dataset.id;
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
+  if(act === 'pin'){
+    const it = listings.find(x => x.id === id);
+    try{ await db.collection(COL).doc(id).update({ pinned: !(it && it.pinned) }); }
+    catch(err){ fail('pin', err); }
+    return;
+  }
   const del = act === 'del';
   if(!confirm(del ? 'حذف هذا الإعلان نهائياً؟' : 'تأكيد إتمام الصفقة وإزالة الإعلان؟')) return;
   try{ await db.collection(COL).doc(id).delete(); toast(del ? 'تم الحذف' : 'تمت إزالة الإعلان بعد الإتمام ✅'); }
@@ -430,10 +462,26 @@ function showJoinRequests(){
 }
 $('joinBackBtn').addEventListener('click', showHome);
 
+function imagesOf(it){
+  if(Array.isArray(it.images) && it.images.length) return it.images;
+  if(it.image) return [it.image];
+  return [];
+}
+
+function renderImagePreview(){
+  $('fImagePreview').innerHTML = formImages.map((src, i) =>
+    `<div class="img-thumb"><img src="${src}" alt=""><button type="button" data-rm="${i}">✕</button></div>`
+  ).join('');
+}
+$('fImagePreview').addEventListener('click', e => {
+  const b = e.target.closest('button[data-rm]'); if(!b) return;
+  formImages.splice(Number(b.dataset.rm), 1);
+  renderImagePreview();
+});
+
 function openModal(edit){
-  pendingImage = null;
+  formImages = edit ? imagesOf(edit).slice() : [];
   editingId = edit ? edit.id : null;
-  existingImage = edit ? (edit.image || null) : null;
   $('modalTitle').textContent = edit ? 'تعديل الإعلان' : 'إضافة إعلان';
   $('saveBtn').textContent = edit ? 'حفظ التعديلات' : 'حفظ';
   $('fListingType').value = edit ? edit.type : 'عرض';
@@ -447,8 +495,7 @@ function openModal(edit){
   $('fPhone').value = edit ? (edit.phone || '') : '';
   $('fDesc').value = edit ? (edit.desc || '') : '';
   $('fImage').value = '';
-  const p = $('fImagePreview');
-  if(existingImage){ p.src = existingImage; p.style.display = 'block'; } else { p.style.display = 'none'; }
+  renderImagePreview();
   $('overlay').classList.add('show');
 }
 function closeModal(){ $('overlay').classList.remove('show'); }
@@ -462,22 +509,34 @@ $('fltType').addEventListener('change', render);
 $('cancelBtn').addEventListener('click', closeModal);
 $('overlay').addEventListener('click', e => { if(e.target === $('overlay')) closeModal(); });
 
-// ضغط الصورة قبل الحفظ (تبقى أقل من حد المستند)
-$('fImage').addEventListener('change', e => {
-  const f = e.target.files[0]; if(!f) return;
-  const im = new Image(), url = URL.createObjectURL(f);
-  im.onload = () => {
-    const s = Math.min(1, 800 / im.width), c = document.createElement('canvas');
-    c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
-    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-    let q = .7, d = c.toDataURL('image/jpeg', q);
-    while(d.length > 400000 && q > .3){ q -= .1; d = c.toDataURL('image/jpeg', q); }
-    pendingImage = d;
-    const p = $('fImagePreview'); p.src = d; p.style.display = 'block';
-    URL.revokeObjectURL(url);
-  };
-  im.onerror = () => toast('تعذر قراءة الصورة');
-  im.src = url;
+// ضغط كل صورة قبل الحفظ (تبقى المجموعة أقل من حد المستند)
+function compressFile(f){
+  return new Promise((resolve, reject) => {
+    const im = new Image(), url = URL.createObjectURL(f);
+    im.onload = () => {
+      const s = Math.min(1, 650 / im.width), c = document.createElement('canvas');
+      c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      let q = .7, d = c.toDataURL('image/jpeg', q);
+      while(d.length > 150000 && q > .25){ q -= .1; d = c.toDataURL('image/jpeg', q); }
+      URL.revokeObjectURL(url);
+      resolve(d);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('read-fail')); };
+    im.src = url;
+  });
+}
+$('fImage').addEventListener('change', async e => {
+  const files = Array.from(e.target.files || []);
+  const room = MAX_IMAGES - formImages.length;
+  if(room <= 0){ toast('وصلت للحد الأقصى (' + MAX_IMAGES + ' صور)'); e.target.value = ''; return; }
+  for(const f of files.slice(0, room)){
+    try{ formImages.push(await compressFile(f)); }
+    catch{ toast('تعذر قراءة إحدى الصور'); }
+  }
+  if(files.length > room) toast('تم أخذ أول ' + room + ' صور فقط (الحد الأقصى ' + MAX_IMAGES + ')');
+  renderImagePreview();
+  e.target.value = '';
 });
 
 $('saveBtn').addEventListener('click', async () => {
@@ -489,7 +548,7 @@ $('saveBtn').addEventListener('click', async () => {
     type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
-    desc: $('fDesc').value.trim(), image: pendingImage || existingImage || null
+    desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null
   };
   saving = true; $('saveBtn').disabled = true;
   try{
