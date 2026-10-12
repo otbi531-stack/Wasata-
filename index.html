@@ -829,6 +829,25 @@ function downloadBackup(){
 }
 $('backupBtn').addEventListener('click', downloadBackup);
 
+// التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
+const APP_VERSION = '1791806511';
+async function checkForUpdate(){
+  try{
+    const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
+    if(!r.ok) return;
+    const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
+    if(!m || m[1] === APP_VERSION) return;
+    if(document.querySelector('.overlay.show')) return; // لا نقاطع من يكتب نموذجاً الآن
+    if(sessionStorage.getItem('wasata_updated_to') === m[1]) return; // منع التكرار
+    sessionStorage.setItem('wasata_updated_to', m[1]);
+    toast('جارٍ تحديث التطبيق...');
+    setTimeout(() => location.replace(location.pathname + '?u=' + m[1]), 1200);
+  }catch{}
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') checkForUpdate(); });
+setInterval(checkForUpdate, 5 * 60 * 1000);
+checkForUpdate();
+
 init();
 </script>
 </body>
