@@ -6,6 +6,11 @@
 <title>وسطاء المملكة</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12160e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="وسطاء المملكة">
@@ -14,7 +19,7 @@
 <style>
 :root{--primary:#1f6f54;--primary-dark:#164f3c;--accent:#d98a3d;--text:#1f2430;--muted:#6b7280;--border:#e5e7eb;--danger:#c0392b}
 *{box-sizing:border-box}
-body{margin:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
+body{margin:0;font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
 button{font-family:inherit}
 header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 100% no-repeat,linear-gradient(#1f6f54,#12160e);position:relative;z-index:1}
 .container{max-width:720px;margin:-30vw auto 0;padding:14px 16px;position:relative;z-index:2}
@@ -115,6 +120,28 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .btn-save{background:var(--primary);color:#fff}
 .btn-cancel{background:#eef2f6;color:var(--text)}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2430;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:90%;text-align:center}
+.skel{background:linear-gradient(90deg,#e8ebe9 25%,#f4f6f5 37%,#e8ebe9 63%);background-size:400% 100%;animation:skel 1.4s ease infinite}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skel-card{background:rgba(255,255,255,.96);border-radius:14px;overflow:hidden;margin-bottom:14px;padding-bottom:6px}
+.skel-img{height:170px}
+.skel-line{height:14px;border-radius:7px;margin:12px 14px}
+.saved-banner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,243,218,.97);color:#7a4a0f;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:10px}
+.saved-banner button{border:0;border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sb-open{background:var(--accent);color:#fff}
+.sb-dismiss{background:#fff;color:var(--muted)}
+.sold-badge{background:#e3f3ec;color:var(--primary-dark);font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
+.arch-badge{background:#eef2f6;color:var(--muted);font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
+.deal-badge{color:#9a5a13;font-weight:700}
+.btn-img{flex:0 0 46px;min-width:46px;background:#eef2f6;font-size:15px}
+.btn-report{flex:0 0 46px;min-width:46px;background:#fdecea;font-size:15px}
+.btn-renew{background:#eaf1fb;color:#1d4ed8}
+.rcard{background:#fafafa;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13.5px}
+.rcard div{margin:3px 0}
+.board-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:14px}
+.board-row .rank{font-size:20px;width:30px;text-align:center}
+.board-row .bname{flex:1;font-weight:700}
+.board-row .bcount{color:var(--primary-dark);font-weight:700}
+.modal .empty{color:var(--muted);background:#f3f4f6;padding:24px 16px}
 .toast.show{opacity:1}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -135,6 +162,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
       <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
     </div>
+    <div id="savedBanner"></div>
     <div id="ownerExtra"></div>
     <div class="footer-row" id="footerRow">
       <a class="link-btn" href="https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4" target="_blank" rel="noopener noreferrer">قروب واتساب</a>
@@ -163,8 +191,12 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
         </select>
         <button type="button" class="fav-toggle" id="fltFav">🤍 المفضلة</button>
       </div>
+      <div class="filter-row" style="margin-top:8px">
+        <button type="button" class="fav-toggle" id="fltArchive">📦 الأرشيف</button>
+        <button type="button" class="fav-toggle" id="fltSave">🔔 حفظ هذا البحث</button>
+      </div>
     </div>
-    <div id="listArea" class="loading">جاري تحميل البيانات...</div>
+    <div id="listArea"></div>
   </div>
 
   <div id="joinRequestsView" style="display:none">
@@ -264,8 +296,11 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 <!-- القائمة العامة (نقاط الأفق) -->
 <div class="menu-dropdown" id="menuDropdown">
   <button class="menu-item" id="menuCalcBtn">🧮 حاسبة السعي</button>
+  <button class="menu-item" id="menuBoardBtn">🏆 المتميزون</button>
+  <button class="menu-item" id="menuInstallBtn" style="display:none">📲 تثبيت التطبيق</button>
   <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
   <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
+  <button class="menu-item" id="menuReportsBtn" style="display:none">🚩 البلاغات</button>
 </div>
 
 <!-- قائمة الأعضاء المسجّلين (للمالك فقط) -->
@@ -276,6 +311,40 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="modal-actions">
       <button class="btn-cancel" id="membersCloseBtn" style="width:100%">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- المتميزون -->
+<div class="overlay" id="boardOverlay">
+  <div class="modal">
+    <h2>🏆 الوسطاء المتميزون</h2>
+    <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 10px">حسب عدد الصفقات التي سجّلها كل وسيط بزر «تم البيع»</p>
+    <div id="boardList"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="boardCloseBtn" style="width:100%">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- الإبلاغ عن إعلان -->
+<div class="overlay" id="reportOverlay">
+  <div class="modal">
+    <h2>🚩 الإبلاغ عن إعلان</h2>
+    <div class="field"><label>سبب البلاغ</label>
+      <select id="rReason"><option>إعلان مكرر</option><option>تم بيعه / لم يعد متاحاً</option><option>معلومات غير صحيحة أو مضللة</option><option>إعلان مخالف للضوابط</option><option>أخرى</option></select>
+    </div>
+    <div class="field"><label>ملاحظات (اختياري)</label><textarea id="rNote" maxlength="300"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="reportCancelBtn">إلغاء</button>
+      <button class="btn-save" id="reportSubmitBtn">إرسال البلاغ</button>
+    </div>
+  </div>
+</div>
+
+<!-- بلاغات الأعضاء (للمالك فقط) -->
+<div class="overlay" id="reportsOverlay">
+  <div class="modal">
+    <h2>🚩 البلاغات</h2>
+    <div id="reportsList"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="reportsCloseBtn" style="width:100%">إغلاق</button></div>
   </div>
 </div>
 
@@ -310,8 +379,15 @@ function priceNum(s){
   return n;
 }
 let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', formImages = [], editingId = null, saving = false, joinSaving = false;
+let listingsLoaded = false, reportsData = [], reportsUnsub = null, savedSearch = null, showArchive = false, deferredInstall = null, reportingId = null;
+const ARCHIVE_DAYS = 30; // الإعلان الأقدم من هذه المدة (بلا تجديد) ينتقل إلى الأرشيف
+const effDate = it => it.renewedAt || it.createdAt || 0;
+const isSold = it => !!it.sold;
+const isExpired = it => { const d = effDate(it); return !it.pinned && !it.sold && d > 0 && (Date.now() - d) > ARCHIVE_DAYS * 864e5; };
+const isActive = it => !isSold(it) && !isExpired(it);
+const sigKey = o => { const { views, id, ...rest } = o; return JSON.stringify(rest); };
 
-function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
+function toast(m, ms){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), ms || 2600); }
 function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function safeUrl(u){ return /^https?:\/\//i.test(u || '') ? u : ''; }
@@ -344,8 +420,14 @@ async function init(){
       uid = firebase.auth().currentUser.uid;
     }catch(e){ fail('auth', e); }
     db.collection(COL).onSnapshot(s => {
-      listings = s.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      render();
+      const sig = !listingsLoaded || s.docChanges().some(ch => {
+        if(ch.type !== 'modified') return true;
+        const prev = listings.find(x => x.id === ch.doc.id);
+        return !prev || sigKey(prev) !== sigKey(ch.doc.data());
+      });
+      listings = s.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => effDate(b) - effDate(a));
+      listingsLoaded = true;
+      if(sig) render(); else updateViewCounts();
     }, e => fail('listen', e));
     if(uid) migrate().catch(e => console.warn('migrate', e));
     checkGate();
@@ -371,21 +453,77 @@ async function migrate(){
   toast('تم نقل الإعلانات القديمة إلى النظام الجديد');
 }
 
+function skeletonHTML(){
+  const one = '<div class="skel-card"><div class="skel skel-img"></div><div class="skel skel-line" style="width:55%"></div><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:40%"></div></div>';
+  return one + one + one;
+}
+
+function cardHTML(it, ctx){
+  const map = safeUrl(it.mapLink), imgs = imagesOf(it).map(safeImg).filter(Boolean), ph = String(it.phone || '').replace(/[^\d+]/g, '');
+  const embed = map ? mapEmbedSrc(map) : '';
+  const mine = !!(uid && it.ownerId === uid), id = esc(it.id);
+  const sold = isSold(it), expired = isExpired(it), active = !sold && !expired;
+  const canDelete = mine || isOwner;
+  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+  let actions = '';
+  if(active){
+    actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
+    actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
+    actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
+    if(!mine && !isOwner) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
+    if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
+    if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
+    if(isOwner) actions += `<button class="btn-small btn-pin" data-act="pin" data-id="${id}">${it.pinned ? '📌 إلغاء التثبيت' : '📌 تثبيت'}</button>`;
+  }else if(expired && mine){
+    actions += `<button class="btn-small btn-renew" data-act="renew" data-id="${id}">🔄 تجديد الإعلان</button>`;
+  }
+  if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
+  if(actions) actions = `<div class="card-actions">${actions}</div>`;
+  const gallery = imgs.length > 1
+    ? `<div style="position:relative"><div class="gallery">${imgs.map(u => `<img src="${u}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">📷 ${imgs.length}</span></div>`
+    : (imgs[0] ? `<img src="${imgs[0]}" alt="صورة العقار">` : '');
+  const dn = ctx.deals[it.ownerId] || 0, nRep = ctx.rmap[it.id] || 0;
+  const badges = (it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : '')
+    + (active && (Date.now() - (it.createdAt || 0)) < 864e5 ? '<span class="new-badge">🆕 جديد</span>' : '')
+    + (sold ? '<span class="sold-badge">✅ تم البيع</span>' : (expired ? '<span class="arch-badge">📦 مؤرشف</span>' : ''))
+    + `<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span>`;
+  const when = sold ? 'بيع ' + timeAgo(it.soldAt) : (it.renewedAt ? 'جُدِّد ' : '') + timeAgo(effDate(it));
+  return `<div class="card"${active ? ` data-lid="${id}"` : ''}>${gallery}<div class="card-body">
+      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${badges}</div></div>
+      <div class="time-ago">${when} · <span data-vid="${id}">👁 ${it.views || 0}</span>${nRep ? ` · 🚩 ${nRep} بلاغ` : ''}</div>
+      ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
+      ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
+      ${embed && active ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
+      ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">فتح في قوقل ماب</a></div>` : ''}
+      ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
+      ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}${dn ? ` <span class="deal-badge">🏅 ${dn} ${dn === 1 ? 'صفقة' : 'صفقات'}</span>` : ''}</div>` : ''}
+      ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
+      ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
+      ${actions}
+    </div></div>`;
+}
+
 function render(){
-  const offers = listings.filter(l => l.type !== 'طلب').length;
+  const act = listings.filter(isActive);
+  const offers = act.filter(l => l.type !== 'طلب').length;
   $('offersCount').textContent = offers;
-  $('requestsCount').textContent = listings.length - offers;
+  $('requestsCount').textContent = act.length - offers;
   renderOwnerUI();
+  renderSavedBanner();
   if(!lib) return;
-  let rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب'));
+  const area = $('listArea'); area.className = '';
+  if(!listingsLoaded){ area.innerHTML = skeletonHTML(); return; }
+  $('fltArchive').classList.toggle('active', showArchive);
+  $('fltSave').textContent = savedSearch ? '🔕 إلغاء البحث المحفوظ' : '🔔 حفظ هذا البحث';
+  let rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب') && (showArchive ? !isActive(l) : isActive(l)));
   const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
   if(fc) rows = rows.filter(l => l.city === fc);
   if(ft) rows = rows.filter(l => l.propertyType === ft);
-  if(q) rows = rows.filter(l => [l.neighborhood, l.desc, l.agent, l.area, l.price].join(' ').toLowerCase().includes(q));
+  if(q) rows = rows.filter(l => textMatch(l, q));
   if(favOnly) rows = rows.filter(l => favs.includes(l.id));
   const sortBy = $('fltSort').value;
   rows = rows.slice().sort((a, b) => {
-    if(sortBy === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
+    if(sortBy === 'old') return effDate(a) - effDate(b);
     if(sortBy === 'high' || sortBy === 'low'){
       const pa = priceNum(a.price), pb = priceNum(b.price);
       if(pa == null && pb == null) return 0;
@@ -393,41 +531,17 @@ function render(){
       if(pb == null) return -1;
       return sortBy === 'high' ? pb - pa : pa - pb;
     }
-    return (b.createdAt || 0) - (a.createdAt || 0);
+    return effDate(b) - effDate(a);
   });
   rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  const area = $('listArea'); area.className = '';
-  if(!rows.length){ area.innerHTML = `<div class="empty">${favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : 'لا توجد نتائج مطابقة لبحثك 🔍'}</div>`; return; }
-  area.innerHTML = rows.map(it => {
-    const map = safeUrl(it.mapLink), imgs = imagesOf(it).map(safeImg).filter(Boolean), ph = String(it.phone || '').replace(/[^\d+]/g, '');
-    const embed = map ? mapEmbedSrc(map) : '';
-    const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
-    const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
-    let actions = '<div class="card-actions">';
-    actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
-    actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
-    if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
-    if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
-    if(isOwner) actions += `<button class="btn-small btn-pin" data-act="pin" data-id="${id}">${it.pinned ? '📌 إلغاء التثبيت' : '📌 تثبيت'}</button>`;
-    if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
-    actions += '</div>';
-    const gallery = imgs.length > 1
-      ? `<div style="position:relative"><div class="gallery">${imgs.map(s => `<img src="${s}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">📷 ${imgs.length}</span></div>`
-      : (imgs[0] ? `<img src="${imgs[0]}" alt="صورة العقار">` : '');
-    return `<div class="card">${gallery}<div class="card-body">
-      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : ''}${(Date.now() - (it.createdAt || 0)) < 864e5 ? '<span class="new-badge">🆕 جديد</span>' : ''}<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div></div>
-      <div class="time-ago">${timeAgo(it.createdAt)}</div>
-      ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
-      ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
-      ${embed ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
-      ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">فتح في قوقل ماب</a></div>` : ''}
-      ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
-      ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}</div>` : ''}
-      ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
-      ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
-      ${actions}
-    </div></div>`;
-  }).join('');
+  if(!rows.length){
+    area.innerHTML = `<div class="empty">${favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : (showArchive ? 'لا توجد إعلانات في الأرشيف 📦' : 'لا توجد نتائج مطابقة لبحثك 🔍')}</div>`;
+    observeViews(); return;
+  }
+  const deals = {}; listings.forEach(l => { if(l.sold && l.ownerId) deals[l.ownerId] = (deals[l.ownerId] || 0) + 1; });
+  const ctx = { deals, rmap: isOwner ? reportsByListing() : {} };
+  area.innerHTML = rows.map(it => cardHTML(it, ctx)).join('');
+  observeViews();
 }
 
 function renderOwnerUI(){
@@ -496,16 +610,254 @@ $('listArea').addEventListener('click', async e => {
     saveFavs(); render(); return;
   }
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
+  if(act === 'img'){ const it = listings.find(x => x.id === id); if(it) shareListingImage(it); return; }
+  if(act === 'report'){ openReport(id); return; }
   if(act === 'pin'){
     const it = listings.find(x => x.id === id);
     try{ await db.collection(COL).doc(id).update({ pinned: !(it && it.pinned) }); }
     catch(err){ fail('pin', err); }
     return;
   }
-  const del = act === 'del';
-  if(!confirm(del ? 'حذف هذا الإعلان نهائياً؟' : 'تأكيد إتمام الصفقة وإزالة الإعلان؟')) return;
-  try{ await db.collection(COL).doc(id).delete(); toast(del ? 'تم الحذف' : 'تمت إزالة الإعلان بعد الإتمام ✅'); }
-  catch(err){ fail('delete', err); }
+  if(act === 'renew'){
+    try{ await db.collection(COL).doc(id).update({ renewedAt: Date.now() }); toast('تم تجديد الإعلان وعاد للقائمة ✅'); }
+    catch(err){ fail('renew', err); }
+    return;
+  }
+  if(act === 'sold'){
+    if(!confirm('تأكيد إتمام الصفقة؟ سيُنقل الإعلان إلى الأرشيف وتُحتسب الصفقة في إنجازاتك.')) return;
+    try{ await db.collection(COL).doc(id).update({ sold: true, soldAt: Date.now(), images: [], image: null }); toast('مبارك! تم احتساب الصفقة في إنجازاتك 🏅'); }
+    catch(err){ fail('sold', err); }
+    return;
+  }
+  if(act === 'del'){
+    if(!confirm('حذف هذا الإعلان نهائياً؟')) return;
+    try{ await db.collection(COL).doc(id).delete(); toast('تم الحذف'); }
+    catch(err){ fail('delete', err); }
+  }
+});
+
+// ===== المشاهدات: تُحتسب مرة واحدة لكل جهاز لكل إعلان =====
+let viewObs = null, viewed = new Set(); const inflight = new Set();
+try{ viewed = new Set(JSON.parse(localStorage.getItem('wasata_viewed') || '[]')); }catch{}
+function observeViews(){
+  if(viewObs){ viewObs.disconnect(); viewObs = null; }
+  if(!('IntersectionObserver' in window) || !uid || !db) return;
+  const cards = document.querySelectorAll('#listArea .card[data-lid]');
+  if(!cards.length) return;
+  viewObs = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if(!en.isIntersecting) return;
+      viewObs.unobserve(en.target);
+      const id = en.target.dataset.lid;
+      const it = listings.find(x => x.id === id);
+      if(!id || !it || it.ownerId === uid || viewed.has(id) || inflight.has(id)) return;
+      inflight.add(id);
+      db.collection(COL).doc(id).update({ views: firebase.firestore.FieldValue.increment(1) })
+        .then(() => { viewed.add(id); try{ localStorage.setItem('wasata_viewed', JSON.stringify([...viewed].slice(-500))); }catch{} })
+        .catch(() => {})
+        .finally(() => inflight.delete(id));
+    });
+  }, { threshold: 0.6 });
+  cards.forEach(c => viewObs.observe(c));
+}
+function updateViewCounts(){
+  document.querySelectorAll('[data-vid]').forEach(el => {
+    const it = listings.find(x => x.id === el.dataset.vid);
+    if(it) el.textContent = '👁 ' + (it.views || 0);
+  });
+}
+
+// ===== الأرشيف والبحث المحفوظ =====
+function textMatch(l, q){ return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price].join(' ').toLowerCase().includes(q); }
+try{ savedSearch = JSON.parse(localStorage.getItem('wasata_saved_search') || 'null'); }catch{ savedSearch = null; }
+function persistSaved(){ try{ if(savedSearch) localStorage.setItem('wasata_saved_search', JSON.stringify(savedSearch)); else localStorage.removeItem('wasata_saved_search'); }catch{} }
+function savedMatches(){
+  if(!savedSearch) return [];
+  const q = (savedSearch.q || '').toLowerCase();
+  return listings.filter(l => isActive(l) && l.ownerId !== uid && (l.createdAt || 0) > savedSearch.since
+    && (savedSearch.lib === 'طلب') === (l.type === 'طلب')
+    && (!savedSearch.city || l.city === savedSearch.city)
+    && (!savedSearch.type || l.propertyType === savedSearch.type)
+    && textMatch(l, q));
+}
+function renderSavedBanner(){
+  const box = $('savedBanner'); if(!box) return;
+  const n = savedMatches().length;
+  if(!n){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="saved-banner">🔔 ${n} ${n === 1 ? 'إعلان جديد يطابق' : 'إعلانات جديدة تطابق'} بحثك المحفوظ <button class="sb-open" id="sbOpen">عرض</button><button class="sb-dismiss" id="sbDismiss">تجاهل</button></div>`;
+  $('sbOpen').addEventListener('click', openSavedSearch);
+  $('sbDismiss').addEventListener('click', () => { savedSearch.since = Date.now(); persistSaved(); renderSavedBanner(); });
+}
+function openSavedSearch(){
+  $('fltCity').value = savedSearch.city || ''; $('fltType').value = savedSearch.type || ''; $('fltSearch').value = savedSearch.q || '';
+  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
+  savedSearch.since = Date.now(); persistSaved();
+  showLibrary(savedSearch.lib);
+}
+$('fltArchive').addEventListener('click', () => { showArchive = !showArchive; render(); });
+$('fltSave').addEventListener('click', () => {
+  if(savedSearch){ savedSearch = null; persistSaved(); toast('تم إلغاء البحث المحفوظ'); }
+  else{
+    savedSearch = { lib, city: $('fltCity').value, type: $('fltType').value, q: $('fltSearch').value.trim(), since: Date.now() };
+    persistSaved(); toast('تم حفظ البحث 🔔 سنخبرك بالجديد عند دخولك التطبيق', 3500);
+  }
+  render();
+});
+
+// ===== صورة الإعلان للمشاركة =====
+function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+function rrect(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function drawCover(c, img, x, y, w, h){ const k = Math.max(w / img.width, h / img.height), dw = img.width * k, dh = img.height * k; c.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); }
+function fitFont(c, text, size, weight, fam, maxW){ while(size > 26){ c.font = weight + ' ' + size + 'px ' + fam; if(c.measureText(text).width <= maxW) break; size -= 2; } }
+function wrapText(c, text, maxW, maxLines){
+  const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  const lines = []; let cur = '', n = 0;
+  while(n < words.length){
+    const t = cur ? cur + ' ' + words[n] : words[n];
+    if(cur && c.measureText(t).width > maxW){
+      if(lines.length === maxLines - 1) break;
+      lines.push(cur); cur = ''; continue;
+    }
+    cur = t; n++;
+  }
+  if(cur) lines.push(cur);
+  if(n < words.length && lines.length) lines[lines.length - 1] += ' …';
+  return lines;
+}
+async function buildShareImage(it){
+  const W = 1080, H = 1350, F = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
+  try{ await Promise.all([document.fonts.load('700 40px Tajawal', 'عربي'), document.fonts.load('400 40px Tajawal', 'عربي')]); }catch{}
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  x.direction = 'rtl'; x.textAlign = 'right'; x.textBaseline = 'alphabetic';
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#16231b'); g.addColorStop(1, '#0d110b');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  try{ const logo = await loadImg('icon.png'); x.save(); rrect(x, 940, 36, 100, 100, 50); x.clip(); x.drawImage(logo, 940, 36, 100, 100); x.restore(); }catch{}
+  x.fillStyle = '#e6c07b'; x.font = '700 56px ' + F; x.fillText('وسطاء المملكة', 920, 106);
+  const imgs = imagesOf(it).map(safeImg).filter(Boolean);
+  x.save(); rrect(x, 40, 170, 1000, 560, 28); x.clip();
+  let drew = false;
+  if(imgs[0]){ try{ drawCover(x, await loadImg(imgs[0]), 40, 170, 1000, 560); drew = true; }catch{} }
+  if(!drew){ x.fillStyle = '#1d2d23'; x.fillRect(40, 170, 1000, 560); x.fillStyle = '#3a5646'; x.font = '700 120px ' + F; x.textAlign = 'center'; x.fillText(it.propertyType || 'عقار', 540, 470); x.textAlign = 'right'; }
+  x.restore();
+  const isReq = it.type === 'طلب';
+  x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 840, 195, 170, 64, 32); x.fill();
+  x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240); x.textAlign = 'right';
+  let y = 800;
+  x.fillStyle = '#ffffff'; fitFont(x, `${it.propertyType || 'عقار'} - ${it.city || ''}`, 64, '700', F, 960);
+  x.fillText(`${it.propertyType || 'عقار'} - ${it.city || ''}`, 1040, y); y += 62;
+  x.fillStyle = '#cfd6c4'; x.font = '400 40px ' + F;
+  if(it.neighborhood){ x.fillText('الحي: ' + it.neighborhood, 1040, y); y += 56; }
+  if(it.area){ x.fillText('المساحة: ' + it.area, 1040, y); y += 56; }
+  if(it.price){ x.fillStyle = '#e6c07b'; fitFont(x, it.price, 58, '700', F, 960); x.fillText(it.price, 1040, y + 14); y += 84; }
+  if(it.desc){ x.fillStyle = '#b9c4b2'; x.font = '400 34px ' + F; wrapText(x, it.desc, 960, 3).forEach(l => { x.fillText(l, 1040, y); y += 48; }); }
+  x.fillStyle = '#0a0d09'; x.fillRect(0, 1228, W, 122);
+  if(it.agent){ x.fillStyle = '#ffffff'; fitFont(x, 'الوسيط: ' + it.agent, 40, '700', F, 560); x.fillText('الوسيط: ' + it.agent, 1040, 1290); }
+  if(it.phone){ x.direction = 'ltr'; x.textAlign = 'left'; x.fillStyle = '#e6c07b'; x.font = '700 46px ' + F; x.fillText(it.phone, 40, 1290); x.direction = 'rtl'; x.textAlign = 'right'; }
+  x.fillStyle = '#6f7d68'; x.font = '400 26px ' + F; x.textAlign = 'center'; x.direction = 'ltr'; x.fillText('otbi531-stack.github.io/Wasata-', 540, 1334); x.direction = 'rtl';
+  return new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
+}
+async function shareListingImage(it){
+  toast('جارٍ تجهيز الصورة...');
+  let blob;
+  try{ blob = await buildShareImage(it); }catch(e){ fail('share-img', e); return; }
+  if(!blob){ toast('تعذر إنشاء الصورة'); return; }
+  const file = new File([blob], 'wasata-listing.jpg', { type: 'image/jpeg' });
+  try{
+    if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file] }); return; }
+  }catch(e){ if(e && e.name === 'AbortError') return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'wasata-listing.jpg';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('تم حفظ الصورة على جهازك');
+}
+
+// ===== الإبلاغ عن إعلان =====
+function openReport(id){ reportingId = id; $('rNote').value = ''; $('rReason').selectedIndex = 0; $('reportOverlay').classList.add('show'); }
+$('reportCancelBtn').addEventListener('click', () => $('reportOverlay').classList.remove('show'));
+$('reportOverlay').addEventListener('click', e => { if(e.target === $('reportOverlay')) $('reportOverlay').classList.remove('show'); });
+$('reportSubmitBtn').addEventListener('click', async () => {
+  if(!uid || !reportingId){ toast('تعذر إرسال البلاغ، حدّث الصفحة وحاول مجدداً'); return; }
+  const it = listings.find(x => x.id === reportingId);
+  $('reportSubmitBtn').disabled = true;
+  try{
+    await db.collection('reports').doc(reportingId + '_' + uid).set({
+      listingId: reportingId, reporterId: uid, reason: $('rReason').value, note: $('rNote').value.trim().slice(0, 300),
+      listingTitle: it ? `${it.propertyType || 'عقار'} - ${it.city || ''}${it.neighborhood ? ' / ' + it.neighborhood : ''}` : '',
+      createdAt: Date.now()
+    });
+    $('reportOverlay').classList.remove('show');
+    toast('تم إرسال البلاغ للإدارة، شكراً لك 🙏');
+  }catch(e){ fail('report', e); }
+  finally{ $('reportSubmitBtn').disabled = false; }
+});
+function subscribeReports(){
+  if(reportsUnsub) return;
+  reportsUnsub = db.collection('reports').onSnapshot(sn => {
+    reportsData = sn.docs.map(d => ({...d.data(), id: d.id})).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if(listingsLoaded) render();
+    renderReportsList();
+  }, e => fail('reports-listen', e));
+}
+function unsubscribeReports(){ if(reportsUnsub){ reportsUnsub(); reportsUnsub = null; } reportsData = []; }
+function reportsByListing(){ const m = {}; reportsData.forEach(r => { m[r.listingId] = (m[r.listingId] || 0) + 1; }); return m; }
+function renderReportsList(){
+  const area = $('reportsList'); if(!area) return;
+  if(!reportsData.length){ area.innerHTML = '<div class="empty">لا توجد بلاغات</div>'; return; }
+  area.innerHTML = reportsData.map(r => {
+    const it = listings.find(x => x.id === r.listingId);
+    return `<div class="rcard">
+      <div><b>${esc(r.listingTitle || (it ? (it.propertyType + ' - ' + it.city) : 'إعلان'))}</b>${it && it.agent ? ' — ' + esc(it.agent) : ''}</div>
+      <div>السبب: ${esc(r.reason)}</div>
+      ${r.note ? `<div>ملاحظة: ${esc(r.note)}</div>` : ''}
+      <div class="time-ago">${timeAgo(r.createdAt)}</div>
+      <div class="card-actions" style="margin-top:8px">
+        ${it ? `<button class="btn-small btn-delete" data-ract="delListing" data-rid="${esc(r.id)}" data-rlid="${esc(r.listingId)}">🗑 حذف الإعلان</button>` : '<span style="font-size:12px;color:var(--muted)">الإعلان محذوف</span>'}
+        <button class="btn-small btn-sold" data-ract="ignore" data-rid="${esc(r.id)}">✔️ تجاهل</button>
+      </div></div>`;
+  }).join('');
+}
+$('reportsList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-ract]'); if(!b) return;
+  try{
+    if(b.dataset.ract === 'ignore'){ await db.collection('reports').doc(b.dataset.rid).delete(); }
+    else if(b.dataset.ract === 'delListing'){
+      if(!confirm('حذف هذا الإعلان نهائياً وإغلاق كل البلاغات عليه؟')) return;
+      const lid = b.dataset.rlid, batch = db.batch();
+      batch.delete(db.collection(COL).doc(lid));
+      reportsData.filter(r => r.listingId === lid).forEach(r => batch.delete(db.collection('reports').doc(r.id)));
+      await batch.commit(); toast('تم حذف الإعلان');
+    }
+  }catch(err){ fail('report-action', err); }
+});
+$('reportsCloseBtn').addEventListener('click', () => $('reportsOverlay').classList.remove('show'));
+$('reportsOverlay').addEventListener('click', e => { if(e.target === $('reportsOverlay')) $('reportsOverlay').classList.remove('show'); });
+
+// ===== المتميزون =====
+function renderBoard(){
+  const stats = {};
+  listings.forEach(l => {
+    if(!l.ownerId) return;
+    const st = stats[l.ownerId] || (stats[l.ownerId] = { deals: 0, name: '', t: -1 });
+    if(l.sold) st.deals++;
+    if(l.agent && effDate(l) >= st.t){ st.name = l.agent; st.t = effDate(l); }
+  });
+  const top = Object.values(stats).filter(st => st.deals > 0).sort((a, b) => b.deals - a.deals).slice(0, 10);
+  $('boardList').innerHTML = top.length
+    ? top.map((st, i) => `<div class="board-row"><span class="rank">${['🥇', '🥈', '🥉'][i] || (i + 1)}</span><span class="bname">${esc(st.name || 'وسيط')}</span><span class="bcount">${st.deals} ${st.deals === 1 ? 'صفقة' : 'صفقات'}</span></div>`).join('')
+    : '<div class="empty">لا توجد صفقات مسجّلة بعد</div>';
+}
+$('boardCloseBtn').addEventListener('click', () => $('boardOverlay').classList.remove('show'));
+$('boardOverlay').addEventListener('click', e => { if(e.target === $('boardOverlay')) $('boardOverlay').classList.remove('show'); });
+
+// ===== تثبيت التطبيق =====
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+$('menuInstallBtn').addEventListener('click', async () => {
+  $('menuDropdown').classList.remove('show');
+  if(deferredInstall){ deferredInstall.prompt(); try{ await deferredInstall.userChoice; }catch{} deferredInstall = null; }
+  else toast('من متصفحك: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»', 6000);
 });
 
 function showHome(){
@@ -666,6 +1018,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
       subscribeJoinRequests();
+      subscribeReports();
     }
     render();
   }catch(e){ fail('owner-login', e); }
@@ -679,6 +1032,7 @@ async function ownerLogout(){
     uid = firebase.auth().currentUser.uid;
     isOwner = false;
     unsubscribeJoinRequests();
+    unsubscribeReports();
     if(view === 'join') showHome();
     toast('تم الخروج من وضع المالك');
     render();
@@ -776,7 +1130,20 @@ $('supportLink').href = 'https://wa.me/' + SUPPORT_PHONE;
 $('menuDotBtn').addEventListener('click', e => {
   e.stopPropagation();
   $('menuMembersBtn').style.display = isOwner ? 'flex' : 'none';
+  $('menuReportsBtn').style.display = isOwner ? 'flex' : 'none';
+  $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
+  $('menuInstallBtn').style.display = isStandalone() ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
+});
+$('menuBoardBtn').addEventListener('click', () => {
+  $('menuDropdown').classList.remove('show');
+  renderBoard();
+  $('boardOverlay').classList.add('show');
+});
+$('menuReportsBtn').addEventListener('click', () => {
+  $('menuDropdown').classList.remove('show');
+  renderReportsList();
+  $('reportsOverlay').classList.add('show');
 });
 document.addEventListener('click', e => {
   if(!$('menuDropdown').contains(e.target) && e.target !== $('menuDotBtn')){ $('menuDropdown').classList.remove('show'); }
@@ -830,7 +1197,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791806511';
+const APP_VERSION = '1791807903';
 async function checkForUpdate(){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
