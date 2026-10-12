@@ -142,6 +142,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .board-row .bname{flex:1;font-weight:700}
 .board-row .bcount{color:var(--primary-dark);font-weight:700}
 .modal .empty{color:var(--muted);background:#f3f4f6;padding:24px 16px}
+.ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -169,6 +170,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
       <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
     </div>
+    <div class="ver" id="appVer" title="اضغط للتحقق من آخر إصدار"></div>
   </div>
 
   <div id="libraryView" style="display:none">
@@ -1197,23 +1199,33 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791807903';
-async function checkForUpdate(){
+const APP_VERSION = '1791836562';
+async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
-    if(!r.ok) return;
+    if(!r.ok){ if(manual) toast('تعذر فحص التحديث، تحقق من الاتصال'); return; }
     const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
-    if(!m || m[1] === APP_VERSION) return;
-    if(document.querySelector('.overlay.show')) return; // لا نقاطع من يكتب نموذجاً الآن
-    if(sessionStorage.getItem('wasata_updated_to') === m[1]) return; // منع التكرار
+    if(!m) return;
+    if(m[1] === APP_VERSION){ if(manual) toast('أنت على آخر إصدار ✅'); return; }
+    if(!manual){
+      if(document.querySelector('.overlay.show')) return; // لا نقاطع من يكتب نموذجاً الآن
+      if(sessionStorage.getItem('wasata_updated_to') === m[1]) return; // منع التكرار
+    }
     sessionStorage.setItem('wasata_updated_to', m[1]);
     toast('جارٍ تحديث التطبيق...');
     setTimeout(() => location.replace(location.pathname + '?u=' + m[1]), 1200);
-  }catch{}
+  }catch{ if(manual) toast('تعذر فحص التحديث، تحقق من الاتصال'); }
 }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') checkForUpdate(); });
-setInterval(checkForUpdate, 5 * 60 * 1000);
+setInterval(() => checkForUpdate(), 5 * 60 * 1000);
 checkForUpdate();
+
+// عرض رقم الإصدار (تاريخ ووقت الإصدار) بخط صغير أسفل الصفحة الرئيسية
+(function showVersion(){
+  const d = new Date(Number(APP_VERSION) * 1000), z = n => String(n).padStart(2, '0');
+  $('appVer').textContent = isNaN(d) ? '' : `إصدار ${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  $('appVer').addEventListener('click', () => checkForUpdate(true));
+})();
 
 init();
 </script>
