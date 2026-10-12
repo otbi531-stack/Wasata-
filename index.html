@@ -37,8 +37,10 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
 .oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
 .menu-dot{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
-.menu-list{display:flex;flex-direction:column;gap:8px}
-.menu-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#fafafa;color:var(--text);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.menu-dropdown{position:fixed;top:58px;left:14px;z-index:61;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:6px;min-width:190px;display:none;flex-direction:column}
+.menu-dropdown.show{display:flex}
+.menu-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:9px;border:0;background:none;color:var(--text);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;text-align:right;width:100%}
+.menu-item:hover{background:#f3f4f6}
 .member-card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
 .member-card .mname{font-size:15px;font-weight:700;margin-bottom:4px}
 .member-card div{font-size:13.5px;margin:2px 0}
@@ -75,6 +77,11 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .filter-row select{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);font-size:13px;font-family:inherit;background:rgba(255,255,255,.95)}
 .card-actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn-share{background:#dff5e6;color:#1f8a4c}
+.fav-toggle{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);font-size:13px;font-family:inherit;background:rgba(255,255,255,.95);cursor:pointer}
+.fav-toggle.active{background:#fdecea;border-color:#f5b7b1}
+.btn-fav{flex:0 0 46px;min-width:46px;background:#fdecea;font-size:16px}
+.new-badge{background:#e3f3ec;color:var(--primary-dark);font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700}
+.calc-result{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;line-height:2;min-height:20px;margin-top:4px}
 .btn-small{flex:1;min-width:90px;padding:8px 6px;border-radius:9px;border:0;font-size:13px;cursor:pointer;font-weight:600}
 .btn-edit{background:#eaf1fb;color:#1d4ed8;border:1px solid var(--border)}
 .btn-sold{background:#eef2f6;color:var(--text);border:1px solid var(--border)}
@@ -146,6 +153,15 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <div class="filter-row">
         <select id="fltCity"><option value="">كل المدن</option></select>
         <select id="fltType"><option value="">كل الأنواع</option></select>
+      </div>
+      <div class="filter-row" style="margin-top:8px">
+        <select id="fltSort">
+          <option value="new">الأحدث أولاً</option>
+          <option value="old">الأقدم أولاً</option>
+          <option value="high">الأعلى سعراً</option>
+          <option value="low">الأقل سعراً</option>
+        </select>
+        <button type="button" class="fav-toggle" id="fltFav">🤍 المفضلة</button>
       </div>
     </div>
     <div id="listArea" class="loading">جاري تحميل البيانات...</div>
@@ -233,18 +249,26 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
-<!-- القائمة العامة (نقاط الأفق) -->
-<div class="overlay" id="menuOverlay">
+<!-- حاسبة السعي -->
+<div class="overlay" id="calcOverlay">
   <div class="modal">
-    <h2>القائمة</h2>
-    <div class="menu-list">
-      <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
-      <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
+    <h2>🧮 حاسبة السعي</h2>
+    <div class="field"><label>سعر العقار (ريال)</label><input type="text" id="cPrice" inputmode="decimal" placeholder="مثال: 1000000"></div>
+    <div class="field"><label>نسبة السعي %</label><input type="text" id="cRate" inputmode="decimal" value="2.5"></div>
+    <div class="field"><label>حصة الإدارة %</label><input type="text" id="cShare" inputmode="decimal" value="0.5"></div>
+    <div class="field"><label>تُحسب حصة الإدارة من</label>
+      <select id="cBase"><option value="price">قيمة العقار</option><option value="fee">قيمة السعي</option></select>
     </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="menuCloseBtn" style="width:100%">إغلاق</button>
-    </div>
+    <div class="calc-result" id="cResult"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="calcCloseBtn" style="width:100%">إغلاق</button></div>
   </div>
+</div>
+
+<!-- القائمة العامة (نقاط الأفق) -->
+<div class="menu-dropdown" id="menuDropdown">
+  <button class="menu-item" id="menuCalcBtn">🧮 حاسبة السعي</button>
+  <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
+  <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
 </div>
 
 <!-- قائمة الأعضاء المسجّلين (للمالك فقط) -->
@@ -276,6 +300,18 @@ const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة 
 const SUPPORT_PHONE = '966505550531';
 const $ = id => document.getElementById(id);
 const MAX_IMAGES = 4;
+let favs = [], favOnly = false;
+try{ favs = JSON.parse(localStorage.getItem('wasata_favs') || '[]'); }catch{ favs = []; }
+function saveFavs(){ try{ localStorage.setItem('wasata_favs', JSON.stringify(favs)); }catch{} }
+function toWestern(s){ return String(s || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace('٫', '.'); }
+function priceNum(s){
+  const t = toWestern(s).replace(/[,،\s]/g, '');
+  const m = t.match(/\d+(\.\d+)?/);
+  if(!m) return null;
+  let n = parseFloat(m[0]);
+  if(/مليون/.test(t)) n *= 1e6; else if(/[أا]لف/.test(t)) n *= 1e3;
+  return n;
+}
 let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', formImages = [], editingId = null, saving = false, joinSaving = false;
 
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
@@ -349,15 +385,29 @@ function render(){
   if(fc) rows = rows.filter(l => l.city === fc);
   if(ft) rows = rows.filter(l => l.propertyType === ft);
   if(q) rows = rows.filter(l => [l.neighborhood, l.desc, l.agent, l.area, l.price].join(' ').toLowerCase().includes(q));
-  rows = rows.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  if(favOnly) rows = rows.filter(l => favs.includes(l.id));
+  const sortBy = $('fltSort').value;
+  rows = rows.slice().sort((a, b) => {
+    if(sortBy === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
+    if(sortBy === 'high' || sortBy === 'low'){
+      const pa = priceNum(a.price), pb = priceNum(b.price);
+      if(pa == null && pb == null) return 0;
+      if(pa == null) return 1;
+      if(pb == null) return -1;
+      return sortBy === 'high' ? pb - pa : pa - pb;
+    }
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+  rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   const area = $('listArea'); area.className = '';
-  if(!rows.length){ area.innerHTML = '<div class="empty">لا توجد نتائج مطابقة لبحثك 🔍</div>'; return; }
+  if(!rows.length){ area.innerHTML = `<div class="empty">${favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : 'لا توجد نتائج مطابقة لبحثك 🔍'}</div>`; return; }
   area.innerHTML = rows.map(it => {
     const map = safeUrl(it.mapLink), imgs = imagesOf(it).map(safeImg).filter(Boolean), ph = String(it.phone || '').replace(/[^\d+]/g, '');
     const embed = map ? mapEmbedSrc(map) : '';
     const mine = uid && it.ownerId === uid, canDelete = mine || isOwner, id = esc(it.id);
     const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
     let actions = '<div class="card-actions">';
+    actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
     if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
@@ -368,7 +418,7 @@ function render(){
       ? `<div style="position:relative"><div class="gallery">${imgs.map(s => `<img src="${s}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">📷 ${imgs.length}</span></div>`
       : (imgs[0] ? `<img src="${imgs[0]}" alt="صورة العقار">` : '');
     return `<div class="card">${gallery}<div class="card-body">
-      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : ''}<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div></div>
+      <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : ''}${(Date.now() - (it.createdAt || 0)) < 864e5 ? '<span class="new-badge">🆕 جديد</span>' : ''}<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(it.type || 'عرض')}</span></div></div>
       <div class="time-ago">${timeAgo(it.createdAt)}</div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
       ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
@@ -443,6 +493,11 @@ $('joinListArea').addEventListener('click', async e => {
 $('listArea').addEventListener('click', async e => {
   const b = e.target.closest('button[data-act]'); if(!b) return;
   const act = b.dataset.act, id = b.dataset.id;
+  if(act === 'fav'){
+    const i = favs.indexOf(id);
+    if(i >= 0) favs.splice(i, 1); else favs.push(id);
+    saveFavs(); render(); return;
+  }
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
   if(act === 'pin'){
     const it = listings.find(x => x.id === id);
@@ -523,6 +578,13 @@ $('libBackBtn').addEventListener('click', showHome);
 $('fltSearch').addEventListener('input', render);
 $('fltCity').addEventListener('change', render);
 $('fltType').addEventListener('change', render);
+$('fltSort').addEventListener('change', render);
+$('fltFav').addEventListener('click', () => {
+  favOnly = !favOnly;
+  $('fltFav').classList.toggle('active', favOnly);
+  $('fltFav').textContent = favOnly ? '❤️ المفضلة' : '🤍 المفضلة';
+  render();
+});
 $('cancelBtn').addEventListener('click', closeModal);
 $('overlay').addEventListener('click', e => { if(e.target === $('overlay')) closeModal(); });
 
@@ -714,14 +776,37 @@ function renderMembersList(){
 }
 
 $('supportLink').href = 'https://wa.me/' + SUPPORT_PHONE;
-$('menuDotBtn').addEventListener('click', () => {
+$('menuDotBtn').addEventListener('click', e => {
+  e.stopPropagation();
   $('menuMembersBtn').style.display = isOwner ? 'flex' : 'none';
-  $('menuOverlay').classList.add('show');
+  $('menuDropdown').classList.toggle('show');
 });
-$('menuCloseBtn').addEventListener('click', () => $('menuOverlay').classList.remove('show'));
-$('menuOverlay').addEventListener('click', e => { if(e.target === $('menuOverlay')) $('menuOverlay').classList.remove('show'); });
+document.addEventListener('click', e => {
+  if(!$('menuDropdown').contains(e.target) && e.target !== $('menuDotBtn')){ $('menuDropdown').classList.remove('show'); }
+});
+$('supportLink').addEventListener('click', () => $('menuDropdown').classList.remove('show'));
+
+// حاسبة السعي
+const fmtNum = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+function numOf(s){ const n = parseFloat(toWestern(s).replace(/[,،\s]/g, '')); return isNaN(n) ? 0 : n; }
+function runCalc(){
+  const price = numOf($('cPrice').value), rate = numOf($('cRate').value), share = numOf($('cShare').value);
+  const fee = price * rate / 100;
+  const adminShare = ($('cBase').value === 'fee' ? fee : price) * share / 100;
+  $('cResult').innerHTML = price > 0
+    ? `قيمة السعي: <b>${fmtNum(fee)}</b> ريال<br>حصة الإدارة: <b>${fmtNum(adminShare)}</b> ريال<br>الصافي للوسيط بعد الحصة: <b>${fmtNum(fee - adminShare)}</b> ريال`
+    : '';
+}
+['cPrice', 'cRate', 'cShare', 'cBase'].forEach(id => { $(id).addEventListener('input', runCalc); $(id).addEventListener('change', runCalc); });
+$('menuCalcBtn').addEventListener('click', () => {
+  $('menuDropdown').classList.remove('show');
+  runCalc();
+  $('calcOverlay').classList.add('show');
+});
+$('calcCloseBtn').addEventListener('click', () => $('calcOverlay').classList.remove('show'));
+$('calcOverlay').addEventListener('click', e => { if(e.target === $('calcOverlay')) $('calcOverlay').classList.remove('show'); });
 $('menuMembersBtn').addEventListener('click', () => {
-  $('menuOverlay').classList.remove('show');
+  $('menuDropdown').classList.remove('show');
   renderMembersList();
   $('membersOverlay').classList.add('show');
 });
