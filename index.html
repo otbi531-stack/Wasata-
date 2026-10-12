@@ -36,7 +36,9 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .oath-box{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.9;color:#1f2430;margin-bottom:12px}
 .oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
 .oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
-.menu-dot{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+.menu-dot{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+.menu-list{display:flex;flex-direction:column;gap:8px}
+.menu-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#fafafa;color:var(--text);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
 .member-card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
 .member-card .mname{font-size:15px;font-weight:700;margin-bottom:4px}
 .member-card div{font-size:13.5px;margin:2px 0}
@@ -116,7 +118,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 </head>
 <body>
 <header aria-label="وسطاء المملكة"></header>
-<button class="menu-dot" id="menuDotBtn" aria-label="القائمة">⋮</button>
+<button class="menu-dot" id="menuDotBtn" aria-label="القائمة">⋯</button>
 
 <div class="container">
   <button class="add-btn" id="openAddBtn">+ إضافة جديد</button>
@@ -231,6 +233,20 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
   </div>
 </div>
 
+<!-- القائمة العامة (نقاط الأفق) -->
+<div class="overlay" id="menuOverlay">
+  <div class="modal">
+    <h2>القائمة</h2>
+    <div class="menu-list">
+      <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
+      <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="menuCloseBtn" style="width:100%">إغلاق</button>
+    </div>
+  </div>
+</div>
+
 <!-- قائمة الأعضاء المسجّلين (للمالك فقط) -->
 <div class="overlay" id="membersOverlay">
   <div class="modal">
@@ -255,8 +271,9 @@ const firebaseConfig = {
 };
 const OWNER_UID = "DRJcCRTXm9Y2HnVwIm5QkQV9vBw2";
 const COL = 'listings'; // كل إعلان مستند مستقل
-const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','محل تجاري','مستودع','مكتب','أخرى'];
+const PROPS = ['شقة','فيلا','دور','أرض','عمارة','استراحة','فندق','محل تجاري','مستودع','مكتب','أخرى'];
 const CITIES = ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الظهران','الطائف','تبوك','بريدة','خميس مشيط','أبها','حائل','نجران','جازان','الجبيل','ينبع','القطيف','عرعر','سكاكا','الباحة','أخرى'];
+const SUPPORT_PHONE = '966505550531';
 const $ = id => document.getElementById(id);
 const MAX_IMAGES = 4;
 let db, uid = null, isOwner = false, listings = [], joinRequests = [], joinUnsub = null, lib = null, view = 'home', formImages = [], editingId = null, saving = false, joinSaving = false;
@@ -696,8 +713,15 @@ function renderMembersList(){
   </div>`).join('');
 }
 
+$('supportLink').href = 'https://wa.me/' + SUPPORT_PHONE;
 $('menuDotBtn').addEventListener('click', () => {
-  if(!isOwner){ toast('هذه الميزة متاحة للمالك فقط'); return; }
+  $('menuMembersBtn').style.display = isOwner ? 'flex' : 'none';
+  $('menuOverlay').classList.add('show');
+});
+$('menuCloseBtn').addEventListener('click', () => $('menuOverlay').classList.remove('show'));
+$('menuOverlay').addEventListener('click', e => { if(e.target === $('menuOverlay')) $('menuOverlay').classList.remove('show'); });
+$('menuMembersBtn').addEventListener('click', () => {
+  $('menuOverlay').classList.remove('show');
   renderMembersList();
   $('membersOverlay').classList.add('show');
 });
