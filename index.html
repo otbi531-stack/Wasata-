@@ -221,7 +221,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
       <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
       <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
       <div class="oath-box">
-        أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة السعي في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
+        أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة العقار في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
       </div>
       <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
       <div class="modal-actions">
@@ -255,10 +255,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <h2>🧮 حاسبة السعي</h2>
     <div class="field"><label>سعر العقار (ريال)</label><input type="text" id="cPrice" inputmode="decimal" placeholder="مثال: 1000000"></div>
     <div class="field"><label>نسبة السعي %</label><input type="text" id="cRate" inputmode="decimal" value="2.5"></div>
-    <div class="field"><label>حصة الإدارة %</label><input type="text" id="cShare" inputmode="decimal" value="0.5"></div>
-    <div class="field"><label>تُحسب حصة الإدارة من</label>
-      <select id="cBase"><option value="price">قيمة العقار</option><option value="fee">قيمة السعي</option></select>
-    </div>
+    <div class="field"><label>حصة الإدارة % (من قيمة العقار)</label><input type="text" id="cShare" inputmode="decimal" value="0.5"></div>
     <div class="calc-result" id="cResult"></div>
     <div class="modal-actions"><button class="btn-cancel" id="calcCloseBtn" style="width:100%">إغلاق</button></div>
   </div>
@@ -792,12 +789,12 @@ function numOf(s){ const n = parseFloat(toWestern(s).replace(/[,،\s]/g, '')); r
 function runCalc(){
   const price = numOf($('cPrice').value), rate = numOf($('cRate').value), share = numOf($('cShare').value);
   const fee = price * rate / 100;
-  const adminShare = ($('cBase').value === 'fee' ? fee : price) * share / 100;
+  const adminShare = price * share / 100;
   $('cResult').innerHTML = price > 0
     ? `قيمة السعي: <b>${fmtNum(fee)}</b> ريال<br>حصة الإدارة: <b>${fmtNum(adminShare)}</b> ريال<br>الصافي للوسيط بعد الحصة: <b>${fmtNum(fee - adminShare)}</b> ريال`
     : '';
 }
-['cPrice', 'cRate', 'cShare', 'cBase'].forEach(id => { $(id).addEventListener('input', runCalc); $(id).addEventListener('change', runCalc); });
+['cPrice', 'cRate', 'cShare'].forEach(id => { $(id).addEventListener('input', runCalc); $(id).addEventListener('change', runCalc); });
 $('menuCalcBtn').addEventListener('click', () => {
   $('menuDropdown').classList.remove('show');
   runCalc();
