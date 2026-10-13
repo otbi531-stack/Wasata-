@@ -157,6 +157,10 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .card .btn-small{flex:1;min-width:74px;padding:5px 8px;border-radius:8px;border:1px solid #d9c79b;background:#f1e4c3;color:#000;font-size:12px;font-weight:600}
 .card .btn-fav,.card .btn-img,.card .btn-report{flex:0 0 36px;min-width:36px;padding:5px 0;font-size:14px}
 .card .card-actions{gap:6px}
+.vid-stage{display:flex;justify-content:center;margin-bottom:10px}
+.vid-stage canvas,.vid-stage video{max-width:100%;max-height:50vh;border-radius:12px;background:#000;display:block}
+.vid-progress{height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:8px 0}
+.vid-progress div{height:100%;width:0;background:var(--primary);transition:width .2s}
 .ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
 </style>
@@ -331,6 +335,21 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <div class="modal-actions">
       <button class="btn-cancel" id="membersCloseBtn" style="width:100%">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- فيديو ترويجي للإعلان -->
+<div class="overlay" id="videoOverlay" style="z-index:40">
+  <div class="modal" style="text-align:center">
+    <h2>🎬 فيديو ترويجي للإعلان</h2>
+    <div id="vidStage" class="vid-stage"></div>
+    <div class="vid-progress"><div id="vidBar"></div></div>
+    <div id="vidStatus" class="picker-hint"></div>
+    <div class="modal-actions" id="vidDone" style="display:none">
+      <button class="btn-save" id="vidShareBtn">📤 مشاركة</button>
+      <button class="btn-cancel" id="vidSaveBtn">⬇️ حفظ</button>
+    </div>
+    <div class="modal-actions"><button class="btn-cancel" id="vidCloseBtn" style="width:100%">إلغاء</button></div>
   </div>
 </div>
 
@@ -600,6 +619,7 @@ function cardHTML(it, ctx){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
+    actions += `<button class="btn-small btn-img" data-act="video" data-id="${id}" aria-label="فيديو ترويجي">🎬</button>`;
     if(!mine && !isOwner && !ctx.seeker) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
     if(mine || isOwner) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
     if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
@@ -743,6 +763,7 @@ $('listArea').addEventListener('click', async e => {
   }
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
   if(act === 'img'){ const it = listings.find(x => x.id === id); if(it) shareListingImage(it); return; }
+  if(act === 'video'){ const it = listings.find(x => x.id === id); if(it) openMontage(it); return; }
   if(act === 'report'){ openReport(id); return; }
   if(act === 'pin'){
     const it = listings.find(x => x.id === id);
@@ -904,6 +925,199 @@ async function shareListingImage(it){
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   toast('تم حفظ الصورة على جهازك');
 }
+
+// ===== فيديو ترويجي للإعلان: يُرسم على Canvas ويُسجَّل داخل المتصفح (بلا خوادم) =====
+const VW = 720, VH = 1280, VFPS = 30, XFADE = 0.45;
+const VF = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
+const eOut = v => 1 - Math.pow(1 - v, 3);
+const eIO = v => v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
+const eBack = v => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(v - 1, 3) + c1 * Math.pow(v - 1, 2); };
+const c01 = v => Math.max(0, Math.min(1, v));
+function withAlpha(x, f, fn){ const b = x.globalAlpha; x.globalAlpha = b * c01(f); fn(); x.globalAlpha = b; }
+function vBg(x){ const g = x.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#16231b'); g.addColorStop(1, '#0b0f09'); x.fillStyle = g; x.fillRect(0, 0, VW, VH); }
+function vText(x, s, px, py, size, weight, color, align){ x.direction = 'rtl'; x.textAlign = align || 'right'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); }
+function vTextLtr(x, s, px, py, size, weight, color, align){ x.direction = 'ltr'; x.textAlign = align || 'center'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); x.direction = 'rtl'; }
+function vFit(x, s, size, weight, maxW){ while(size > 24){ x.font = weight + ' ' + size + 'px ' + VF; if(x.measureText(s).width <= maxW) break; size -= 2; } return size; }
+function vLogo(x, logo, cx, cy, r){ if(!logo) return; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.clip(); x.drawImage(logo, cx - r, cy - r, r * 2, r * 2); x.restore(); }
+function vHeader(x, logo){ vLogo(x, logo, 654, 92, 30); vText(x, 'وسطاء المملكة', 610, 104, 38, '700', '#e6c07b'); }
+function vFooter(x, it){
+  x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, 1170, VW, 110);
+  vText(x, it.agent ? 'للتواصل مع ' + it.agent : 'للتواصل', 360, 1208, 28, '400', '#cfd6c4', 'center');
+  if(it.phone) vTextLtr(x, it.phone, 360, 1258, 52, '700', '#e6c07b');
+}
+
+async function prepareMontage(it){
+  try{ await Promise.all([document.fonts.load('700 40px Tajawal', 'عربي'), document.fonts.load('400 40px Tajawal', 'عربي')]); }catch{}
+  let logo = null; try{ logo = await loadImg('icon.png'); }catch{}
+  const photos = [];
+  for(const src of imagesOf(it).map(safeImg).filter(Boolean).slice(0, 4)){ try{ photos.push(await loadImg(src)); }catch{} }
+  const isReq = it.type === 'طلب';
+  const title = `${it.propertyType || 'عقار'} - ${it.city || ''}`;
+  const hood = it.neighborhood ? 'حي ' + it.neighborhood : '';
+  const sub = [hood, it.area ? 'مساحة ' + it.area : ''].filter(Boolean).join(' · ');
+  const rise = (t, d, dist) => (1 - eOut(c01((t - d) / 0.6))) * dist;
+
+  const intro = (x, t) => {
+    vBg(x);
+    const gl = x.createRadialGradient(360, 430, 10, 360, 430, 420); gl.addColorStop(0, 'rgba(230,192,123,.30)'); gl.addColorStop(1, 'rgba(230,192,123,0)');
+    x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
+    withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 430, 120 * (0.55 + 0.45 * eBack(c01(t / 0.9)))));
+    withAlpha(x, (t - 0.35) / 0.6, () => vText(x, 'وسطاء المملكة', 360, 640 + rise(t, 0.35, 30), 64, '700', '#e6c07b', 'center'));
+    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vText(x, isReq ? 'مطلوب' : 'للعرض', 360, 733 + dy, 38, '700', '#ffffff', 'center'); });
+    withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
+    withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), 40, '400', '#cfd6c4', 'center'); });
+    const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
+  };
+  const photoScene = (x, t, img, i) => {
+    vBg(x); vHeader(x, logo);
+    const cx = 40, cy = 160, cw = 640, ch = 600, pr = c01(t / 2.8);
+    const z = 1 + 0.10 * eIO(pr), pan = (pr - 0.5) * 28 * (i % 2 ? -1 : 1);
+    x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 24; x.shadowOffsetY = 8; x.fillStyle = '#000'; rrect(x, cx, cy, cw, ch, 28); x.fill(); x.restore();
+    x.save(); rrect(x, cx, cy, cw, ch, 28); x.clip();
+    const k = Math.max(cw / img.width, ch / img.height) * z, dw = img.width * k, dh = img.height * k;
+    x.drawImage(img, cx + (cw - dw) / 2 + pan, cy + (ch - dh) / 2, dw, dh);
+    x.restore();
+    if(photos.length > 1){ x.fillStyle = 'rgba(0,0,0,.55)'; rrect(x, 60, 180, 96, 44, 22); x.fill(); vTextLtr(x, (i + 1) + ' / ' + photos.length, 108, 211, 26, '700', '#ffffff', 'center'); }
+    const u = eOut(c01((t - 0.15) / 0.6)), dy = (1 - u) * 40;
+    withAlpha(x, u, () => {
+      const sz = vFit(x, title, 54, '700', 640); vText(x, title, 680, 850 + dy, sz, '700', '#ffffff');
+      if(it.price){ const s2 = vFit(x, it.price, 62, '700', 640); vText(x, it.price, 680, 935 + dy, s2, '700', '#e6c07b'); }
+      if(sub) vText(x, sub, 680, 1000 + dy, 34, '400', '#cfd6c4');
+    });
+    vFooter(x, it);
+  };
+  const details = (x, t) => {
+    vBg(x); vHeader(x, logo);
+    withAlpha(x, t / 0.5, () => vText(x, isReq ? 'تفاصيل الطلب' : 'تفاصيل العرض', 680, 230, 52, '700', '#e6c07b'));
+    const rows = [['النوع', it.propertyType], ['المدينة', it.city], ['الحي', it.neighborhood], ['المساحة', it.area]].filter(r => r[1]);
+    rows.forEach((r, i) => {
+      const a = c01((t - (0.3 + i * 0.25)) / 0.5), dx = (1 - eOut(a)) * 60, y = 320 + i * 92;
+      withAlpha(x, a, () => {
+        x.fillStyle = 'rgba(255,255,255,.07)'; rrect(x, 40 + dx, y - 56, 640, 76, 18); x.fill();
+        vText(x, r[0], 660 + dx, y - 6, 30, '400', '#9fb09a');
+        const sz = vFit(x, r[1], 36, '700', 440); vText(x, r[1], 520 + dx, y - 6, sz, '700', '#ffffff');
+      });
+    });
+    const py = 320 + rows.length * 92 + 40;
+    if(it.price) withAlpha(x, (t - (0.4 + rows.length * 0.25)) / 0.6, () => {
+      vText(x, isReq ? 'الميزانية' : 'السعر المطلوب', 680, py + 20, 32, '400', '#9fb09a');
+      const sz = vFit(x, it.price, 76, '700', 640); vText(x, it.price, 680, py + 110, sz, '700', '#e6c07b');
+    });
+    if(it.desc) withAlpha(x, (t - 1.8) / 0.6, () => {
+      x.font = '400 32px ' + VF;
+      wrapText(x, it.desc, 640, 3).forEach((l, i) => vText(x, l, 680, py + 190 + i * 46, 32, '400', '#b9c4b2'));
+    });
+    vFooter(x, it);
+  };
+  const outro = (x, t) => {
+    vBg(x);
+    const gl = x.createRadialGradient(360, 330, 10, 360, 330, 400); gl.addColorStop(0, 'rgba(230,192,123,.25)'); gl.addColorStop(1, 'rgba(230,192,123,0)');
+    x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
+    withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 330, 90 * (1 + 0.03 * Math.sin(t * 4))));
+    withAlpha(x, (t - 0.3) / 0.5, () => vText(x, 'للتواصل والاستفسار', 360, 520, 40, '400', '#9fb09a', 'center'));
+    withAlpha(x, (t - 0.5) / 0.5, () => { const nm = it.agent || 'وسطاء المملكة', sz = vFit(x, nm, 62, '700', 620); vText(x, nm, 360, 610, sz, '700', '#ffffff', 'center'); });
+    if(it.phone) withAlpha(x, (t - 0.8) / 0.5, () => {
+      const pulse = 1 + 0.025 * Math.sin(t * 6);
+      x.save(); x.translate(360, 740); x.scale(pulse, pulse); x.fillStyle = '#1f8a4c'; rrect(x, -290, -70, 580, 140, 70); x.fill(); vTextLtr(x, it.phone, 0, 24, 70, '700', '#ffffff', 'center'); x.restore();
+      vText(x, 'واتساب · اتصال', 360, 880, 34, '400', '#cfd6c4', 'center');
+    });
+    withAlpha(x, (t - 1.2) / 0.6, () => { vText(x, 'تطبيق وسطاء المملكة', 360, 1040, 46, '700', '#e6c07b', 'center'); vTextLtr(x, 'otbi531-stack.github.io/Wasata-', 360, 1100, 28, '400', '#6f7d68', 'center'); });
+  };
+
+  const scenes = [{ dur: 2.4, draw: intro }];
+  photos.forEach((img, i) => scenes.push({ dur: 2.8, draw: (x, t) => photoScene(x, t, img, i) }));
+  scenes.push({ dur: 3.4, draw: details }, { dur: 3.2, draw: outro });
+  let st = 0; scenes.forEach(sc => { sc.start = st; st += sc.dur - XFADE; });
+  const last = scenes[scenes.length - 1], total = last.start + last.dur;
+  function draw(x, t){
+    x.save(); x.globalAlpha = 1;
+    scenes.forEach((sc, i) => {
+      if(t < sc.start || t > sc.start + sc.dur) return;
+      const lt = t - sc.start;
+      x.save(); x.globalAlpha = i === 0 ? 1 : c01(lt / XFADE); sc.draw(x, Math.min(lt, sc.dur)); x.restore();
+    });
+    x.restore();
+  }
+  return { total, draw };
+}
+
+function pickVideoMime(){
+  if(!window.MediaRecorder) return '';
+  return ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+}
+async function recordMontage(it, canvas, onProgress, state){
+  const m = await prepareMontage(it), mime = pickVideoMime();
+  if(!mime || !canvas.captureStream) throw new Error('unsupported');
+  const x = canvas.getContext('2d');
+  m.draw(x, 0);
+  const stream = canvas.captureStream(VFPS);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3500000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(res => { rec.onstop = res; });
+  rec.start(300);
+  const t0 = performance.now();
+  await new Promise(resolve => {
+    const tick = () => {
+      if(state.cancelled){ resolve(); return; }
+      const t = (performance.now() - t0) / 1000;
+      m.draw(x, Math.min(t, m.total));
+      onProgress(Math.min(1, t / m.total));
+      if(t >= m.total) resolve(); else requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await new Promise(r => setTimeout(r, 250));   // لضمان تسجيل الإطار الأخير
+  if(rec.state !== 'inactive') rec.stop();
+  await stopped;
+  stream.getTracks().forEach(tr => tr.stop());
+  if(state.cancelled) return null;
+  const type = mime.split(';')[0];
+  return { blob: new Blob(chunks, { type }), mime: type, total: m.total };
+}
+
+let vidBusy = false, vidState = { cancelled: false }, vidUrl = null, vidFile = null;
+function closeMontage(){
+  vidState.cancelled = true;
+  $('videoOverlay').classList.remove('show');
+  if(vidUrl){ URL.revokeObjectURL(vidUrl); vidUrl = null; }
+  vidFile = null; $('vidStage').innerHTML = '';
+}
+async function openMontage(it){
+  if(vidBusy) return;
+  if(!pickVideoMime() || !HTMLCanvasElement.prototype.captureStream){ toast('متصفحك لا يدعم إنشاء الفيديو. جرّب Safari أو Chrome حديثاً', 5000); return; }
+  vidBusy = true; vidState = { cancelled: false };
+  const stage = $('vidStage'); stage.innerHTML = '';
+  const cv = document.createElement('canvas'); cv.width = VW; cv.height = VH; stage.appendChild(cv);
+  $('vidDone').style.display = 'none'; $('vidBar').style.width = '0'; $('vidCloseBtn').textContent = 'إلغاء';
+  $('vidStatus').textContent = 'جارٍ تجهيز الفيديو... لا تغادر هذه الصفحة حتى يكتمل';
+  $('videoOverlay').classList.add('show');
+  try{
+    const out = await recordMontage(it, cv, p => { $('vidBar').style.width = Math.round(p * 100) + '%'; }, vidState);
+    if(!out) return;
+    vidFile = new File([out.blob], 'wasata-video.' + (out.mime.includes('mp4') ? 'mp4' : 'webm'), { type: out.mime });
+    vidUrl = URL.createObjectURL(out.blob);
+    stage.innerHTML = '';
+    const v = document.createElement('video'); v.src = vidUrl; v.controls = true; v.loop = true; v.muted = true; v.autoplay = true; v.playsInline = true; stage.appendChild(v);
+    $('vidStatus').textContent = 'جاهز! شاهده ثم شاركه أو احفظه ✅' + (out.mime.includes('webm') ? ' (صيغة WebM، وقد لا يعمل في بعض تطبيقات واتساب)' : '');
+    $('vidDone').style.display = 'flex'; $('vidCloseBtn').textContent = 'إغلاق';
+  }catch(e){ fail('video', e); $('videoOverlay').classList.remove('show'); }
+  finally{ vidBusy = false; }
+}
+function saveVideo(){
+  if(!vidFile) return;
+  const a = document.createElement('a'); a.href = vidUrl; a.download = vidFile.name;
+  document.body.appendChild(a); a.click(); a.remove(); toast('تم حفظ الفيديو على جهازك');
+}
+$('vidShareBtn').addEventListener('click', async () => {
+  if(!vidFile) return;
+  try{ if(navigator.canShare && navigator.canShare({ files: [vidFile] })){ await navigator.share({ files: [vidFile] }); return; } }
+  catch(e){ if(e && e.name === 'AbortError') return; }
+  saveVideo();
+});
+$('vidSaveBtn').addEventListener('click', saveVideo);
+$('vidCloseBtn').addEventListener('click', closeMontage);
+$('videoOverlay').addEventListener('click', e => { if(e.target === $('videoOverlay') && !vidBusy) closeMontage(); });
 
 // ===== الإبلاغ عن إعلان =====
 function openReport(id){ reportingId = id; $('rNote').value = ''; $('rReason').selectedIndex = 0; $('reportOverlay').classList.add('show'); }
@@ -1119,6 +1333,7 @@ $('saveBtn').addEventListener('click', async () => {
       item.ownerId = uid; item.createdAt = Date.now();
       await db.collection(COL).add(item);
       toast('تم الحفظ 🎉');
+      setTimeout(() => { if(confirm('تم النشر 🎉\nهل تريد إنشاء فيديو ترويجي ملفت لهذا الإعلان لتشاركه في واتساب؟')) openMontage(item); }, 400);
     }
     closeModal();
   }catch(e){ fail('save', e); }
@@ -1353,7 +1568,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791868178';
+const APP_VERSION = '1791888333';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
