@@ -71,7 +71,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .location a{color:var(--primary-dark)}
 .map-embed{width:100%;height:190px;border:0;border-radius:10px;margin:4px 0 8px;display:block}
 .map-pick-btn{width:100%;padding:9px;border-radius:9px;border:1px dashed var(--primary);background:#eef7f2;color:var(--primary-dark);font-size:13px;font-weight:700;cursor:pointer;margin-top:6px}
-.picker-map{height:320px;border-radius:10px;margin-bottom:10px}
+.picker-map{height:min(50vh,380px);border-radius:10px;margin-bottom:10px;direction:ltr;background:#e8ebe9}
+.pin-wrap{background:none;border:none}
 .picker-hint{font-size:12.5px;color:var(--muted);margin-bottom:8px}
 .picker-actions{display:flex;gap:8px;margin-bottom:8px}
 .picker-actions button{flex:1;padding:9px;border-radius:9px;border:1px solid var(--border);background:#fafafa;font-size:13px;cursor:pointer;font-weight:600}
@@ -233,7 +234,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <div class="field"><label>المدينة</label><select id="fCity"></select></div>
     <div class="field"><label>الحي</label><input type="text" id="fNeighborhood" placeholder="مثال: حي الملقا"></div>
     <div class="field"><label>المساحة</label><input type="text" id="fArea" placeholder="مثال: 350 م²"></div>
-    <div class="field"><label>قوقل ماب (للمعاينة التلقائية، افتح الموقع في خرائط قوقل وانسخ الرابط من شريط العنوان وليس رابط المشاركة المختصر)</label><input type="text" id="fMapLink" placeholder="مثال: https://www.google.com/maps/@24.7136,46.6753,15z"></div>
+    <div class="field"><label>الموقع على الخريطة</label><input type="text" id="fMapLink" placeholder="حدّد الموقع بالخريطة، أو الصق رابط قوقل ماب فيه الإحداثيات"><button type="button" class="map-pick-btn" id="pickMapBtn">📍 تحديد الموقع على الخريطة</button></div>
     <div class="field"><label>المطلوب</label><input type="text" id="fPrice" placeholder="مثال: 450,000 ريال أو حسب الاتفاق"></div>
     <div class="field"><label>الوسيط</label><input type="text" id="fAgent" placeholder="اسم الوسيط"></div>
     <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
@@ -329,6 +330,21 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <div id="membersList" class="loading">جاري التحميل...</div>
     <div class="modal-actions">
       <button class="btn-cancel" id="membersCloseBtn" style="width:100%">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- تحديد الموقع على الخريطة -->
+<div class="overlay" id="pickerOverlay" style="z-index:30">
+  <div class="modal" style="overflow:hidden">
+    <h2>📍 تحديد موقع العقار</h2>
+    <div class="picker-hint">انقر على الخريطة لوضع الدبوس، ثم أمسكه واسحبه لتعديل الموقع بدقة. للأراضي جرّب «قمر صناعي» من أيقونة الطبقات أعلى الخريطة.</div>
+    <div id="pickMap" class="picker-map"></div>
+    <div class="picker-actions"><button type="button" id="pickLocBtn">🎯 استخدم موقعي الحالي</button></div>
+    <div id="pickCoords" class="picker-hint" style="text-align:center;font-weight:700;color:var(--text)"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="pickCancelBtn">إلغاء</button>
+      <button class="btn-save" id="pickConfirmBtn" disabled>تأكيد الموقع</button>
     </div>
   </div>
 </div>
@@ -438,6 +454,83 @@ function timeAgo(ts){
   if(diff < d * 30) return 'قبل ' + Math.round(diff / d) + ' يوم';
   return 'قبل ' + Math.round(diff / (d * 30)) + ' شهر';
 }
+// ===== تحديد الموقع على الخريطة (Leaflet + OpenStreetMap) =====
+const CITY_CENTERS = {
+  'الرياض': [24.7136, 46.6753], 'جدة': [21.4858, 39.1925], 'مكة المكرمة': [21.3891, 39.8579], 'المدينة المنورة': [24.5247, 39.5692],
+  'الدمام': [26.4207, 50.0888], 'الخبر': [26.2172, 50.1971], 'الظهران': [26.2361, 50.1140], 'الطائف': [21.2703, 40.4158],
+  'تبوك': [28.3835, 36.5662], 'بريدة': [26.3260, 43.9750], 'خميس مشيط': [18.3000, 42.7333], 'أبها': [18.2164, 42.5053],
+  'حائل': [27.5114, 41.6900], 'نجران': [17.5656, 44.2289], 'جازان': [16.8894, 42.5706], 'الجبيل': [27.0046, 49.6457],
+  'ينبع': [24.0896, 38.0618], 'القطيف': [26.5196, 49.9959], 'عرعر': [30.9753, 41.0381], 'سكاكا': [29.9697, 40.2064], 'الباحة': [20.0129, 41.4677]
+};
+let pickMap = null, pickMarker = null, pickPoint = null;
+function coordsFrom(u){
+  const t = String(u || '');
+  const m = t.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) || t.match(/[?&]q=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/);
+  return m ? { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } : null;
+}
+function cityCenter(){ return CITY_CENTERS[$('fCity').value] || [24.7136, 46.6753]; }
+function showPickCoords(lat, lng){ $('pickCoords').textContent = '📍 ' + lat.toFixed(6) + ' ، ' + lng.toFixed(6); }
+function pinIcon(){
+  return L.divIcon({
+    className: 'pin-wrap', iconSize: [34, 46], iconAnchor: [17, 46],
+    html: '<svg viewBox="0 0 34 46" width="34" height="46"><path d="M17 1C8 1 1 8 1 17c0 12 16 28 16 28s16-16 16-28C33 8 26 1 17 1z" fill="#d9534f" stroke="#fff" stroke-width="2"/><circle cx="17" cy="17" r="6" fill="#fff"/></svg>'
+  });
+}
+function initPickMap(){
+  const c = cityCenter();
+  pickMap = L.map('pickMap', { zoomControl: true }).setView(c, 11);
+  const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles © Esri' });
+  streets.addTo(pickMap);
+  L.control.layers({ 'خريطة': streets, 'قمر صناعي': sat }, null, { position: 'topright', collapsed: true }).addTo(pickMap);
+  pickMap.on('click', e => setPick(e.latlng.lat, e.latlng.lng));   // النقر: ضع الدبوس أو انقله
+}
+function setPick(lat, lng, zoomIn){
+  pickPoint = { lat, lng };
+  if(!pickMarker){
+    pickMarker = L.marker([lat, lng], { draggable: true, icon: pinIcon(), autoPan: true }).addTo(pickMap);
+    pickMarker.on('drag', () => { const ll = pickMarker.getLatLng(); showPickCoords(ll.lat, ll.lng); });          // السحب: تحديث الإحداثيات لحظياً
+    pickMarker.on('dragend', () => { const ll = pickMarker.getLatLng(); pickPoint = { lat: ll.lat, lng: ll.lng }; showPickCoords(ll.lat, ll.lng); });
+  }else{
+    pickMarker.setLatLng([lat, lng]);
+  }
+  showPickCoords(lat, lng);
+  $('pickConfirmBtn').disabled = false;
+  if(zoomIn) pickMap.setView([lat, lng], Math.max(pickMap.getZoom(), 17));
+}
+function openMapPicker(){
+  if(typeof L === 'undefined'){ toast('تعذر تحميل الخريطة، تحقق من الإنترنت وأعد المحاولة', 4000); return; }
+  $('pickerOverlay').classList.add('show');
+  setTimeout(() => {   // بعد ظهور النافذة حتى تُقاس أبعاد الخريطة بشكل صحيح
+    if(!pickMap) initPickMap();
+    pickMap.invalidateSize();
+    const existing = coordsFrom($('fMapLink').value);
+    if(existing){ pickMap.setView([existing.lat, existing.lng], 17); setPick(existing.lat, existing.lng); }
+    else{
+      if(pickMarker){ pickMap.removeLayer(pickMarker); pickMarker = null; }
+      pickPoint = null; $('pickConfirmBtn').disabled = true;
+      $('pickCoords').textContent = 'لم يُحدَّد موقع بعد';
+      pickMap.setView(cityCenter(), 11);
+    }
+  }, 60);
+}
+$('pickMapBtn').addEventListener('click', openMapPicker);
+$('pickCancelBtn').addEventListener('click', () => $('pickerOverlay').classList.remove('show'));
+$('pickConfirmBtn').addEventListener('click', () => {
+  if(!pickPoint) return;
+  $('fMapLink').value = 'https://www.google.com/maps?q=' + pickPoint.lat.toFixed(6) + ',' + pickPoint.lng.toFixed(6);
+  $('pickerOverlay').classList.remove('show');
+  toast('تم تحديد الموقع ✅');
+});
+$('pickLocBtn').addEventListener('click', () => {
+  if(!navigator.geolocation){ toast('جهازك لا يدعم تحديد الموقع'); return; }
+  toast('جارٍ تحديد موقعك...', 2500);
+  navigator.geolocation.getCurrentPosition(
+    pos => setPick(pos.coords.latitude, pos.coords.longitude, true),
+    () => toast('تعذر تحديد موقعك. فعّل خدمة الموقع للمتصفح أو انقر على الخريطة', 4500),
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+});
+
 function mapEmbedSrc(u){
   const s = String(u || '');
   const m = s.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) || s.match(/[?&]q=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/);
@@ -1260,7 +1353,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791866930';
+const APP_VERSION = '1791868178';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
