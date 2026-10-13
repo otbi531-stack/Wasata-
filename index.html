@@ -41,8 +41,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .oath-box{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.9;color:#1f2430;margin-bottom:12px}
 .oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
 .oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
-.menu-dot{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
-.menu-dropdown{position:fixed;top:58px;left:14px;z-index:61;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:6px;min-width:190px;display:none;flex-direction:column}
+.menu-dot{position:fixed;top:14px;left:14px;z-index:1000;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:32px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+.menu-dropdown{position:fixed;top:70px;left:14px;z-index:1001;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:6px;min-width:190px;display:none;flex-direction:column}
 .menu-dropdown.show{display:flex}
 .menu-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:9px;border:0;background:none;color:var(--text);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;text-align:right;width:100%}
 .menu-item:hover{background:#f3f4f6}
@@ -119,7 +119,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .modal-actions button:disabled{opacity:.6}
 .btn-save{background:var(--primary);color:#fff}
 .btn-cancel{background:#eef2f6;color:var(--text)}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2430;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50;max-width:90%;text-align:center}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1f2430;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:2000;max-width:90%;text-align:center}
 .skel{background:linear-gradient(90deg,#e8ebe9 25%,#f4f6f5 37%,#e8ebe9 63%);background-size:400% 100%;animation:skel 1.4s ease infinite}
 @keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
 .skel-card{background:rgba(255,255,255,.96);border-radius:14px;overflow:hidden;margin-bottom:14px;padding-bottom:6px}
@@ -142,6 +142,16 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .board-row .bname{flex:1;font-weight:700}
 .board-row .bcount{color:var(--primary-dark);font-weight:700}
 .modal .empty{color:var(--muted);background:#f3f4f6;padding:24px 16px}
+.menu-item.gate-only,.menu-item.seeker-only{display:none}
+body.gate-open .menu-item.gate-only{display:flex}
+body.seeker:not(.gate-open) .menu-item.seeker-only{display:flex}
+body.gate-open .menu-item.member-only{display:none}
+body.seeker .broker-only{display:none}
+.terms-title{color:#164f3c;border-bottom:2px solid #c9a35e;padding-bottom:10px;margin-bottom:14px}
+.terms-card{background:#fdf8ec;border:1.5px solid #c9a35e;border-radius:16px;padding:14px 16px;box-shadow:3px 3px 0 #d8b873;margin:0 3px 14px 0}
+.terms-card ul{margin:0;padding:0 18px 0 0;list-style:disc;line-height:2.1;font-size:14.5px;color:#1f2430}
+body.seeker #openAddBtn{display:none}
+body.seeker .footer-row [id^="backupBtn"]{display:none}
 .ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
 </style>
@@ -297,9 +307,12 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 
 <!-- القائمة العامة (نقاط الأفق) -->
 <div class="menu-dropdown" id="menuDropdown">
-  <button class="menu-item" id="menuCalcBtn">🧮 حاسبة السعي</button>
-  <button class="menu-item" id="menuBoardBtn">🏆 المتميزون</button>
-  <button class="menu-item" id="menuInstallBtn" style="display:none">📲 تثبيت التطبيق</button>
+  <button class="menu-item gate-only" id="menuSeekerBtn">🔎 باحث عن عقار</button>
+  <button class="menu-item seeker-only" id="menuRegisterBtn">🏢 التسجيل كوسيط عقاري</button>
+  <button class="menu-item broker-only member-only" id="menuCalcBtn">🧮 حاسبة السعي</button>
+  <button class="menu-item member-only" id="menuBoardBtn">🏆 المتميزون</button>
+  <button class="menu-item" id="menuTermsBtn">📜 الشروط والأحكام</button>
+  <button class="menu-item member-only" id="menuInstallBtn" style="display:none">📲 تثبيت التطبيق</button>
   <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
   <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
   <button class="menu-item" id="menuReportsBtn" style="display:none">🚩 البلاغات</button>
@@ -313,6 +326,24 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
     <div class="modal-actions">
       <button class="btn-cancel" id="membersCloseBtn" style="width:100%">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- الشروط والأحكام -->
+<div class="overlay" id="termsOverlay" style="z-index:1002">
+  <div class="modal">
+    <h2 class="terms-title">الشروط والأحكام</h2>
+    <div class="terms-card">
+      <ul>
+        <li>أن يكون لدى الوسيط العقاري رخصة فال سارية</li>
+        <li>وجود حساب بنكي فعّال برقم الآيبان</li>
+        <li>أن يكون الطلب أو العرض من المالك أو وكيله فقط</li>
+        <li>يُستحسن وجود عقد وساطة غير ملزم لحفظ الحقوق</li>
+        <li>استقطاع نسبة تسويق (1%) في حال طلب العميل تسويق العقار له. تُقسم بين إدارة القروب والوسيط</li>
+        <li>دفع المالك السعي في حال تم البيع على الأوقاف</li>
+      </ul>
+    </div>
+    <div class="modal-actions"><button class="btn-cancel" id="termsCloseBtn" style="width:100%">إغلاق</button></div>
   </div>
 </div>
 
@@ -472,7 +503,7 @@ function cardHTML(it, ctx){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
-    if(!mine && !isOwner) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
+    if(!mine && !isOwner && !ctx.seeker) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
     if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
     if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
     if(isOwner) actions += `<button class="btn-small btn-pin" data-act="pin" data-id="${id}">${it.pinned ? '📌 إلغاء التثبيت' : '📌 تثبيت'}</button>`;
@@ -499,7 +530,7 @@ function cardHTML(it, ctx){
       ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">فتح في قوقل ماب</a></div>` : ''}
       ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
       ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}${dn ? ` <span class="deal-badge">🏅 ${dn} ${dn === 1 ? 'صفقة' : 'صفقات'}</span>` : ''}</div>` : ''}
-      ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a></div>` : ''}
+      ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a> · <a href="https://wa.me/${esc(waPhone(it.phone))}" target="_blank" rel="noopener noreferrer">💬 واتساب</a></div>` : ''}
       ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
       ${actions}
     </div></div>`;
@@ -541,21 +572,23 @@ function render(){
     observeViews(); return;
   }
   const deals = {}; listings.forEach(l => { if(l.sold && l.ownerId) deals[l.ownerId] = (deals[l.ownerId] || 0) + 1; });
-  const ctx = { deals, rmap: isOwner ? reportsByListing() : {} };
+  const ctx = { deals, rmap: isOwner ? reportsByListing() : {}, seeker: isSeeker() && !isOwner };
   area.innerHTML = rows.map(it => cardHTML(it, ctx)).join('');
   observeViews();
 }
 
 function renderOwnerUI(){
+  applyMode();
   const row = $('footerRow'), extra = $('ownerExtra');
+  const grp = `<a class="link-btn broker-only" href="${WA_GROUP}" target="_blank" rel="noopener noreferrer">قروب واتساب</a>`;
   if(isOwner){
-    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span><button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
+    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span>' + grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
     $('ownerLogoutBtn').addEventListener('click', ownerLogout);
     $('backupBtn2').addEventListener('click', downloadBackup);
     extra.innerHTML = `<button class="join-owner-btn" id="openJoinReqBtn">📋 طلبات الانضمام (${joinRequests.length})</button>`;
     $('openJoinReqBtn').addEventListener('click', showJoinRequests);
   }else{
-    row.innerHTML = '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
+    row.innerHTML = grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
     $('backupBtn2').addEventListener('click', downloadBackup);
     $('ownerLoginBtn2').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
     extra.innerHTML = '';
@@ -1041,10 +1074,18 @@ async function ownerLogout(){
   }catch(e){ fail('owner-logout', e); }
 }
 
-// بوابة الدخول الإلزامية — الدخول الفعلي مرتبط بموافقة المالك
+// بوابة الدخول الإلزامية — الدخول الفعلي مرتبط بموافقة المالك، مع مسار «باحث عن عقار» للتصفح فقط
 const GATE_KEY = 'wasata_gate_passed_v1';
 const REQ_KEY = 'wasata_gate_request_id';
+const SEEKER_KEY = 'wasata_seeker_v1';
+const WA_GROUP = 'https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4';
 let gateUnsub = null;
+
+const isMember = () => localStorage.getItem(GATE_KEY) === '1';
+const isSeeker = () => !isMember() && localStorage.getItem(SEEKER_KEY) === '1';
+function applyMode(){ document.body.classList.toggle('seeker', isSeeker() && !isOwner); }
+function showGate(){ $('joinOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; document.body.classList.add('gate-open'); }
+function hideGate(){ $('joinOverlay').classList.remove('show'); document.body.style.overflow = ''; document.body.classList.remove('gate-open'); }
 
 function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; }
 function showGatePending(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'block'; $('gateRejected').style.display = 'none'; }
@@ -1053,8 +1094,8 @@ function showGateRejected(){ $('gateForm').style.display = 'none'; $('gatePendin
 function openApp(){
   localStorage.setItem(GATE_KEY, '1');
   localStorage.removeItem(REQ_KEY);
-  $('joinOverlay').classList.remove('show');
-  document.body.style.overflow = '';
+  localStorage.removeItem(SEEKER_KEY);
+  hideGate(); applyMode(); render();
   $('waOverlay').classList.add('show');
 }
 
@@ -1070,16 +1111,31 @@ function watchRequest(reqId){
 }
 
 function checkGate(){
-  if(localStorage.getItem(GATE_KEY) === '1'){
-    $('joinOverlay').classList.remove('show');
-    document.body.style.overflow = '';
-    return;
-  }
-  $('joinOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
   const pendingId = localStorage.getItem(REQ_KEY);
-  if(pendingId) watchRequest(pendingId); else showGateForm();
+  if(isMember()){ hideGate(); }
+  else if(isSeeker()){ hideGate(); if(pendingId) watchRequest(pendingId); }
+  else{ showGate(); if(pendingId) watchRequest(pendingId); else showGateForm(); }
+  applyMode();
 }
+
+// إخفاء البوابة فوراً (دون انتظار Firebase) لمن دخل سابقاً، حتى لا تومض شاشة الدخول
+if(isMember() || isSeeker()) hideGate(); else document.body.classList.add('gate-open');
+applyMode();
+
+$('menuSeekerBtn').addEventListener('click', () => {
+  $('menuDropdown').classList.remove('show');
+  localStorage.setItem(SEEKER_KEY, '1');
+  hideGate(); applyMode(); render();
+  toast('أهلاً بك! تصفّح العروض والطلبات 🔎');
+});
+$('menuTermsBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); $('termsOverlay').classList.add('show'); });
+$('termsCloseBtn').addEventListener('click', () => $('termsOverlay').classList.remove('show'));
+$('termsOverlay').addEventListener('click', e => { if(e.target === $('termsOverlay')) $('termsOverlay').classList.remove('show'); });
+$('menuRegisterBtn').addEventListener('click', () => {
+  $('menuDropdown').classList.remove('show');
+  showGate();
+  if(!localStorage.getItem(REQ_KEY)) showGateForm();
+});
 
 $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
@@ -1131,10 +1187,11 @@ function renderMembersList(){
 $('supportLink').href = 'https://wa.me/' + SUPPORT_PHONE;
 $('menuDotBtn').addEventListener('click', e => {
   e.stopPropagation();
-  $('menuMembersBtn').style.display = isOwner ? 'flex' : 'none';
-  $('menuReportsBtn').style.display = isOwner ? 'flex' : 'none';
+  const gate = document.body.classList.contains('gate-open');
+  $('menuMembersBtn').style.display = isOwner && !gate ? 'flex' : 'none';
+  $('menuReportsBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
-  $('menuInstallBtn').style.display = isStandalone() ? 'none' : 'flex';
+  $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
 });
 $('menuBoardBtn').addEventListener('click', () => {
@@ -1199,7 +1256,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791836562';
+const APP_VERSION = '1791865396';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
