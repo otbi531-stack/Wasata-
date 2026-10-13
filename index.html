@@ -152,6 +152,10 @@ body.seeker .broker-only{display:none}
 .terms-card ul{margin:0;padding:0 18px 0 0;list-style:disc;line-height:2.1;font-size:14.5px;color:#1f2430}
 body.seeker #openAddBtn{display:none}
 body.seeker .footer-row [id^="backupBtn"]{display:none}
+/* أزرار البطاقات: لون بيج موحّد وكتابة سوداء وحجم أصغر */
+.card .btn-small{flex:1;min-width:74px;padding:5px 8px;border-radius:8px;border:1px solid #d9c79b;background:#f1e4c3;color:#000;font-size:12px;font-weight:600}
+.card .btn-fav,.card .btn-img,.card .btn-report{flex:0 0 36px;min-width:36px;padding:5px 0;font-size:14px}
+.card .card-actions{gap:6px}
 .ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
 </style>
@@ -178,7 +182,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <div class="footer-row" id="footerRow">
       <a class="link-btn" href="https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4" target="_blank" rel="noopener noreferrer">قروب واتساب</a>
       <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
-      <button class="link-btn" id="ownerLoginBtn">دخول المالك</button>
+      <button class="link-btn" id="ownerLoginBtn">دخول المدير</button>
     </div>
     <div class="ver" id="appVer" title="اضغط للتحقق من آخر إصدار"></div>
   </div>
@@ -242,10 +246,10 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   </div>
 </div>
 
-<!-- نموذج دخول المالك -->
+<!-- نموذج دخول المدير -->
 <div class="overlay" id="ownerOverlay">
   <div class="modal">
-    <h2>دخول المالك</h2>
+    <h2>دخول المدير</h2>
     <div class="field"><label>البريد الإلكتروني</label><input type="email" id="ownerEmail" autocomplete="username"></div>
     <div class="field"><label>كلمة المرور</label><input type="password" id="ownerPass" autocomplete="current-password"></div>
     <div class="modal-actions">
@@ -318,7 +322,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <button class="menu-item" id="menuReportsBtn" style="display:none">🚩 البلاغات</button>
 </div>
 
-<!-- قائمة الأعضاء المسجّلين (للمالك فقط) -->
+<!-- قائمة الأعضاء المسجّلين (للمدير فقط) -->
 <div class="overlay" id="membersOverlay">
   <div class="modal">
     <h2>الأعضاء المسجّلون</h2>
@@ -372,7 +376,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   </div>
 </div>
 
-<!-- بلاغات الأعضاء (للمالك فقط) -->
+<!-- بلاغات الأعضاء (للمدير فقط) -->
 <div class="overlay" id="reportsOverlay">
   <div class="modal">
     <h2>🚩 البلاغات</h2>
@@ -504,7 +508,7 @@ function cardHTML(it, ctx){
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
     if(!mine && !isOwner && !ctx.seeker) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
-    if(mine) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
+    if(mine || isOwner) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
     if(mine) actions += `<button class="btn-small btn-sold" data-act="sold" data-id="${id}">✅ تم البيع</button>`;
     if(isOwner) actions += `<button class="btn-small btn-pin" data-act="pin" data-id="${id}">${it.pinned ? '📌 إلغاء التثبيت' : '📌 تثبيت'}</button>`;
   }else if(expired && mine){
@@ -582,13 +586,13 @@ function renderOwnerUI(){
   const row = $('footerRow'), extra = $('ownerExtra');
   const grp = `<a class="link-btn broker-only" href="${WA_GROUP}" target="_blank" rel="noopener noreferrer">قروب واتساب</a>`;
   if(isOwner){
-    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمالك <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span>' + grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
+    row.innerHTML = '<span class="owner-badge">👑 مسجّل كمدير <button class="link-btn" id="ownerLogoutBtn" style="color:#ffe9c7">خروج</button></span>' + grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button>';
     $('ownerLogoutBtn').addEventListener('click', ownerLogout);
     $('backupBtn2').addEventListener('click', downloadBackup);
     extra.innerHTML = `<button class="join-owner-btn" id="openJoinReqBtn">📋 طلبات الانضمام (${joinRequests.length})</button>`;
     $('openJoinReqBtn').addEventListener('click', showJoinRequests);
   }else{
-    row.innerHTML = grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المالك</button>';
+    row.innerHTML = grp + '<button class="link-btn" id="backupBtn2">تنزيل نسخة احتياطية</button><button class="link-btn" id="ownerLoginBtn2">دخول المدير</button>';
     $('backupBtn2').addEventListener('click', downloadBackup);
     $('ownerLoginBtn2').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
     extra.innerHTML = '';
@@ -1028,7 +1032,7 @@ $('saveBtn').addEventListener('click', async () => {
   finally{ saving = false; $('saveBtn').disabled = false; }
 });
 
-// دخول/خروج المالك
+// دخول/خروج المدير
 $('ownerLoginBtn').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
 $('ownerCancelBtn').addEventListener('click', () => $('ownerOverlay').classList.remove('show'));
 $('ownerOverlay').addEventListener('click', e => { if(e.target === $('ownerOverlay')) $('ownerOverlay').classList.remove('show'); });
@@ -1043,13 +1047,13 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
     uid = cred.user.uid;
     isOwner = uid === OWNER_UID;
     if(!isOwner){
-      toast('هذا الحساب ليس حساب المالك');
+      toast('هذا الحساب ليس حساب المدير');
       await firebase.auth().signOut();
       await firebase.auth().signInAnonymously();
       uid = firebase.auth().currentUser.uid;
       isOwner = false;
     }else{
-      toast('تم تسجيل الدخول كمالك 👑');
+      toast('تم تسجيل الدخول كمدير 👑');
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
       subscribeJoinRequests();
@@ -1069,12 +1073,12 @@ async function ownerLogout(){
     unsubscribeJoinRequests();
     unsubscribeReports();
     if(view === 'join') showHome();
-    toast('تم الخروج من وضع المالك');
+    toast('تم الخروج من وضع المدير');
     render();
   }catch(e){ fail('owner-logout', e); }
 }
 
-// بوابة الدخول الإلزامية — الدخول الفعلي مرتبط بموافقة المالك، مع مسار «باحث عن عقار» للتصفح فقط
+// بوابة الدخول الإلزامية — الدخول الفعلي مرتبط بموافقة المدير، مع مسار «باحث عن عقار» للتصفح فقط
 const GATE_KEY = 'wasata_gate_passed_v1';
 const REQ_KEY = 'wasata_gate_request_id';
 const SEEKER_KEY = 'wasata_seeker_v1';
@@ -1256,7 +1260,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791865396';
+const APP_VERSION = '1791866930';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
