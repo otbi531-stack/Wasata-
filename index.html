@@ -41,7 +41,7 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .oath-box{background:#f3f7f4;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13.5px;line-height:1.9;color:#1f2430;margin-bottom:12px}
 .oath-check{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;font-weight:600;margin-bottom:4px}
 .oath-check input{margin-top:3px;width:18px;height:18px;flex-shrink:0}
-.menu-dot{position:fixed;top:14px;left:14px;z-index:1000;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:32px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+.menu-dot{position:fixed;top:14px;left:14px;z-index:1000;width:48px;height:48px;border:0;background:none;padding:0;-webkit-tap-highlight-color:transparent;color:#fff;font-size:32px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .menu-dropdown{position:fixed;top:70px;left:14px;z-index:1001;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:6px;min-width:190px;display:none;flex-direction:column}
 .menu-dropdown.show{display:flex}
 .menu-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:9px;border:0;background:none;color:var(--text);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;text-align:right;width:100%}
@@ -1568,7 +1568,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791888333';
+const APP_VERSION = '1791890252';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
