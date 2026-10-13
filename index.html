@@ -1042,6 +1042,7 @@ document.querySelectorAll('.allmap-filters .chip').forEach(b => b.addEventListen
 
 // ===== فيديو ترويجي للإعلان: يُرسم على Canvas ويُسجَّل داخل المتصفح (بلا خوادم) =====
 const VW = 720, VH = 1280, VFPS = 30, XFADE = 0.45;
+const VSLOW = 1.3;   // عامل إبطاء الفيديو: 1 = السرعة الأصلية، وكل 0.1 زيادة تُطيل الفيديو نحو 8%
 const VF = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
 const eOut = v => 1 - Math.pow(1 - v, 3);
 const eIO = v => v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
@@ -1167,7 +1168,8 @@ async function prepareMontage(it){
     });
     x.restore();
   }
-  return { total, draw };
+  // الإبطاء يشمل كل شيء بالتساوي: مدة المشاهد وحركة النصوص والتقريب والانتقالات
+  return { total: total * VSLOW, draw: (x, t) => draw(x, t / VSLOW) };
 }
 
 function pickVideoMime(){
@@ -1697,7 +1699,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791891694';
+const APP_VERSION = '1791923272';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
