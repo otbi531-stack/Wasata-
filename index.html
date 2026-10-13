@@ -937,13 +937,22 @@ function withAlpha(x, f, fn){ const b = x.globalAlpha; x.globalAlpha = b * c01(f
 function vBg(x){ const g = x.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#16231b'); g.addColorStop(1, '#0b0f09'); x.fillStyle = g; x.fillRect(0, 0, VW, VH); }
 function vText(x, s, px, py, size, weight, color, align){ x.direction = 'rtl'; x.textAlign = align || 'right'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); }
 function vTextLtr(x, s, px, py, size, weight, color, align){ x.direction = 'ltr'; x.textAlign = align || 'center'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); x.direction = 'rtl'; }
+function vCenter(x, s, cx, cy, size, weight, color, maxW, ltr){
+  x.direction = ltr ? 'ltr' : 'rtl'; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = color;
+  while(size > 22){ x.font = weight + ' ' + size + 'px ' + VF; if(x.measureText(s).width <= maxW) break; size -= 2; }
+  x.font = weight + ' ' + size + 'px ' + VF;
+  const m = x.measureText(s), a = m.actualBoundingBoxAscent, d = m.actualBoundingBoxDescent;
+  const y = (isFinite(a) && isFinite(d) && a + d > 0) ? cy + (a - d) / 2 : cy + size * 0.35;
+  x.fillText(s, cx, y); x.direction = 'rtl';
+}
 function vFit(x, s, size, weight, maxW){ while(size > 24){ x.font = weight + ' ' + size + 'px ' + VF; if(x.measureText(s).width <= maxW) break; size -= 2; } return size; }
 function vLogo(x, logo, cx, cy, r){ if(!logo) return; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.clip(); x.drawImage(logo, cx - r, cy - r, r * 2, r * 2); x.restore(); }
 function vHeader(x, logo){ vLogo(x, logo, 654, 92, 30); vText(x, 'وسطاء المملكة', 610, 104, 38, '700', '#e6c07b'); }
 function vFooter(x, it){
   x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, 1170, VW, 110);
-  vText(x, it.agent ? 'للتواصل مع ' + it.agent : 'للتواصل', 360, 1208, 28, '400', '#cfd6c4', 'center');
-  if(it.phone) vTextLtr(x, it.phone, 360, 1258, 52, '700', '#e6c07b');
+  const lab = it.agent ? 'للتواصل مع ' + it.agent : 'للتواصل';
+  vText(x, lab, 360, 1208, vFit(x, lab, 28, '400', 660), '400', '#cfd6c4', 'center');
+  if(it.phone) vCenter(x, it.phone, 360, 1245, 52, '700', '#e6c07b', 640, true);
 }
 
 async function prepareMontage(it){
@@ -963,9 +972,9 @@ async function prepareMontage(it){
     x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
     withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 430, 120 * (0.55 + 0.45 * eBack(c01(t / 0.9)))));
     withAlpha(x, (t - 0.35) / 0.6, () => vText(x, 'وسطاء المملكة', 360, 640 + rise(t, 0.35, 30), 64, '700', '#e6c07b', 'center'));
-    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vText(x, isReq ? 'مطلوب' : 'للعرض', 360, 733 + dy, 38, '700', '#ffffff', 'center'); });
+    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vCenter(x, isReq ? 'مطلوب' : 'للعرض', 360, 721 + dy, 38, '700', '#ffffff', 160, false); });
     withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
-    withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), 40, '400', '#cfd6c4', 'center'); });
+    withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cfd6c4', 'center'); });
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
   };
   const photoScene = (x, t, img, i) => {
@@ -982,7 +991,7 @@ async function prepareMontage(it){
     withAlpha(x, u, () => {
       const sz = vFit(x, title, 54, '700', 640); vText(x, title, 680, 850 + dy, sz, '700', '#ffffff');
       if(it.price){ const s2 = vFit(x, it.price, 62, '700', 640); vText(x, it.price, 680, 935 + dy, s2, '700', '#e6c07b'); }
-      if(sub) vText(x, sub, 680, 1000 + dy, 34, '400', '#cfd6c4');
+      if(sub) vText(x, sub, 680, 1000 + dy, vFit(x, sub, 34, '400', 640), '400', '#cfd6c4');
     });
     vFooter(x, it);
   };
@@ -1018,8 +1027,14 @@ async function prepareMontage(it){
     withAlpha(x, (t - 0.5) / 0.5, () => { const nm = it.agent || 'وسطاء المملكة', sz = vFit(x, nm, 62, '700', 620); vText(x, nm, 360, 610, sz, '700', '#ffffff', 'center'); });
     if(it.phone) withAlpha(x, (t - 0.8) / 0.5, () => {
       const pulse = 1 + 0.025 * Math.sin(t * 6);
-      x.save(); x.translate(360, 740); x.scale(pulse, pulse); x.fillStyle = '#1f8a4c'; rrect(x, -290, -70, 580, 140, 70); x.fill(); vTextLtr(x, it.phone, 0, 24, 70, '700', '#ffffff', 'center'); x.restore();
-      vText(x, 'واتساب · اتصال', 360, 880, 34, '400', '#cfd6c4', 'center');
+      const sz = vFit(x, it.phone, 70, '700', 520);
+      x.font = '700 ' + sz + 'px ' + VF;
+      const pw = Math.min(660, Math.max(380, x.measureText(it.phone).width + 120)), ph = 130;
+      x.save(); x.translate(360, 740); x.scale(pulse, pulse);
+      x.fillStyle = '#1f8a4c'; rrect(x, -pw / 2, -ph / 2, pw, ph, ph / 2); x.fill();
+      vCenter(x, it.phone, 0, 0, sz, '700', '#ffffff', 9999, true);
+      x.restore();
+      vText(x, 'واتساب · اتصال', 360, 740 + ph / 2 + 60, 34, '400', '#cfd6c4', 'center');
     });
     withAlpha(x, (t - 1.2) / 0.6, () => { vText(x, 'تطبيق وسطاء المملكة', 360, 1040, 46, '700', '#e6c07b', 'center'); vTextLtr(x, 'otbi531-stack.github.io/Wasata-', 360, 1100, 28, '400', '#6f7d68', 'center'); });
   };
@@ -1568,7 +1583,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1791890252';
+const APP_VERSION = '1791890777';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
