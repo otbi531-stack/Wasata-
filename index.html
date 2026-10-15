@@ -258,7 +258,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <h2 id="modalTitle">إضافة إعلان</h2>
     <div class="field"><label>نوع الإعلان</label><select id="fListingType"><option>عرض</option><option>طلب</option></select></div>
     <div class="field"><label>من</label>
-      <select id="fSource"><option value="">اختر...</option><option>المالك</option><option>وكيله</option><option>المنفذ</option><option>وسيط</option><option>عدد من الوسطاء</option></select>
+      <select id="fSource"><option value="">اختر...</option></select>
       <input type="text" id="fSourceNames" maxlength="200" placeholder="اكتب أسماء الوسطاء (افصل بينها بفاصلة)" style="display:none;margin-top:8px">
     </div>
     <div class="field"><label>نوع العقار</label><select id="fPropertyType"></select></div>
@@ -686,7 +686,7 @@ function cardHTML(it, ctx){
       ${embed && active ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
       ${map ? `<div class="location">🗺️ <a href="${esc(map)}" target="_blank" rel="noopener noreferrer">فتح في قوقل ماب</a></div>` : ''}
       ${it.price ? `<div class="price">${esc(it.price)}</div>` : ''}
-      ${it.source ? `<div class="location">👤 من: ${esc(it.source)}${it.source === 'عدد من الوسطاء' && it.sourceNames ? ' — ' + esc(it.sourceNames) : ''}</div>` : ''}
+      ${it.source ? `<div class="location">👤 من: ${srcText(it)}</div>` : ''}
       ${it.agent ? `<div class="location">🧑‍💼 الوسيط: ${esc(it.agent)}${dn ? ` <span class="deal-badge">🏅 ${dn} ${dn === 1 ? 'صفقة' : 'صفقات'}</span>` : ''}</div>` : ''}
       ${ph ? `<div class="location">📞 <a href="tel:${esc(ph)}">${esc(it.phone)}</a> · <a href="https://wa.me/${esc(waPhone(it.phone))}" target="_blank" rel="noopener noreferrer">💬 واتساب</a></div>` : ''}
       ${it.desc ? `<div class="desc">${esc(it.desc)}</div>` : ''}
@@ -1382,13 +1382,41 @@ $('fImagePreview').addEventListener('click', e => {
   renderImagePreview();
 });
 
-const SOURCE_MULTI = 'عدد من الوسطاء';
-function syncSourceNames(){
-  const multi = $('fSource').value === SOURCE_MULTI;
-  $('fSourceNames').style.display = multi ? 'block' : 'none';
-  if(!multi) $('fSourceNames').value = '';
+const SOURCE_MULTI = 'عدد من الوسطاء', SOURCE_OTHER = 'آخر';
+// «المالك» للعروض فقط، «المشتري» للطلبات فقط، والبقية للاثنين
+const SOURCES = [
+  { v: 'المالك', only: 'عرض' }, { v: 'المشتري', only: 'طلب' },
+  { v: 'الوكيل' }, { v: 'المباشر' }, { v: 'المنفذ' }, { v: 'الوسيط' }, { v: SOURCE_MULTI }, { v: SOURCE_OTHER }
+];
+const normSource = v => v === 'وكيله' ? 'الوكيل' : (v || '');   // توافق مع الإعلانات القديمة
+function srcText(it){
+  const v = normSource(it.source);
+  if(v === SOURCE_OTHER) return esc(it.sourceNames || SOURCE_OTHER);
+  if(v === SOURCE_MULTI) return esc(v) + (it.sourceNames ? ' — ' + esc(it.sourceNames) : '');
+  return esc(v);
 }
-$('fSource').addEventListener('change', () => { syncSourceNames(); if($('fSource').value === SOURCE_MULTI) $('fSourceNames').focus(); });
+function fillSources(selected, keepInvalid){
+  const type = $('fListingType').value, ok = x => !x.only || x.only === type;
+  const valid = SOURCES.some(x => x.v === selected && ok(x));
+  let html = '<option value="">اختر...</option>' + SOURCES.filter(ok).map(x => `<option>${x.v}</option>`).join('');
+  if(selected && !valid && keepInvalid) html += `<option>${esc(selected)}</option>`;   // لا نُسقط قيمة إعلان قديم عند تعديله
+  $('fSource').innerHTML = html;
+  $('fSource').value = (valid || (selected && keepInvalid)) ? selected : '';
+}
+function syncSourceNames(){
+  const v = $('fSource').value, need = v === SOURCE_MULTI || v === SOURCE_OTHER, inp = $('fSourceNames');
+  inp.style.display = need ? 'block' : 'none';
+  inp.placeholder = v === SOURCE_OTHER ? 'اكتب ما تريد (مثال: صاحب الأرض، شركة...)' : 'اكتب أسماء الوسطاء (افصل بينها بفاصلة)';
+  if(!need) inp.value = '';
+}
+let srcPrev = '';
+$('fSource').addEventListener('change', () => {
+  const v = $('fSource').value, need = v === SOURCE_MULTI || v === SOURCE_OTHER;
+  if(v !== srcPrev && need) $('fSourceNames').value = '';
+  srcPrev = v; syncSourceNames();
+  if(need) $('fSourceNames').focus();
+});
+$('fListingType').addEventListener('change', () => { fillSources($('fSource').value, false); srcPrev = $('fSource').value; syncSourceNames(); });
 
 function openModal(edit){
   formImages = edit ? imagesOf(edit).slice() : [];
@@ -1405,9 +1433,9 @@ function openModal(edit){
   $('fAgent').value = edit ? (edit.agent || '') : '';
   $('fPhone').value = edit ? (edit.phone || '') : '';
   $('fDesc').value = edit ? (edit.desc || '') : '';
-  $('fSource').value = edit ? (edit.source || '') : '';
+  fillSources(edit ? normSource(edit.source) : '', true);
   $('fSourceNames').value = edit ? (edit.sourceNames || '') : '';
-  syncSourceNames();
+  syncSourceNames(); srcPrev = $('fSource').value;
   $('fImage').value = '';
   renderImagePreview();
   $('overlay').classList.add('show');
@@ -1468,12 +1496,13 @@ $('saveBtn').addEventListener('click', async () => {
   const source = $('fSource').value, sourceNames = $('fSourceNames').value.trim();
   if(!source && !editingId){ toast('اختر صفة مقدّم الإعلان في حقل «من»'); return; }
   if(source === SOURCE_MULTI && !sourceNames){ toast('اكتب أسماء الوسطاء'); return; }
+  if(source === SOURCE_OTHER && !sourceNames){ toast('اكتب صفة مقدّم الإعلان في الحقل الظاهر'); return; }
   const item = {
     type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
     desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null,
-    source, sourceNames: source === SOURCE_MULTI ? sourceNames : ''
+    source, sourceNames: (source === SOURCE_MULTI || source === SOURCE_OTHER) ? sourceNames : ''
   };
   saving = true; $('saveBtn').disabled = true;
   try{
@@ -1719,7 +1748,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792054659';
+const APP_VERSION = '1792058039';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
