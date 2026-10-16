@@ -30,8 +30,6 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .lib-text{font-size:14px;font-weight:700;color:var(--text)}
 .lib-count{font-size:12px;font-weight:700;color:#fff;background:var(--primary);border-radius:999px;padding:2px 10px;margin-top:2px}
 .lib-requests .lib-count{background:var(--accent)}
-.badge.invest{background:#e3edf8;color:#1f4f87}
-.mp .mp-type.inv{background:#e3edf8;color:#1f4f87}
 .join-btn{width:100%;padding:12px;border:0;border-radius:12px;background:#1f8a4c;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .join-owner-btn{width:100%;padding:9px;border-radius:10px;border:1px solid var(--accent);background:rgba(217,138,61,.15);color:#ffe9c7;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px}
 .jcard{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
@@ -238,7 +236,6 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
           <option value="low">الأقل سعراً</option>
         </select>
         <button type="button" class="fav-toggle" id="fltFav">🤍 المفضلة</button>
-        <button type="button" class="fav-toggle" id="fltInvest">📈 استثمار</button>
       </div>
       <div class="filter-row" style="margin-top:8px">
         <button type="button" class="fav-toggle" id="fltArchive">📦 الأرشيف</button>
@@ -262,9 +259,6 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <div class="modal">
     <h2 id="modalTitle">إضافة إعلان</h2>
     <div class="field"><label>نوع الإعلان</label><select id="fListingType"><option>عرض</option><option>طلب</option><option>استثمار</option></select></div>
-    <div class="field"><label>التصنيف</label>
-      <label class="oath-check" style="margin:0"><input type="checkbox" id="fInvest"> 📈 استثمار</label>
-    </div>
     <div class="field"><label>من</label>
       <select id="fSource"><option value="">اختر...</option></select>
       <input type="text" id="fSourceNames" maxlength="200" placeholder="اكتب أسماء الوسطاء (افصل بينها بفاصلة)" style="display:none;margin-top:8px">
@@ -380,7 +374,6 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <button class="chip active" data-f="all">الكل</button>
     <button class="chip" data-f="عرض">🟢 العروض</button>
     <button class="chip" data-f="طلب">🟠 الطلبات</button>
-    <button class="chip" data-f="استثمار">📈 الاستثمار</button>
     <span class="allmap-count" id="allMapCount"></span>
   </div>
   <div id="allMap"></div>
@@ -505,16 +498,10 @@ const effDate = it => it.renewedAt || it.createdAt || 0;
 const isSold = it => !!it.sold;
 const isExpired = it => { const d = effDate(it); return !it.pinned && !it.sold && d > 0 && (Date.now() - d) > ARCHIVE_DAYS * 864e5; };
 const isActive = it => !isSold(it) && !isExpired(it);
-// نوع الإعلان: عرض / طلب. والاستثمار «تصنيف» يوضع على أي منهما (الإعلان القديم بنوع «استثمار» يُعدّ عرضاً مصنّفاً استثماراً)
-const typeOf = l => l.type === 'طلب' ? 'طلب' : 'عرض';
-const isInvest = l => l.category === 'استثمار' || l.type === 'استثمار';
-const typeLabel = l => typeOf(l) === 'طلب' ? 'مطلوب' : 'للعرض';
-const typeColor = l => typeOf(l) === 'طلب' ? '#d98a3d' : '#1f8a4c';
-const typeClass = l => typeOf(l) === 'طلب' ? 'request' : 'offer';
-const LIB_TITLES = { 'عرض': 'مكتبة العروض', 'طلب': 'مكتبة الطلبات' };
+// نص النوع كما يظهر: يحترم إعلانات حُفظت سابقاً كـ«عرض» بتصنيف استثمار
+const typeText = l => (l.type === 'عرض' && l.category === 'استثمار') ? 'استثمار' : (l.type || 'عرض');
 const sigKey = o => { const { views, id, ...rest } = o; return JSON.stringify(rest); };
 let allMap = null, allGroup = null, allMapOpen = false, allMapFilter = 'all', allMapSig = null;
-let investOnly = false;
 
 function toast(m, ms){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), ms || 2600); }
 function fail(ctx, e){ console.error(ctx, e); toast('خطأ: ' + ((e && (e.code || e.message)) || ctx)); }
@@ -670,7 +657,7 @@ function cardHTML(it, ctx){
   const mine = !!(uid && it.ownerId === uid), id = esc(it.id);
   const sold = isSold(it), expired = isExpired(it), active = !sold && !expired;
   const canDelete = mine || isOwner;
-  const shareText = `🏢 ${it.propertyType || 'عقار'} ${typeLabel(it)}${isInvest(it) ? ' (فرصة استثمارية)' : ''} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
   let actions = '';
   if(active){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
@@ -693,8 +680,7 @@ function cardHTML(it, ctx){
   const badges = (it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : '')
     + (active && (Date.now() - (it.createdAt || 0)) < 864e5 ? '<span class="new-badge">🆕 جديد</span>' : '')
     + (sold ? '<span class="sold-badge">✅ تم البيع</span>' : (expired ? '<span class="arch-badge">📦 مؤرشف</span>' : ''))
-    + (isInvest(it) ? '<span class="badge invest">📈 استثمار</span>' : '')
-    + `<span class="badge ${typeClass(it)}">${esc(typeOf(it))}</span>`;
+    + `<span class="badge ${it.type === 'طلب' ? 'request' : 'offer'}">${esc(typeText(it))}</span>`;
   const when = sold ? 'بيع ' + timeAgo(it.soldAt) : (it.renewedAt ? 'جُدِّد ' : '') + timeAgo(effDate(it));
   return `<div class="card"${active ? ` data-lid="${id}"` : ''}>${gallery}<div class="card-body">
       <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${badges}</div></div>
@@ -714,9 +700,9 @@ function cardHTML(it, ctx){
 
 function render(){
   const act = listings.filter(isActive);
-  const nOf = t => act.filter(l => typeOf(l) === t).length;
-  $('offersCount').textContent = nOf('عرض');
-  $('requestsCount').textContent = nOf('طلب');
+  const offers = act.filter(l => l.type !== 'طلب').length;
+  $('offersCount').textContent = offers;
+  $('requestsCount').textContent = act.length - offers;
   $('mapCount').textContent = act.filter(l => listingPoint(l)).length;
   if(allMapOpen) refreshAllMap(false);
   renderOwnerUI();
@@ -726,13 +712,12 @@ function render(){
   if(!listingsLoaded){ area.innerHTML = skeletonHTML(); return; }
   $('fltArchive').classList.toggle('active', showArchive);
   $('fltSave').textContent = savedSearch ? '🔕 إلغاء البحث المحفوظ' : '🔔 حفظ هذا البحث';
-  let rows = listings.filter(l => typeOf(l) === lib && (showArchive ? !isActive(l) : isActive(l)));
+  let rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب') && (showArchive ? !isActive(l) : isActive(l)));
   const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
   if(fc) rows = rows.filter(l => l.city === fc);
   if(ft) rows = rows.filter(l => l.propertyType === ft);
   if(q) rows = rows.filter(l => textMatch(l, q));
   if(favOnly) rows = rows.filter(l => favs.includes(l.id));
-  if(investOnly) rows = rows.filter(isInvest);
   const sortBy = $('fltSort').value;
   rows = rows.slice().sort((a, b) => {
     if(sortBy === 'old') return effDate(a) - effDate(b);
@@ -883,15 +868,14 @@ function updateViewCounts(){
 }
 
 // ===== الأرشيف والبحث المحفوظ =====
-function textMatch(l, q){ return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames, isInvest(l) ? 'استثمار' : ''].join(' ').toLowerCase().includes(q); }
+function textMatch(l, q){ return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames].join(' ').toLowerCase().includes(q); }
 try{ savedSearch = JSON.parse(localStorage.getItem('wasata_saved_search') || 'null'); }catch{ savedSearch = null; }
 function persistSaved(){ try{ if(savedSearch) localStorage.setItem('wasata_saved_search', JSON.stringify(savedSearch)); else localStorage.removeItem('wasata_saved_search'); }catch{} }
 function savedMatches(){
   if(!savedSearch) return [];
   const q = (savedSearch.q || '').toLowerCase();
   return listings.filter(l => isActive(l) && l.ownerId !== uid && (l.createdAt || 0) > savedSearch.since
-    && typeOf(l) === savedSearch.lib
-    && (!savedSearch.invest || isInvest(l))
+    && (savedSearch.lib === 'طلب') === (l.type === 'طلب')
     && (!savedSearch.city || l.city === savedSearch.city)
     && (!savedSearch.type || l.propertyType === savedSearch.type)
     && textMatch(l, q));
@@ -906,16 +890,15 @@ function renderSavedBanner(){
 }
 function openSavedSearch(){
   $('fltCity').value = savedSearch.city || ''; $('fltType').value = savedSearch.type || ''; $('fltSearch').value = savedSearch.q || '';
-  favOnly = false; showArchive = false; investOnly = false; $('fltFav').classList.remove('active'); $('fltInvest').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
+  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
   savedSearch.since = Date.now(); persistSaved();
-  investOnly = !!savedSearch.invest; $('fltInvest').classList.toggle('active', investOnly);
   showLibrary(savedSearch.lib);
 }
 $('fltArchive').addEventListener('click', () => { showArchive = !showArchive; render(); });
 $('fltSave').addEventListener('click', () => {
   if(savedSearch){ savedSearch = null; persistSaved(); toast('تم إلغاء البحث المحفوظ'); }
   else{
-    savedSearch = { lib, city: $('fltCity').value, type: $('fltType').value, q: $('fltSearch').value.trim(), invest: investOnly, since: Date.now() };
+    savedSearch = { lib, city: $('fltCity').value, type: $('fltType').value, q: $('fltSearch').value.trim(), since: Date.now() };
     persistSaved(); toast('تم حفظ البحث 🔔 سنخبرك بالجديد عند دخولك التطبيق', 3500);
   }
   render();
@@ -957,10 +940,9 @@ async function buildShareImage(it){
   if(imgs[0]){ try{ drawCover(x, await loadImg(imgs[0]), 40, 170, 1000, 560); drew = true; }catch{} }
   if(!drew){ x.fillStyle = '#1d2d23'; x.fillRect(40, 170, 1000, 560); x.fillStyle = '#3a5646'; x.font = '700 120px ' + F; x.textAlign = 'center'; x.fillText(it.propertyType || 'عقار', 540, 470); x.textAlign = 'right'; }
   x.restore();
-  x.fillStyle = typeColor(it); rrect(x, 840, 195, 170, 64, 32); x.fill();
-  x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(typeLabel(it), 925, 240);
-  if(isInvest(it)){ x.fillStyle = '#2f6fb3'; rrect(x, 640, 195, 180, 64, 32); x.fill(); x.fillStyle = '#ffffff'; x.fillText('استثمار', 730, 240); }
-  x.textAlign = 'right';
+  const isReq = it.type === 'طلب';
+  x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 840, 195, 170, 64, 32); x.fill();
+  x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240); x.textAlign = 'right';
   let y = 800;
   x.fillStyle = '#ffffff'; fitFont(x, `${it.propertyType || 'عقار'} - ${it.city || ''}`, 64, '700', F, 960);
   x.fillText(`${it.propertyType || 'عقار'} - ${it.city || ''}`, 1040, y); y += 62;
@@ -1000,7 +982,7 @@ function popupFor(it){
   const el = document.createElement('div'); el.className = 'mp';
   const ph = String(it.phone || '').replace(/[^\d+]/g, ''), link = safeUrl(it.mapLink);
   const sub = [it.neighborhood ? 'حي ' + it.neighborhood : '', it.area || ''].filter(Boolean).join(' · ');
-  el.innerHTML = `<div class="mp-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city || '')} <span class="mp-type ${typeClass(it) === 'request' ? 'req' : 'off'}">${esc(typeOf(it))}</span>${isInvest(it) ? ' <span class="mp-type inv">📈 استثمار</span>' : ''}</div>`
+  el.innerHTML = `<div class="mp-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city || '')} <span class="mp-type ${it.type === 'طلب' ? 'req' : 'off'}">${esc(typeText(it))}</span></div>`
     + (sub ? `<div class="mp-line">${esc(sub)}</div>` : '')
     + (it.price ? `<div class="mp-price">${esc(it.price)}</div>` : '')
     + (it.agent ? `<div class="mp-line">🧑‍💼 ${esc(it.agent)}</div>` : '')
@@ -1019,7 +1001,7 @@ function initAllMap(){
 }
 function refreshAllMap(fit){
   if(!allMap || !allGroup) return;
-  const items = listings.filter(l => isActive(l) && (allMapFilter === 'all' || (allMapFilter === 'استثمار' ? isInvest(l) : typeOf(l) === allMapFilter)));
+  const items = listings.filter(l => isActive(l) && (allMapFilter === 'all' || (allMapFilter === 'طلب') === (l.type === 'طلب')));
   const sig = allMapFilter + '#' + items.map(it => [it.id, it.type, it.mapLink, it.price, it.propertyType, it.city, it.neighborhood, it.area, it.agent, it.phone].join('~')).join('|');
   if(sig === allMapSig && !fit) return;   // لا نعيد بناء الدبابيس (فيُغلق النافذة المفتوحة) إن لم يتغير شيء
   allMapSig = sig;
@@ -1028,7 +1010,7 @@ function refreshAllMap(fit){
   items.forEach(it => {
     const c = listingPoint(it);
     if(!c){ missing++; return; }
-    const m = L.marker([c.lat, c.lng], { icon: pinIcon(typeColor(it)) });
+    const m = L.marker([c.lat, c.lng], { icon: pinIcon(it.type === 'طلب' ? '#d98a3d' : '#1f8a4c') });
     m.bindPopup(popupFor(it), { maxWidth: 260 });
     allGroup.addLayer(m); shown++;
   });
@@ -1052,8 +1034,8 @@ function focusListing(id){
   const it = listings.find(x => x.id === id); if(!it) return;
   closeAllMap();
   $('fltCity').value = ''; $('fltType').value = ''; $('fltSearch').value = '';
-  favOnly = false; showArchive = false; investOnly = false; $('fltFav').classList.remove('active'); $('fltInvest').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
-  showLibrary(typeOf(it));
+  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
+  showLibrary(it.type === 'طلب' ? 'طلب' : 'عرض');
   setTimeout(() => {
     const c = document.querySelector(`#listArea .card[data-lid="${CSS.escape(id)}"]`);
     if(c){ c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2400); }
@@ -1102,9 +1084,9 @@ async function prepareMontage(it){
   let logo = null; try{ logo = await loadImg('icon.png'); }catch{}
   const photos = [];
   for(const src of imagesOf(it).map(safeImg).filter(Boolean).slice(0, 4)){ try{ photos.push(await loadImg(src)); }catch{} }
-  const kind = typeOf(it), tLabel = typeLabel(it), tColor = typeColor(it), inv = isInvest(it);
-  const detailsTitle = kind === 'طلب' ? 'تفاصيل الطلب' : 'تفاصيل العرض';
-  const priceLabel = kind === 'طلب' ? 'الميزانية' : 'السعر المطلوب';
+  const isReq = it.type === 'طلب';
+  const detailsTitle = isReq ? 'تفاصيل الطلب' : 'تفاصيل العرض';
+  const priceLabel = isReq ? 'الميزانية' : 'السعر المطلوب';
   const title = `${it.propertyType || 'عقار'} - ${it.city || ''}`;
   const hood = it.neighborhood ? 'حي ' + it.neighborhood : '';
   const sub = [hood, it.area ? 'مساحة ' + it.area : ''].filter(Boolean).join(' · ');
@@ -1116,11 +1098,7 @@ async function prepareMontage(it){
     x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
     withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 430, 120 * (0.55 + 0.45 * eBack(c01(t / 0.9)))));
     withAlpha(x, (t - 0.35) / 0.6, () => vText(x, 'وسطاء المملكة', 360, 640 + rise(t, 0.35, 30), 64, '700', '#e6c07b', 'center'));
-    withAlpha(x, (t - 0.7) / 0.5, () => {
-      const dy = rise(t, 0.7, 20), w1 = 190, w2 = 190, gap = 16, xr = 360 + (inv ? w1 + gap + w2 : w1) / 2;
-      x.fillStyle = tColor; rrect(x, xr - w1, 690 + dy, w1, 62, 31); x.fill(); vCenter(x, tLabel, xr - w1 / 2, 721 + dy, 38, '700', '#ffffff', w1 - 30, false);
-      if(inv){ x.fillStyle = '#2f6fb3'; rrect(x, xr - w1 - gap - w2, 690 + dy, w2, 62, 31); x.fill(); vCenter(x, 'استثمار', xr - w1 - gap - w2 / 2, 721 + dy, 38, '700', '#ffffff', w2 - 30, false); }
-    });
+    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vCenter(x, isReq ? 'مطلوب' : 'للعرض', 360, 721 + dy, 38, '700', '#ffffff', 160, false); });
     withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
     withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cfd6c4', 'center'); });
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
@@ -1146,7 +1124,7 @@ async function prepareMontage(it){
   const details = (x, t) => {
     vBg(x); vHeader(x, logo);
     withAlpha(x, t / 0.5, () => vText(x, detailsTitle, 680, 230, vFit(x, detailsTitle, 52, '700', 620), '700', '#e6c07b'));
-    const rows = [['النوع', it.propertyType], ['المدينة', it.city], ['الحي', it.neighborhood], ['المساحة', it.area], ['التصنيف', inv ? 'استثمار' : '']].filter(r => r[1]);
+    const rows = [['النوع', it.propertyType], ['المدينة', it.city], ['الحي', it.neighborhood], ['المساحة', it.area]].filter(r => r[1]);
     rows.forEach((r, i) => {
       const a = c01((t - (0.3 + i * 0.25)) / 0.5), dx = (1 - eOut(a)) * 60, y = 320 + i * 92;
       withAlpha(x, a, () => {
@@ -1381,7 +1359,7 @@ function showLibrary(t){
   $('homeButtons').style.display = 'none';
   $('libraryView').style.display = 'block';
   $('joinRequestsView').style.display = 'none';
-  $('libTitle').textContent = LIB_TITLES[t] || 'مكتبة العروض';
+  $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض';
   render();
 }
 function showJoinRequests(){
@@ -1413,7 +1391,7 @@ $('fImagePreview').addEventListener('click', e => {
 const SOURCE_MULTI = 'عدد من الوسطاء', SOURCE_OTHER = 'آخر';
 // «المالك» للعروض فقط، «المشتري» للطلبات فقط، والبقية للاثنين
 const SOURCES = [
-  { v: 'المالك', only: 'عرض' }, { v: 'المشتري', only: 'طلب' },
+  { v: 'المالك', only: ['عرض', 'استثمار'] }, { v: 'المشتري', only: 'طلب' },
   { v: 'الوكيل' }, { v: 'المباشر' }, { v: 'المنفذ' }, { v: 'الوسيط' }, { v: SOURCE_MULTI }, { v: SOURCE_OTHER }
 ];
 const normSource = v => v === 'وكيله' ? 'الوكيل' : (v || '');   // توافق مع الإعلانات القديمة
@@ -1424,7 +1402,7 @@ function srcText(it){
   return esc(v);
 }
 function fillSources(selected, keepInvalid){
-  const raw = $('fListingType').value, type = raw === 'استثمار' ? 'عرض' : raw, ok = x => !x.only || [].concat(x.only).includes(type);
+  const type = $('fListingType').value, ok = x => !x.only || [].concat(x.only).includes(type);
   const valid = SOURCES.some(x => x.v === selected && ok(x));
   let html = '<option value="">اختر...</option>' + SOURCES.filter(ok).map(x => `<option>${x.v}</option>`).join('');
   if(selected && !valid && keepInvalid) html += `<option>${esc(selected)}</option>`;   // لا نُسقط قيمة إعلان قديم عند تعديله
@@ -1444,25 +1422,14 @@ $('fSource').addEventListener('change', () => {
   srcPrev = v; syncSourceNames();
   if(need) $('fSourceNames').focus();
 });
-// «استثمار» في قائمة النوع اختصار لـ: عرض + تصنيف استثمار، وخانة التصنيف تبقى متزامنة معه (وتتيح تصنيف الطلب أيضاً)
-$('fListingType').addEventListener('change', () => {
-  const v = $('fListingType').value;
-  if(v === 'استثمار') $('fInvest').checked = true; else if(v === 'عرض') $('fInvest').checked = false;
-  fillSources($('fSource').value, false); srcPrev = $('fSource').value; syncSourceNames();
-});
-$('fInvest').addEventListener('change', () => {
-  const t = $('fListingType');
-  if($('fInvest').checked && t.value === 'عرض') t.value = 'استثمار';
-  else if(!$('fInvest').checked && t.value === 'استثمار') t.value = 'عرض';
-});
+$('fListingType').addEventListener('change', () => { fillSources($('fSource').value, false); srcPrev = $('fSource').value; syncSourceNames(); });
 
 function openModal(edit){
   formImages = edit ? imagesOf(edit).slice() : [];
   editingId = edit ? edit.id : null;
   $('modalTitle').textContent = edit ? 'تعديل الإعلان' : 'إضافة إعلان';
   $('saveBtn').textContent = edit ? 'حفظ التعديلات' : 'حفظ';
-  $('fInvest').checked = edit ? isInvest(edit) : false;
-  $('fListingType').value = edit ? (typeOf(edit) === 'عرض' && isInvest(edit) ? 'استثمار' : typeOf(edit)) : 'عرض';
+  $('fListingType').value = edit ? typeText(edit) : 'عرض';
   $('fPropertyType').value = edit ? (edit.propertyType || PROPS[0]) : PROPS[0];
   $('fCity').value = edit ? (edit.city || CITIES[0]) : CITIES[0];
   $('fNeighborhood').value = edit ? (edit.neighborhood || '') : '';
@@ -1488,7 +1455,6 @@ $('fltSearch').addEventListener('input', render);
 $('fltCity').addEventListener('change', render);
 $('fltType').addEventListener('change', render);
 $('fltSort').addEventListener('change', render);
-$('fltInvest').addEventListener('click', () => { investOnly = !investOnly; $('fltInvest').classList.toggle('active', investOnly); render(); });
 $('fltFav').addEventListener('click', () => {
   favOnly = !favOnly;
   $('fltFav').classList.toggle('active', favOnly);
@@ -1538,12 +1504,11 @@ $('saveBtn').addEventListener('click', async () => {
   if(source === SOURCE_MULTI && !sourceNames){ toast('اكتب أسماء الوسطاء'); return; }
   if(source === SOURCE_OTHER && !sourceNames){ toast('اكتب صفة مقدّم الإعلان في الحقل الظاهر'); return; }
   const item = {
-    type: $('fListingType').value === 'استثمار' ? 'عرض' : $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
+    type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
     desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null,
-    source, sourceNames: (source === SOURCE_MULTI || source === SOURCE_OTHER) ? sourceNames : '',
-    category: ($('fInvest').checked || $('fListingType').value === 'استثمار') ? 'استثمار' : ''
+    source, sourceNames: (source === SOURCE_MULTI || source === SOURCE_OTHER) ? sourceNames : ''
   };
   saving = true; $('saveBtn').disabled = true;
   try{
@@ -1789,7 +1754,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792186176';
+const APP_VERSION = '1792187145';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
