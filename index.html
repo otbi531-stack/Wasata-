@@ -185,6 +185,12 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .card.flash{outline:3px solid var(--accent);outline-offset:2px}
 .wa-app-btn{display:block;width:100%;background:#f1e4c3;border:1px solid #d9c79b;color:#000;padding:13px;border-radius:10px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;margin-bottom:10px}
 .wa-group-btn{display:block;background:#1f8a4c;color:#fff;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none}
+.imp-list{max-height:34vh;overflow-y:auto;margin:6px 0}
+.imp-row{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.5px;line-height:1.7;cursor:pointer}
+.imp-row input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
+.imp-row.off{opacity:.55}
+.imp-row .warn{color:#9a5a13}
+.imp-row .bad{color:var(--danger)}
 .ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
 </style>
@@ -354,6 +360,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
   <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
   <button class="menu-item" id="menuReportsBtn" style="display:none">🚩 البلاغات</button>
+  <button class="menu-item" id="menuImportBtn" style="display:none">📥 استيراد إعلانات</button>
 </div>
 
 <!-- قائمة الأعضاء المسجّلين (للمدير فقط) -->
@@ -377,6 +384,25 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <span class="allmap-count" id="allMapCount"></span>
   </div>
   <div id="allMap"></div>
+</div>
+
+<!-- استيراد إعلانات من ملف (للمدير) -->
+<div class="overlay" id="importOverlay" style="z-index:40">
+  <div class="modal">
+    <h2>📥 استيراد إعلانات</h2>
+    <div class="picker-hint">ارفع ملف CSV أو Excel، أو الصق الجدول. أول سطر عناوين الأعمدة (النوع، نوع العقار، المدينة، الحي، المساحة، السعر، الوسيط، الجوال، التفاصيل، التاريخ، من). تُنشر الإعلانات باسم حسابك كمدير.</div>
+    <div class="field"><input type="file" id="impFile" accept=".csv,.tsv,.txt,.xlsx,.xls"></div>
+    <div class="field"><textarea id="impText" placeholder="أو الصق محتوى الجدول هنا" style="min-height:80px"></textarea></div>
+    <div class="picker-actions"><button type="button" id="impTemplateBtn">⬇️ تنزيل نموذج</button><button type="button" id="impPreviewBtn">🔍 معاينة</button></div>
+    <div id="impSummary" class="picker-hint" style="font-weight:700;color:var(--text)"></div>
+    <button type="button" class="link-btn" id="impToggleAll" style="display:none;color:var(--primary-dark)">تحديد / إلغاء الكل</button>
+    <div id="impList" class="imp-list"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="impCloseBtn">إغلاق</button>
+      <button class="btn-save" id="impPublishBtn" disabled>نشر المحدد</button>
+    </div>
+    <button type="button" class="link-btn" id="impUndoBtn" style="display:none;color:var(--danger);margin-top:8px"></button>
+  </div>
 </div>
 
 <!-- فيديو ترويجي للإعلان -->
@@ -1049,6 +1075,194 @@ document.querySelectorAll('.allmap-filters .chip').forEach(b => b.addEventListen
   allMapSig = null; refreshAllMap(true);
 }));
 
+// ===== استيراد إعلانات من ملف (للمدير): CSV / Excel / نص ملصوق =====
+const IMP_SYN = {
+  type: ['النوع', 'نوع الاعلان', 'type'], propertyType: ['نوع العقار', 'العقار', 'property', 'propertytype'], city: ['المدينة', 'city'],
+  neighborhood: ['الحي', 'neighborhood', 'district'], area: ['المساحة', 'area'], price: ['السعر', 'المطلوب', 'السعر المطلوب', 'price'],
+  agent: ['الوسيط', 'اسم الوسيط', 'agent', 'broker'], phone: ['الجوال', 'رقم الجوال', 'الهاتف', 'جوال', 'phone', 'mobile'],
+  desc: ['التفاصيل', 'الوصف', 'ملاحظات', 'desc', 'description', 'details'], date: ['التاريخ', 'تاريخ الاعلان', 'date'],
+  mapLink: ['رابط الخريطة', 'الموقع', 'الخريطة', 'map', 'maplink'], source: ['من', 'المصدر', 'source']
+};
+const normAr = v => String(v == null ? '' : v).replace(/[\u064B-\u065F\u0670\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim().toLowerCase();
+const hdrKey = h => normAr(h).replace(/[\s_\-:]+/g, '');
+let impRows = [];
+
+function parseCSV(text){
+  text = String(text).replace(/^\uFEFF/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  let d = ',', best = 0;
+  [',', ';', '\t'].forEach(c => { const n = first.split(c).length; if(n > best){ best = n; d = c; } });
+  const rows = []; let row = [], cur = '', q = false;
+  const endRow = () => { row.push(cur); cur = ''; if(row.some(x => x.trim() !== '')) rows.push(row); row = []; };
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(q){ if(ch === '"'){ if(text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if(ch === '"') q = true;
+    else if(ch === d){ row.push(cur); cur = ''; }
+    else if(ch === '\n' || ch === '\r'){ if(ch === '\r' && text[i + 1] === '\n') i++; endRow(); }
+    else cur += ch;
+  }
+  if(cur !== '' || row.length) endRow();
+  return rows;
+}
+function loadXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = res; sc.onerror = () => rej(new Error('xlsx-load')); document.head.appendChild(sc);
+  });
+}
+async function readImportFile(f){
+  if(/\.xlsx?$/i.test(f.name)){
+    await loadXLSX();
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
+    return rows.map(r => r.map(c => String(c))).filter(r => r.some(x => x.trim() !== ''));
+  }
+  const buf = await f.arrayBuffer(); let text;
+  try{ text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }catch{ text = new TextDecoder('windows-1256').decode(buf); }
+  return parseCSV(text);
+}
+function parseDate(v){
+  const t = toWestern(v).trim(); if(!t) return null;
+  let m = t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2] - 1, +m[3], 12).getTime();
+  m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);   // يوم/شهر/سنة
+  if(m){ let y = +m[3]; if(y < 100) y += 2000; return new Date(y, +m[2] - 1, +m[1], 12).getTime(); }
+  const x = Date.parse(t); return isNaN(x) ? null : x;
+}
+function mapFrom(list, v){
+  const t = normAr(v); if(!t) return null;
+  return list.find(x => normAr(x) === t) || list.find(x => x !== 'أخرى' && (normAr(x).includes(t) || t.includes(normAr(x)))) || null;
+}
+function cleanPhone(v){
+  const t = toWestern(v).replace(/[\s\-().]/g, '');
+  const m = t.match(/(?:\+?966|00966|0)?5\d{8}/);
+  if(m){ const d = m[0].replace(/^\+?966|^00966|^0/, ''); return '0' + d; }
+  const dg = t.replace(/[^\d+]/g, ''); return dg.length >= 8 ? dg : '';
+}
+function impDupKey(d){
+  const ph = String(d.phone || '').replace(/\D/g, ''), pr = toWestern(d.price).replace(/\D/g, ''), ar = toWestern(d.area).replace(/\D/g, '');
+  return ph && (pr || ar) ? [ph, pr, ar, normAr(d.neighborhood)].join('|') : '';
+}
+function buildImportRows(table){
+  const keyOf = {};
+  Object.entries(IMP_SYN).forEach(([k, arr]) => arr.forEach(a => { keyOf[hdrKey(a)] = k; }));
+  const cols = table[0].map(h => keyOf[hdrKey(h)] || null);
+  if(!cols.some(Boolean)) return null;
+  const seen = new Set(listings.filter(isActive).map(impDupKey).filter(Boolean));
+  const now = Date.now();
+  return table.slice(1).map(cells => {
+    const raw = {}; cols.forEach((k, i) => { if(k && raw[k] == null) raw[k] = String(cells[i] == null ? '' : cells[i]).trim(); });
+    const warns = [], errors = [], d = {};
+    const t = normAr(raw.type);
+    d.type = /طلب|مطلوب/.test(t) ? 'طلب' : (/استثمار/.test(t) ? 'استثمار' : 'عرض');
+    if(!t) warns.push('النوع غير محدد، اعتُبر عرضاً');
+    d.propertyType = mapFrom(PROPS, raw.propertyType) || 'أخرى';
+    if(raw.propertyType && d.propertyType === 'أخرى' && normAr(raw.propertyType) !== 'اخري') warns.push('نوع العقار غير معروف: ' + esc(raw.propertyType));
+    d.city = mapFrom(CITIES, raw.city) || 'أخرى';
+    if(raw.city && d.city === 'أخرى' && normAr(raw.city) !== 'اخري') warns.push('مدينة غير معروفة: ' + esc(raw.city));
+    d.neighborhood = (raw.neighborhood || '').replace(/^حي\s+/, ''); d.area = raw.area || ''; d.price = raw.price || '';
+    d.agent = raw.agent || ''; d.phone = cleanPhone(raw.phone);
+    if(raw.phone && !d.phone) warns.push('الجوال غير واضح');
+    if(!raw.phone && !raw.agent) warns.push('لا يوجد وسيط ولا جوال');
+    d.desc = (raw.desc || '').slice(0, 1000);
+    const link = safeUrl(raw.mapLink); d.mapLink = link;
+    if(raw.mapLink && !link) warns.push('رابط الخريطة غير https فحُذف');
+    const sv = normAr(raw.source);
+    if(sv){ const hit = SOURCES.find(x => normAr(x.v) === sv || (sv === 'وكيله' && x.v === 'الوكيل')); d.source = hit ? hit.v : SOURCE_OTHER; d.sourceNames = hit ? '' : raw.source; }
+    else { d.source = ''; d.sourceNames = ''; }
+    let when = parseDate(raw.date);
+    if(raw.date && when == null) warns.push('التاريخ غير مقروء، اعتُمد الآن');
+    d.createdAt = when || now; d.images = []; d.image = null;
+    if(!d.price && !d.area && !d.desc && !d.neighborhood) errors.push('صف بلا محتوى');
+    const key = impDupKey(d), dup = !!key && seen.has(key); if(key) seen.add(key);
+    const old = (now - d.createdAt) > ARCHIVE_DAYS * 864e5;
+    return { data: d, warns, errors, dup, old, checked: !errors.length && !dup && !old };
+  });
+}
+function impRowHTML(r, i){
+  const d = r.data;
+  const head = `${esc(d.type)} · ${esc(d.propertyType)} · ${esc(d.city)}${d.neighborhood ? ' · ' + esc(d.neighborhood) : ''}`;
+  const sub = [d.area, d.price].filter(Boolean).map(esc).join(' · '), who = [d.agent, d.phone].filter(Boolean).map(esc).join(' · ');
+  const notes = [...r.errors.map(x => `<span class="bad">⛔ ${x}</span>`), r.dup ? '<span class="warn">♻️ مكرر</span>' : '', r.old ? '<span class="warn">📦 قديم (يُؤرشف مباشرة)</span>' : '', ...r.warns.map(x => `<span class="warn">⚠️ ${x}</span>`)].filter(Boolean).join(' · ');
+  return `<label class="imp-row${r.checked ? '' : ' off'}"><input type="checkbox" data-i="${i}"${r.checked ? ' checked' : ''}${r.errors.length ? ' disabled' : ''}><div><b>${head}</b>${sub ? '<br>' + sub : ''}${who ? '<br>' + who : ''}${notes ? '<br>' + notes : ''}</div></label>`;
+}
+function impRefresh(){
+  $('impList').innerHTML = impRows.map(impRowHTML).join('');
+  const n = impRows.filter(r => r.checked).length;
+  $('impPublishBtn').textContent = 'نشر المحدد (' + n + ')'; $('impPublishBtn').disabled = n === 0;
+  $('impToggleAll').style.display = impRows.length ? 'inline' : 'none';
+}
+function impUndoUI(){
+  let last = null; try{ last = JSON.parse(localStorage.getItem('wasata_last_import') || 'null'); }catch{}
+  const b = $('impUndoBtn');
+  if(last && last.id){ b.style.display = 'block'; b.textContent = '↩️ تراجع عن آخر استيراد (' + last.n + ' إعلان)'; } else b.style.display = 'none';
+}
+function openImport(){
+  if(!isOwner){ toast('الاستيراد متاح للمدير فقط'); return; }
+  impRows = []; $('impText').value = ''; $('impFile').value = ''; $('impSummary').textContent = ''; impRefresh(); impUndoUI();
+  $('importOverlay').classList.add('show');
+}
+async function impPreview(){
+  const f = $('impFile').files[0], txt = $('impText').value.trim();
+  let table = null;
+  try{ table = txt ? parseCSV(txt) : (f ? await readImportFile(f) : null); }
+  catch(e){ toast(/xlsx-load/.test(String(e && e.message)) ? 'تعذر تحميل مكتبة الإكسل. احفظ الملف بصيغة CSV وأعد المحاولة' : 'تعذر قراءة الملف', 5000); return; }
+  if(!table || table.length < 2){ toast('لا توجد بيانات: أول سطر عناوين الأعمدة وبعده الإعلانات', 4000); return; }
+  const rows = buildImportRows(table);
+  if(!rows){ toast('لم أتعرف على عناوين الأعمدة. حمّل النموذج واتبع عناوينه', 5000); return; }
+  impRows = rows;
+  const c = k => impRows.filter(r => r[k]).length;
+  $('impSummary').textContent = impRows.length + ' صف · ' + impRows.filter(r => !r.errors.length && !r.dup && !r.old).length + ' صالح · ' + c('dup') + ' مكرر · ' + c('old') + ' قديم · ' + impRows.filter(r => r.errors.length).length + ' فارغ';
+  impRefresh();
+}
+async function impPublish(){
+  const sel = impRows.filter(r => r.checked && !r.errors.length);
+  if(!sel.length) return;
+  if(!isOwner || !uid){ toast('الاستيراد متاح للمدير فقط'); return; }
+  if(!confirm('نشر ' + sel.length + ' إعلان باسم حسابك كمدير؟')) return;
+  const importId = 'imp' + Date.now(); let done = 0;
+  $('impPublishBtn').disabled = true;
+  try{
+    for(let i = 0; i < sel.length; i += 400){
+      const batch = db.batch(), part = sel.slice(i, i + 400);
+      part.forEach(r => batch.set(db.collection(COL).doc(), { ...r.data, ownerId: uid, importId, imported: true }));
+      await batch.commit(); done += part.length;
+    }
+    try{ localStorage.setItem('wasata_last_import', JSON.stringify({ id: importId, n: done })); }catch{}
+    toast('تم نشر ' + done + ' إعلان ✅', 4000);
+    impRows = []; impRefresh(); $('impSummary').textContent = ''; $('impText').value = ''; $('impFile').value = ''; impUndoUI();
+  }catch(e){ fail('import', e); if(done){ toast('نُشر ' + done + ' فقط قبل الخطأ', 5000); } impRefresh(); }
+}
+async function impUndo(){
+  let last = null; try{ last = JSON.parse(localStorage.getItem('wasata_last_import') || 'null'); }catch{}
+  if(!last || !last.id) return;
+  if(!confirm('حذف كل الإعلانات التي نُشرت في آخر استيراد (' + last.n + ')؟')) return;
+  try{
+    const snap = await db.collection(COL).where('importId', '==', last.id).get(); const docs = snap.docs;
+    for(let i = 0; i < docs.length; i += 400){ const batch = db.batch(); docs.slice(i, i + 400).forEach(d => batch.delete(d.ref)); await batch.commit(); }
+    try{ localStorage.removeItem('wasata_last_import'); }catch{}
+    toast('تم حذف ' + docs.length + ' إعلان'); impUndoUI();
+  }catch(e){ fail('import-undo', e); }
+}
+function downloadImportTemplate(){
+  const csv = '\uFEFFالنوع,نوع العقار,المدينة,الحي,المساحة,السعر,الوسيط,الجوال,التفاصيل,التاريخ,من,رابط الخريطة\n'
+    + 'عرض,فيلا,الرياض,الملقا,400 م²,"2,500,000 ريال",محمد السالم,0505550531,فيلا حديثة بمسبح,2026-10-12,المالك,\n'
+    + 'طلب,شقة,جدة,الصفا,,"حتى 600,000 ريال",أحمد العتيبي,0555555555,مطلوب شقة 3 غرف,2026-10-12,المشتري,\n';
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = 'wasata-import-template.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+$('menuImportBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openImport(); });
+$('impPreviewBtn').addEventListener('click', impPreview);
+$('impPublishBtn').addEventListener('click', impPublish);
+$('impUndoBtn').addEventListener('click', impUndo);
+$('impTemplateBtn').addEventListener('click', downloadImportTemplate);
+$('impCloseBtn').addEventListener('click', () => $('importOverlay').classList.remove('show'));
+$('impToggleAll').addEventListener('click', () => { const any = impRows.some(r => r.checked); impRows.forEach(r => { if(!r.errors.length) r.checked = !any; }); impRefresh(); });
+$('impList').addEventListener('change', e => { const cb = e.target.closest('input[data-i]'); if(!cb) return; impRows[+cb.dataset.i].checked = cb.checked; impRefresh(); });
+
 // ===== فيديو ترويجي للإعلان: يُرسم على Canvas ويُسجَّل داخل المتصفح (بلا خوادم) =====
 const VW = 720, VH = 1280, VFPS = 30, XFADE = 0.45;
 const VSLOW = 1.3;   // عامل إبطاء الفيديو: 1 = السرعة الأصلية، وكل 0.1 زيادة تُطيل الفيديو نحو 8%
@@ -1688,6 +1902,7 @@ $('menuDotBtn').addEventListener('click', e => {
   const gate = document.body.classList.contains('gate-open');
   $('menuMembersBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').style.display = isOwner && !gate ? 'flex' : 'none';
+  $('menuImportBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
   $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
@@ -1754,7 +1969,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792187145';
+const APP_VERSION = '1792213372';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
