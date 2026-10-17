@@ -321,8 +321,8 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
       <p style="font-size:13.5px;color:var(--muted)">سيتم فتح الموقع تلقائياً فور موافقة الإدارة على طلبك، لا حاجة لإعادة تحميل الصفحة.</p>
     </div>
     <div id="gateRejected" style="display:none;text-align:center">
-      <p style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:8px">❌ تم رفض طلبك</p>
-      <p style="font-size:13.5px;color:var(--muted)">يرجى التواصل مع إدارة المنصة لمعرفة السبب.</p>
+      <p id="gateRejectedTitle" style="font-size:15px;font-weight:700;color:var(--danger);margin-bottom:8px">❌ تم رفض طلبك</p>
+      <p id="gateRejectedText" style="font-size:13.5px;color:var(--muted)">يرجى التواصل مع إدارة المنصة لمعرفة السبب.</p>
     </div>
   </div>
 </div>
@@ -650,6 +650,7 @@ async function init(){
     }, e => fail('listen', e));
     if(uid) migrate().catch(e => console.warn('migrate', e));
     checkGate();
+    startMemberWatch();
   }catch(e){ fail('init', e); }
 }
 
@@ -793,7 +794,9 @@ function renderJoinRequests(){
     const ph = String(r.phone || '').replace(/[^\d+]/g, ''), id = esc(r.id);
     let actions;
     if(r.status === 'accepted'){
-      actions = `<span class="jstatus accepted">✅ مقبول</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:110px">🗑 حذف</button>`;
+      actions = `<span class="jstatus accepted">✅ مقبول</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="revoke" style="max-width:150px">🚫 إيقاف العضوية</button> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:90px">🗑 حذف</button>`;
+    }else if(r.status === 'revoked'){
+      actions = `<span class="jstatus rejected">⛔ موقوف</span> <button class="btn-small btn-accept" data-jid="${id}" data-jact="reactivate" style="max-width:150px">↩️ إعادة تفعيل</button> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:90px">🗑 حذف</button>`;
     }else if(r.status === 'rejected'){
       actions = `<span class="jstatus rejected">❌ مرفوض</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:110px">🗑 حذف</button>`;
     }else{
@@ -819,8 +822,17 @@ $('joinListArea').addEventListener('click', async e => {
     }else if(act === 'reject'){
       await db.collection('joinRequests').doc(id).update({ status: 'rejected' });
       toast('تم رفض الطلب');
+    }else if(act === 'revoke'){
+      const r = joinRequests.find(x => x.id === id);
+      if(!confirm('إيقاف عضوية ' + ((r && r.name) || 'هذا العضو') + '؟ سيُغلق التطبيق على جهازه ويظهر له أن عضويته موقوفة.')) return;
+      await db.collection('joinRequests').doc(id).update({ status: 'revoked', revokedAt: Date.now() });
+      toast('تم إيقاف العضوية');
+    }else if(act === 'reactivate'){
+      await db.collection('joinRequests').doc(id).update({ status: 'accepted' });
+      toast('أُعيد تفعيل العضوية ✅');
     }else if(act === 'del'){
-      if(!confirm('حذف هذا الطلب نهائياً من القائمة؟')) return;
+      const r = joinRequests.find(x => x.id === id);
+      if(!confirm(r && r.status === 'accepted' ? 'حذف هذا العضو نهائياً؟ سيُغلق التطبيق على جهازه ويحتاج إلى التسجيل من جديد.' : 'حذف هذا الطلب نهائياً من القائمة؟')) return;
       await db.collection('joinRequests').doc(id).delete();
     }
   }catch(err){ fail('join-action', err); }
@@ -1764,6 +1776,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       toast('تم تسجيل الدخول كمدير 👑');
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
+      stopMemberWatch();
       subscribeJoinRequests();
       subscribeReports();
     }
@@ -1780,6 +1793,7 @@ async function ownerLogout(){
     isOwner = false;
     unsubscribeJoinRequests();
     unsubscribeReports();
+    startMemberWatch();
     if(view === 'join') showHome();
     toast('تم الخروج من وضع المدير');
     render();
@@ -1791,7 +1805,8 @@ const GATE_KEY = 'wasata_gate_passed_v1';
 const REQ_KEY = 'wasata_gate_request_id';
 const SEEKER_KEY = 'wasata_seeker_v1';
 const WA_GROUP = 'https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4';
-let gateUnsub = null;
+const VERIFIED_KEY = 'wasata_member_verified', MEMBER_UID_KEY = 'wasata_member_uid';
+let gateUnsub = null, memberUnsub = null;
 
 const isMember = () => localStorage.getItem(GATE_KEY) === '1';
 const isSeeker = () => !isMember() && localStorage.getItem(SEEKER_KEY) === '1';
@@ -1801,14 +1816,20 @@ function hideGate(){ $('joinOverlay').classList.remove('show'); document.body.st
 
 function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; }
 function showGatePending(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'block'; $('gateRejected').style.display = 'none'; }
-function showGateRejected(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'block'; }
+function showGateRejected(st){
+  $('gateForm').style.display = 'none'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'block';
+  $('gateRejectedTitle').textContent = st === 'revoked' ? '⛔ تم إيقاف عضويتك' : '❌ تم رفض طلبك';
+  $('gateRejectedText').textContent = st === 'revoked' ? 'تواصل مع إدارة المنصة لإعادة تفعيل عضويتك.' : 'يرجى التواصل مع إدارة المنصة لمعرفة السبب.';
+}
 
 function openApp(){
   localStorage.setItem(GATE_KEY, '1');
+  try{ localStorage.setItem(VERIFIED_KEY, '1'); if(uid) localStorage.setItem(MEMBER_UID_KEY, uid); }catch{}
   localStorage.removeItem(REQ_KEY);
   localStorage.removeItem(SEEKER_KEY);
   hideGate(); applyMode(); render();
   $('waOverlay').classList.add('show');
+  startMemberWatch();
 }
 
 function watchRequest(reqId){
@@ -1818,8 +1839,38 @@ function watchRequest(reqId){
     if(!doc.exists) return;
     const st = doc.data().status;
     if(st === 'accepted'){ gateUnsub(); gateUnsub = null; openApp(); }
-    else if(st === 'rejected'){ gateUnsub(); gateUnsub = null; showGateRejected(); }
+    else if(st === 'rejected' || st === 'revoked') showGateRejected(st);
+    else showGatePending();
   }, e => fail('gate-watch', e));
+}
+
+// سحب الصلاحية من جهاز عضو أُوقف أو حُذف طلبه (يستمع لحالة طلبه في قاعدة البيانات)
+function stopMemberWatch(){ if(memberUnsub){ memberUnsub(); memberUnsub = null; } }
+function startMemberWatch(){
+  stopMemberWatch();
+  if(!db || !uid || isOwner || !isMember()) return;
+  const saved = localStorage.getItem(MEMBER_UID_KEY);
+  if(saved && saved !== uid) return;   // تغيّرت هوية الجهاز (مثلاً بعد دخول/خروج المدير): لا نحكم على عضويته
+  const myUid = uid;
+  try{
+    memberUnsub = db.collection('joinRequests').where('ownerId', '==', myUid).onSnapshot(snap => {
+      if(snap.metadata && snap.metadata.fromCache) return;   // لا نحكم من نسخة محلية فارغة (انقطاع الاتصال)
+      if(uid !== myUid || isOwner || !isMember()) return;
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if(docs.some(d => d.status === 'accepted')){ try{ localStorage.setItem(VERIFIED_KEY, '1'); localStorage.setItem(MEMBER_UID_KEY, myUid); }catch{} return; }
+      const bad = docs.find(d => d.status === 'revoked' || d.status === 'rejected');
+      if(bad){ revokeMembership(bad.status, bad.id); return; }
+      if(!docs.length && localStorage.getItem(VERIFIED_KEY) === '1' && localStorage.getItem(MEMBER_UID_KEY) === myUid) revokeMembership('deleted');
+    }, e => console.warn('member-watch', e));
+  }catch(e){ console.warn('member-watch', e); }
+}
+function revokeMembership(kind, docId){
+  stopMemberWatch();
+  [GATE_KEY, VERIFIED_KEY, MEMBER_UID_KEY].forEach(k => { try{ localStorage.removeItem(k); }catch{} });
+  try{ if(kind === 'deleted') localStorage.removeItem(REQ_KEY); else localStorage.setItem(REQ_KEY, docId); }catch{}
+  document.querySelectorAll('.overlay.show').forEach(o => { if(o.id !== 'joinOverlay') o.classList.remove('show'); });
+  closeAllMap(); showHome(); checkGate(); applyMode(); render();
+  toast(kind === 'deleted' ? 'أُلغيت عضويتك، يمكنك التسجيل من جديد' : (kind === 'revoked' ? 'تم إيقاف عضويتك' : 'عضويتك غير مفعّلة'), 5000);
 }
 
 function checkGate(){
@@ -1893,6 +1944,7 @@ function renderMembersList(){
     <div>📞 <a href="tel:${esc(waPhone(m.phone))}">${esc(m.phone || '')}</a></div>
     <div>🪪 رقم الرخصة: ${esc(m.license || '')}</div>
     <a class="btn-chat" href="https://wa.me/${esc(waPhone(m.phone))}" target="_blank" rel="noopener noreferrer">💬 محادثة فورية</a>
+    <button type="button" class="btn-small btn-delete" data-mrevoke="${esc(m.id)}" style="max-width:150px;margin-top:8px;margin-right:6px">🚫 إيقاف العضوية</button>
   </div>`).join('');
 }
 
@@ -1906,6 +1958,13 @@ $('menuDotBtn').addEventListener('click', e => {
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
   $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
+});
+$('membersList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-mrevoke]'); if(!b) return;
+  const id = b.dataset.mrevoke, r = joinRequests.find(x => x.id === id);
+  if(!confirm('إيقاف عضوية ' + ((r && r.name) || 'هذا العضو') + '؟ سيُغلق التطبيق على جهازه ويظهر له أن عضويته موقوفة.')) return;
+  try{ await db.collection('joinRequests').doc(id).update({ status: 'revoked', revokedAt: Date.now() }); toast('تم إيقاف العضوية'); }
+  catch(err){ fail('member-revoke', err); }
 });
 $('menuBoardBtn').addEventListener('click', () => {
   $('menuDropdown').classList.remove('show');
@@ -1969,7 +2028,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792213372';
+const APP_VERSION = '1792261295';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
