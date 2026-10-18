@@ -150,7 +150,9 @@ body.gate-open .menu-item.member-only{display:none}
 body.seeker .broker-only{display:none}
 .terms-title{color:#164f3c;border-bottom:2px solid #c9a35e;padding-bottom:10px;margin-bottom:14px}
 .terms-card{background:#fdf8ec;border:1.5px solid #c9a35e;border-radius:16px;padding:14px 16px;box-shadow:3px 3px 0 #d8b873;margin:0 3px 14px 0}
-.terms-card ul{margin:0;padding:0 18px 0 0;list-style:disc;line-height:2.1;font-size:14.5px;color:#1f2430}
+.terms-card ol{margin:0;padding:0 22px 0 0;list-style:decimal;list-style:arabic-indic;line-height:2.1;font-size:14.5px;color:#1f2430}
+.oath-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.terms-icon{border:1px solid #d9c79b;background:#f1e4c3;color:#000;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
 body.seeker #openAddBtn{display:none}
 body.seeker .footer-row [id^="backupBtn"]{display:none}
 /* أزرار البطاقات: لون بيج موحّد وكتابة سوداء وحجم أصغر */
@@ -305,13 +307,16 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
     <h2>الدخول إلى وسطاء المملكة</h2>
     <div id="gateForm">
       <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
-      <div class="field"><label>الاسم الكامل (لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد السالم"></div>
+      <div class="field"><label>الاسم الثلاثي (لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد عبدالله السالم"></div>
       <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
-      <div class="field"><label>رقم رخصة التسويق العقاري (فال)</label><input type="text" id="jLicense" placeholder="رقم الرخصة"></div>
+      <div class="field"><label>رقم رخصة التسويق العقاري (فال) — 10 أرقام</label><input type="text" id="jLicense" inputmode="numeric" autocomplete="off" placeholder="مثال: 1100036666"></div>
       <div class="oath-box">
         أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة العقار في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
       </div>
-      <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
+      <div class="oath-row">
+        <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
+        <button type="button" class="terms-icon" id="termsIconBtn" aria-label="الشروط والأحكام">📜 الشروط</button>
+      </div>
       <div class="modal-actions">
         <button class="btn-save" id="joinSubmitBtn" style="flex:1">دخول</button>
       </div>
@@ -355,7 +360,6 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <button class="menu-item seeker-only" id="menuRegisterBtn">🏢 التسجيل كوسيط عقاري</button>
   <button class="menu-item broker-only member-only" id="menuCalcBtn">🧮 حاسبة السعي</button>
   <button class="menu-item member-only" id="menuBoardBtn">🏆 المتميزون</button>
-  <button class="menu-item" id="menuTermsBtn">📜 الشروط والأحكام</button>
   <button class="menu-item member-only" id="menuInstallBtn" style="display:none">📲 تثبيت التطبيق</button>
   <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
   <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
@@ -440,14 +444,14 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <div class="modal">
     <h2 class="terms-title">الشروط والأحكام</h2>
     <div class="terms-card">
-      <ul>
-        <li>أن يكون لدى الوسيط العقاري رخصة فال سارية</li>
-        <li>وجود حساب بنكي فعّال برقم الآيبان</li>
-        <li>أن يكون الطلب أو العرض من المالك أو وكيله فقط</li>
-        <li>يُستحسن وجود عقد وساطة غير ملزم لحفظ الحقوق</li>
-        <li>استقطاع نسبة تسويق (1%) في حال طلب العميل تسويق العقار له. تُقسم بين إدارة القروب والوسيط</li>
+      <ol>
+        <li>الاسم الثلاثي</li>
+        <li>وجود رخصة فال سارية المفعول</li>
+        <li>وجود حساب بنكي فعّال (آيبان)</li>
+        <li>عقد وساطة من المالك أو المشتري</li>
+        <li>عمولة تسويق في حال طلب المالك التسويق للعقار 1%</li>
         <li>دفع المالك السعي في حال تم البيع على الأوقاف</li>
-      </ul>
+      </ol>
     </div>
     <div class="modal-actions"><button class="btn-cancel" id="termsCloseBtn" style="width:100%">إغلاق</button></div>
   </div>
@@ -1814,7 +1818,7 @@ function applyMode(){ document.body.classList.toggle('seeker', isSeeker() && !is
 function showGate(){ $('joinOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; document.body.classList.add('gate-open'); }
 function hideGate(){ $('joinOverlay').classList.remove('show'); document.body.style.overflow = ''; document.body.classList.remove('gate-open'); }
 
-function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; }
+function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; syncTermsIcon(); }
 function showGatePending(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'block'; $('gateRejected').style.display = 'none'; }
 function showGateRejected(st){
   $('gateForm').style.display = 'none'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'block';
@@ -1891,7 +1895,9 @@ $('menuSeekerBtn').addEventListener('click', () => {
   hideGate(); applyMode(); render();
   toast('أهلاً بك! تصفّح العروض والطلبات 🔎');
 });
-$('menuTermsBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); $('termsOverlay').classList.add('show'); });
+$('termsIconBtn').addEventListener('click', () => $('termsOverlay').classList.add('show'));
+function syncTermsIcon(){ $('termsIconBtn').style.display = $('jOath').checked ? 'none' : 'inline-block'; }   // الأيقونة تظهر حتى تُفعَّل الموافقة
+$('jOath').addEventListener('change', syncTermsIcon);
 $('termsCloseBtn').addEventListener('click', () => $('termsOverlay').classList.remove('show'));
 $('termsOverlay').addEventListener('click', e => { if(e.target === $('termsOverlay')) $('termsOverlay').classList.remove('show'); });
 $('menuRegisterBtn').addEventListener('click', () => {
@@ -1900,12 +1906,26 @@ $('menuRegisterBtn').addEventListener('click', () => {
   if(!localStorage.getItem(REQ_KEY)) showGateForm();
 });
 
+// الاسم الثلاثي: ثلاثة أسماء على الأقل. «بن/ابن/بنت» لا تُعدّ اسماً، و«عبد X» و«أبو X» و«أم X» اسم واحد
+function isTripleName(raw){
+  const name = String(raw || '').trim().replace(/\s+/g, ' ');
+  if(!/^[\u0600-\u06FFa-zA-Z\s]+$/.test(name)) return false;
+  const skip = new Set(['بن', 'ابن', 'بنت', 'bin', 'ibn', 'bint']);
+  const words = name.split(' ').filter(w => !skip.has(w.toLowerCase()));
+  const tokens = [];
+  for(let i = 0; i < words.length; i++){
+    const n = normAr(words[i]);
+    if((n === 'عبد' || n === 'ابو' || n === 'ام') && i + 1 < words.length){ tokens.push(words[i] + ' ' + words[i + 1]); i++; }
+    else tokens.push(words[i]);
+  }
+  return tokens.length >= 3 && tokens.every(t => t.replace(/\s/g, '').length >= 2);
+}
 $('joinSubmitBtn').addEventListener('click', async () => {
   if(joinSaving) return;
-  const name = $('jName').value.trim().replace(/\s+/g, ' '), phone = $('jPhone').value.trim(), license = $('jLicense').value.trim(), oath = $('jOath').checked;
+  const name = $('jName').value.trim().replace(/\s+/g, ' '), phone = $('jPhone').value.trim(), license = toWestern($('jLicense').value).replace(/[\s\-]/g, ''), oath = $('jOath').checked;
   if(!name || !phone || !license){ toast('يرجى تعبئة كل الحقول'); return; }
-  const nameOk = name.length >= 4 && /^[\u0600-\u06FFa-zA-Z\s]+$/.test(name);
-  if(!nameOk){ toast('يرجى إدخال الاسم الكامل الحقيقي، لا يُقبل اسم مستعار أو رموز/أرقام'); return; }
+  if(!isTripleName(name)){ toast('يرجى إدخال الاسم الثلاثي (ثلاثة أسماء على الأقل)، ولا يُقبل اسم مستعار أو رموز/أرقام', 4500); return; }
+  if(!/^\d{10}$/.test(license)){ toast('رقم رخصة فال يجب أن يكون 10 أرقام بالضبط', 4000); return; }
   if(!oath){ toast('يجب الموافقة على التعهد قبل إرسال الطلب'); return; }
   if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   joinSaving = true; $('joinSubmitBtn').disabled = true;
@@ -2028,7 +2048,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792261295';
+const APP_VERSION = '1792297001';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
