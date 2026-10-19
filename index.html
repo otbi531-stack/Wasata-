@@ -234,7 +234,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
       <h2 class="lib-title" id="libTitle">مكتبة العروض</h2>
     </div>
     <div class="filter-bar">
-      <input type="text" id="fltSearch" placeholder="🔍 ابحث عن حي، تفاصيل، وسيط...">
+      <input type="text" id="fltSearch" placeholder="🔍 ابحث: حي، وسيط، رقم الإعلان 12-A3">
       <div class="filter-row">
         <select id="fltCity"><option value="">كل المدن</option></select>
         <select id="fltType"><option value="">كل الأنواع</option></select>
@@ -954,7 +954,13 @@ function updateViewCounts(){
 }
 
 // ===== الأرشيف والبحث المحفوظ =====
-function textMatch(l, q){ if(q && /^\d+-/.test(q)) return (l.code || '').toLowerCase().startsWith(q); return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames, notesMap[l.id] || '', l.code || ''].join(' ').toLowerCase().includes(q); }
+function textMatch(l, q){
+  q = toWestern(q || '');   // يقبل الأرقام العربية
+  if(q && /^\d+-[abc]?\d*$/.test(q)){   // بحث برمز العضو: «12-» كل إعلاناته، «12-A» عروضه، «12-A3» إعلان واحد بعينه
+    const code = (l.code || '').toLowerCase();
+    return /^\d+-[abc]\d+$/.test(q) ? code === q : code.startsWith(q);
+  }
+  return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames, notesMap[l.id] || '', l.code || ''].join(' ').toLowerCase().includes(q); }
 try{ savedSearch = JSON.parse(localStorage.getItem('wasata_saved_search') || 'null'); }catch{ savedSearch = null; }
 function persistSaved(){ try{ if(savedSearch) localStorage.setItem('wasata_saved_search', JSON.stringify(savedSearch)); else localStorage.removeItem('wasata_saved_search'); }catch{} }
 function savedMatches(){
@@ -2187,7 +2193,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792409587';
+const APP_VERSION = '1792412296';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
