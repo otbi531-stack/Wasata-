@@ -187,6 +187,8 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .card.flash{outline:3px solid var(--accent);outline-offset:2px}
 .wa-app-btn{display:block;width:100%;background:#f1e4c3;border:1px solid #d9c79b;color:#000;padding:13px;border-radius:10px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;margin-bottom:10px}
 .wa-group-btn{display:block;background:#1f8a4c;color:#fff;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none}
+.owner-bar{align-items:center;justify-content:space-between;gap:8px;background:#e8f1ec;border:1px solid #cfe0d6;border-radius:12px;padding:8px 12px;margin:6px 0;font-size:13px;font-weight:700;color:var(--primary-dark)}
+.code-tag{font-weight:800;color:var(--primary-dark);background:#e8f1ec;border-radius:6px;padding:1px 7px;font-size:12.5px;direction:ltr;unicode-bidi:isolate;cursor:pointer}
 .person-tag{font-size:11.5px;color:#5b4a1f;background:#f1e4c3;border:1px solid #d9c79b;border-radius:8px;padding:2px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .imp-list{max-height:34vh;overflow-y:auto;margin:6px 0}
 .imp-row{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.5px;line-height:1.7;cursor:pointer}
@@ -251,6 +253,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
         <button type="button" class="fav-toggle" id="fltSave">🔔 حفظ هذا البحث</button>
       </div>
     </div>
+    <div id="ownerFilterBar" class="owner-bar" style="display:none"></div>
     <div id="listArea"></div>
   </div>
 
@@ -362,11 +365,13 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <button class="menu-item seeker-only" id="menuRegisterBtn">🏢 التسجيل كوسيط عقاري</button>
   <button class="menu-item broker-only member-only" id="menuCalcBtn">🧮 حاسبة السعي</button>
   <button class="menu-item member-only" id="menuBoardBtn">🏆 المتميزون</button>
+  <button class="menu-item member-only" id="menuMineBtn">📋 إعلاناتي</button>
   <button class="menu-item member-only" id="menuInstallBtn" style="display:none">📲 تثبيت التطبيق</button>
   <a class="menu-item" id="supportLink" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a>
   <button class="menu-item" id="menuMembersBtn" style="display:none">👥 الأعضاء المسجّلون</button>
   <button class="menu-item" id="menuReportsBtn" style="display:none">🚩 البلاغات</button>
   <button class="menu-item" id="menuImportBtn" style="display:none">📥 استيراد إعلانات</button>
+  <button class="menu-item" id="menuNumberBtn" style="display:none">🔢 ترقيم الأعضاء والإعلانات</button>
 </div>
 
 <!-- قائمة الأعضاء المسجّلين (للمدير فقط) -->
@@ -531,6 +536,25 @@ const isSold = it => !!it.sold;
 const isExpired = it => { const d = effDate(it); return !it.pinned && !it.sold && d > 0 && (Date.now() - d) > ARCHIVE_DAYS * 864e5; };
 const isActive = it => !isSold(it) && !isExpired(it);
 // نص النوع كما يظهر: يحترم إعلانات حُفظت سابقاً كـ«عرض» بتصنيف استثمار
+// ترقيم الإعلانات مرتبط بالعضو: «رقم العضو-حرف النوع+تسلسله عند العضو» مثل 12-A3 (A عروض، B طلبات، C استثمار). الإدارة = 0
+const codePrefix = l => l.type === 'طلب' ? 'B' : (typeText(l) === 'استثمار' ? 'C' : 'A');
+const memberNoOf = code => String(code || '').split('-')[0];
+async function allocateCodes(letter, count){          // حجز تسلسل لإعلانات الإدارة (0-A…)
+  return db.runTransaction(async tx => {
+    const ref = db.collection('counters').doc('ADMIN'), snap = await tx.get(ref);
+    const cur = (snap.exists && snap.data()[letter]) || 0;
+    tx.set(ref, { [letter]: cur + count }, { merge: true });
+    return cur;
+  });
+}
+async function bumpMemberCounter(count){              // حجز أرقام للأعضاء الجدد
+  return db.runTransaction(async tx => {
+    const ref = db.collection('counters').doc('M'), snap = await tx.get(ref);
+    const cur = (snap.exists && snap.data().n) || 0;
+    tx.set(ref, { n: cur + count });
+    return cur;
+  });
+}
 const typeText = l => (l.type === 'عرض' && l.category === 'استثمار') ? 'استثمار' : (l.type || 'عرض');
 const sigKey = o => { const { views, id, ...rest } = o; return JSON.stringify(rest); };
 let allMap = null, allGroup = null, allMapOpen = false, allMapFilter = 'all', allMapSig = null;
@@ -691,7 +715,7 @@ function cardHTML(it, ctx){
   const mine = !!(uid && it.ownerId === uid), id = esc(it.id);
   const sold = isSold(it), expired = isExpired(it), active = !sold && !expired;
   const canDelete = mine || isOwner;
-  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.code ? '🔖 رقم الإعلان: ' + it.code + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
   let actions = '';
   if(active){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
@@ -719,7 +743,7 @@ function cardHTML(it, ctx){
   const when = sold ? 'بيع ' + timeAgo(it.soldAt) : (it.renewedAt ? 'جُدِّد ' : '') + timeAgo(effDate(it));
   return `<div class="card"${active ? ` data-lid="${id}"` : ''}>${gallery}<div class="card-body">
       <div class="card-top"><h3 class="card-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city)}</h3><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${badges}</div></div>
-      <div class="time-ago">${when} · <span data-vid="${id}">👁 ${it.views || 0}</span>${nRep ? ` · 🚩 ${nRep} بلاغ` : ''}</div>
+      <div class="time-ago">${it.code ? `<span class="code-tag" dir="ltr" data-owner="${esc(it.ownerId || '')}" data-no="${esc(memberNoOf(it.code))}" title="اضغط لعرض كل إعلانات هذا العضو">${esc(it.code)}</span> · ` : ''}${when} · <span data-vid="${id}">👁 ${it.views || 0}</span>${nRep ? ` · 🚩 ${nRep} بلاغ` : ''}</div>
       ${it.neighborhood ? `<div class="location">📍 حي ${esc(it.neighborhood)}</div>` : ''}
       ${it.area ? `<div class="location">📐 المساحة: ${esc(it.area)}</div>` : ''}
       ${embed && active ? `<iframe class="map-embed" src="${esc(embed)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
@@ -753,6 +777,13 @@ function render(){
   if(ft) rows = rows.filter(l => l.propertyType === ft);
   if(q) rows = rows.filter(l => textMatch(l, q));
   if(favOnly) rows = rows.filter(l => favs.includes(l.id));
+  if(ownerFilter) rows = rows.filter(l => l.ownerId === ownerFilter);
+  const ob = $('ownerFilterBar');
+  if(ownerFilter){
+    const mine = listings.filter(l => l.ownerId === ownerFilter && isActive(l)), nOff = mine.filter(l => l.type !== 'طلب').length;
+    ob.style.display = 'flex';
+    ob.innerHTML = `<span>👤 ${esc(ownerFilterName)} · عروض ${nOff} · طلبات ${mine.length - nOff}</span><button type="button" id="ownerFilterClear" class="link-btn" style="color:var(--danger)">✕ إلغاء</button>`;
+  }else ob.style.display = 'none';
   const sortBy = $('fltSort').value;
   rows = rows.slice().sort((a, b) => {
     if(sortBy === 'old') return effDate(a) - effDate(b);
@@ -802,7 +833,7 @@ function renderJoinRequests(){
     const ph = String(r.phone || '').replace(/[^\d+]/g, ''), id = esc(r.id);
     let actions;
     if(r.status === 'accepted'){
-      actions = `<span class="jstatus accepted">✅ مقبول</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="revoke" style="max-width:150px">🚫 إيقاف العضوية</button> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:90px">🗑 حذف</button>`;
+      actions = `<span class="jstatus accepted">✅ مقبول${r.memberNo ? ' · عضو ' + esc(r.memberNo) : ''}</span> <button class="btn-small btn-delete" data-jid="${id}" data-jact="revoke" style="max-width:150px">🚫 إيقاف العضوية</button> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:90px">🗑 حذف</button>`;
     }else if(r.status === 'revoked'){
       actions = `<span class="jstatus rejected">⛔ موقوف</span> <button class="btn-small btn-accept" data-jid="${id}" data-jact="reactivate" style="max-width:150px">↩️ إعادة تفعيل</button> <button class="btn-small btn-delete" data-jid="${id}" data-jact="del" style="max-width:90px">🗑 حذف</button>`;
     }else if(r.status === 'rejected'){
@@ -825,7 +856,16 @@ $('joinListArea').addEventListener('click', async e => {
   const id = b.dataset.jid, act = b.dataset.jact;
   try{
     if(act === 'accept'){
-      await db.collection('joinRequests').doc(id).update({ status: 'accepted' });
+      try{
+        await db.runTransaction(async tx => {
+          const rref = db.collection('joinRequests').doc(id), rs = await tx.get(rref), patch = { status: 'accepted' };
+          if(!(rs.data() || {}).memberNo){
+            const cref = db.collection('counters').doc('M'), cs = await tx.get(cref), n = ((cs.exists && cs.data().n) || 0) + 1;
+            tx.set(cref, { n }); patch.memberNo = n;
+          }
+          tx.update(rref, patch);
+        });
+      }catch(err){ console.warn('member-no', err); await db.collection('joinRequests').doc(id).update({ status: 'accepted' }); }   // بلا رقم: يُرقَّم لاحقاً من القائمة
       toast('تم القبول — لا تنسَ إرسال رابط القروب للعضو عبر الجوال ✅');
     }else if(act === 'reject'){
       await db.collection('joinRequests').doc(id).update({ status: 'rejected' });
@@ -914,7 +954,7 @@ function updateViewCounts(){
 }
 
 // ===== الأرشيف والبحث المحفوظ =====
-function textMatch(l, q){ return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames, notesMap[l.id] || ''].join(' ').toLowerCase().includes(q); }
+function textMatch(l, q){ if(q && /^\d+-/.test(q)) return (l.code || '').toLowerCase().startsWith(q); return !q || [l.neighborhood, l.desc, l.agent, l.area, l.price, l.source, l.sourceNames, notesMap[l.id] || '', l.code || ''].join(' ').toLowerCase().includes(q); }
 try{ savedSearch = JSON.parse(localStorage.getItem('wasata_saved_search') || 'null'); }catch{ savedSearch = null; }
 function persistSaved(){ try{ if(savedSearch) localStorage.setItem('wasata_saved_search', JSON.stringify(savedSearch)); else localStorage.removeItem('wasata_saved_search'); }catch{} }
 function savedMatches(){
@@ -988,7 +1028,9 @@ async function buildShareImage(it){
   x.restore();
   const isReq = it.type === 'طلب';
   x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 840, 195, 170, 64, 32); x.fill();
-  x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240); x.textAlign = 'right';
+  x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240);
+  if(it.code){ x.fillStyle = '#f1e4c3'; rrect(x, 680, 195, 140, 64, 32); x.fill(); x.fillStyle = '#000000'; x.font = '700 36px ' + F; x.fillText(it.code, 750, 240); }
+  x.textAlign = 'right';
   let y = 800;
   x.fillStyle = '#ffffff'; fitFont(x, `${it.propertyType || 'عقار'} - ${it.city || ''}`, 64, '700', F, 960);
   x.fillText(`${it.propertyType || 'عقار'} - ${it.city || ''}`, 1040, y); y += 62;
@@ -1028,7 +1070,7 @@ function popupFor(it){
   const el = document.createElement('div'); el.className = 'mp';
   const ph = String(it.phone || '').replace(/[^\d+]/g, ''), link = safeUrl(it.mapLink);
   const sub = [it.neighborhood ? 'حي ' + it.neighborhood : '', it.area || ''].filter(Boolean).join(' · ');
-  el.innerHTML = `<div class="mp-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city || '')} <span class="mp-type ${it.type === 'طلب' ? 'req' : 'off'}">${esc(typeText(it))}</span></div>`
+  el.innerHTML = `<div class="mp-title">${esc(it.propertyType || 'عقار')} - ${esc(it.city || '')} <span class="mp-type ${it.type === 'طلب' ? 'req' : 'off'}">${esc(typeText(it))}</span>${it.code ? ' <b class="code-tag" dir="ltr">' + esc(it.code) + '</b>' : ''}</div>`
     + (sub ? `<div class="mp-line">${esc(sub)}</div>` : '')
     + (it.price ? `<div class="mp-price">${esc(it.price)}</div>` : '')
     + (it.agent ? `<div class="mp-line">🧑‍💼 ${esc(it.agent)}</div>` : '')
@@ -1245,9 +1287,13 @@ async function impPublish(){
   const importId = 'imp' + Date.now(); let done = 0;
   $('impPublishBtn').disabled = true;
   try{
+    const codeOf = new Map(), groups = {};
+    sel.slice().sort((a, b) => a.data.createdAt - b.data.createdAt).forEach(r => { const pre = codePrefix(r.data); (groups[pre] = groups[pre] || []).push(r); });
+    try{ for(const [pre, arr] of Object.entries(groups)){ const n0 = await allocateCodes(pre, arr.length); arr.forEach((r, i) => codeOf.set(r, '0-' + pre + (n0 + i + 1))); } }
+    catch(err){ console.warn('import-codes', err); }
     for(let i = 0; i < sel.length; i += 400){
       const batch = db.batch(), part = sel.slice(i, i + 400);
-      part.forEach(r => batch.set(db.collection(COL).doc(), { ...r.data, ownerId: uid, importId, imported: true }));
+      part.forEach(r => batch.set(db.collection(COL).doc(), { ...r.data, ownerId: uid, importId, imported: true, ...(codeOf.has(r) ? { code: codeOf.get(r) } : {}) }));
       await batch.commit(); done += part.length;
     }
     try{ localStorage.setItem('wasata_last_import', JSON.stringify({ id: importId, n: done })); }catch{}
@@ -1274,6 +1320,42 @@ function downloadImportTemplate(){
   const a = document.createElement('a'); a.href = url; a.download = 'wasata-import-template.csv';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
+async function numberOldListings(){
+  if(!isOwner) return;
+  const byDate = (x, y) => (x.createdAt || 0) - (y.createdAt || 0);
+  const noNo = joinRequests.filter(r => r.status === 'accepted' && !r.memberNo).sort(byDate);
+  const noCode = listings.filter(l => !l.code).sort(byDate);
+  if(!noNo.length && !noCode.length){ toast('كل الأعضاء والإعلانات مرقّمة ✅'); return; }
+  if(!confirm('ترقيم ' + noNo.length + ' عضو و' + noCode.length + ' إعلان بلا رقم؟ الأرقام ثابتة ولا يمكن التراجع عنها.')) return;
+  try{
+    if(noNo.length){ const n0 = await bumpMemberCounter(noNo.length); noNo.forEach((r, i) => { r.memberNo = n0 + i + 1; }); }
+    const reqByOwner = {}; joinRequests.forEach(r => { if(r.ownerId) reqByOwner[r.ownerId] = r; });
+    const as = await db.collection('counters').doc('ADMIN').get(), adm = as.exists ? as.data() : {};
+    const seq = {}, ops = [], reqPatch = {}, admPatch = {};
+    noNo.forEach(r => { reqPatch[r.id] = { memberNo: r.memberNo }; });
+    noCode.forEach(l => {
+      const req = reqByOwner[l.ownerId], no = (req && req.memberNo) || 0, letter = codePrefix(l), key = no + letter;
+      if(seq[key] == null) seq[key] = no ? (req['n' + letter] || 0) : (adm[letter] || 0);
+      seq[key]++;
+      ops.push({ ref: db.collection(COL).doc(l.id), data: { code: no + '-' + letter + seq[key] } });
+      if(no){ reqPatch[req.id] = { ...(reqPatch[req.id] || {}), ['n' + letter]: seq[key] }; } else admPatch[letter] = seq[key];
+    });
+    Object.entries(reqPatch).forEach(([id, data]) => ops.push({ ref: db.collection('joinRequests').doc(id), data }));
+    if(Object.keys(admPatch).length) ops.push({ ref: db.collection('counters').doc('ADMIN'), data: admPatch });
+    for(let i = 0; i < ops.length; i += 400){
+      const batch = db.batch(); ops.slice(i, i + 400).forEach(o => batch.set(o.ref, o.data, { merge: true })); await batch.commit();
+    }
+    toast('تم ترقيم ' + noNo.length + ' عضو و' + noCode.length + ' إعلان ✅', 4500);
+  }catch(e){ fail('number-old', e); }
+}
+$('menuNumberBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); numberOldListings(); });
+$('listArea').addEventListener('click', e => {
+  const c = e.target.closest('.code-tag'); if(!c || !c.dataset.owner) return;
+  ownerFilter = c.dataset.owner; ownerFilterName = c.dataset.owner === uid ? 'إعلاناتك' : (c.dataset.no === '0' ? 'الإدارة' : 'العضو ' + c.dataset.no);
+  render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('ownerFilterBar').addEventListener('click', e => { if(e.target.closest('#ownerFilterClear')){ ownerFilter = null; render(); } });
+$('menuMineBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); ownerFilter = uid; ownerFilterName = 'إعلاناتك'; showLibrary('عرض'); });
 $('menuImportBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openImport(); });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
@@ -1336,6 +1418,7 @@ async function prepareMontage(it){
     withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
     withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cfd6c4', 'center'); });
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
+    withAlpha(x, (t - 1.45) / 0.4, () => { if(it.code) vText(x, 'رقم الإعلان  ' + it.code, 360, 1045, 36, '700', '#e6c07b', 'center'); });
   };
   const photoScene = (x, t, img, i) => {
     vBg(x); vHeader(x, logo);
@@ -1659,7 +1742,7 @@ $('fSource').addEventListener('change', () => {
 $('fListingType').addEventListener('change', () => { fillSources($('fSource').value, false); srcPrev = $('fSource').value; syncSourceNames(); syncPersonLabel(); });
 
 // ===== اسم الشخص (مالك العرض / صاحب الطلب): ملاحظة خاصة لا يراها إلا صاحب الإعلان والمدير =====
-let notesMap = {}, notesUnsub = null;
+let notesMap = {}, notesUnsub = null, ownerFilter = null, ownerFilterName = '';
 function stopNotes(){ if(notesUnsub){ notesUnsub(); notesUnsub = null; } notesMap = {}; }
 function startNotes(){
   stopNotes();
@@ -1779,7 +1862,21 @@ $('saveBtn').addEventListener('click', async () => {
       toast('تم حفظ التعديلات ✅');
     }else{
       item.ownerId = uid; item.createdAt = Date.now();
-      const ref = await db.collection(COL).add(item); listingId = ref && ref.id;
+      const ref = db.collection(COL).doc(), letter = codePrefix(item);
+      try{
+        await db.runTransaction(async tx => {
+          if(isOwner){                                   // إعلانات الإدارة: 0-A1
+            const cref = db.collection('counters').doc('ADMIN'), cs = await tx.get(cref), n = ((cs.exists && cs.data()[letter]) || 0) + 1;
+            tx.set(cref, { [letter]: n }, { merge: true }); tx.set(ref, { ...item, code: '0-' + letter + n });
+          }else if(myMember && myMember.id){             // إعلانات العضو: رقمه + تسلسله عنده
+            const mref = db.collection('joinRequests').doc(myMember.id), ms = await tx.get(mref), d = ms.data() || {};
+            if(!d.memberNo){ tx.set(ref, item); return; }
+            const n = (d['n' + letter] || 0) + 1;
+            tx.update(mref, { ['n' + letter]: n }); tx.set(ref, { ...item, code: d.memberNo + '-' + letter + n });
+          }else tx.set(ref, item);
+        });
+      }catch(err){ console.warn('code-tx', err); await ref.set(item); }   // تعذّر الترقيم (قواعد غير محدّثة): يُنشر بلا رقم ويُرقَّم لاحقاً
+      listingId = ref.id;
       toast('تم الحفظ 🎉');
       setTimeout(() => { if(confirm('تم النشر 🎉\nهل تريد إنشاء فيديو ترويجي ملفت لهذا الإعلان لتشاركه في واتساب؟')) openMontage(item); }, 400);
     }
@@ -1845,7 +1942,7 @@ const REQ_KEY = 'wasata_gate_request_id';
 const SEEKER_KEY = 'wasata_seeker_v1';
 const WA_GROUP = 'https://chat.whatsapp.com/IFTC890uiinJJOiSupFupc?s=sh&p=i&mlu=4&ilr=4';
 const VERIFIED_KEY = 'wasata_member_verified', MEMBER_UID_KEY = 'wasata_member_uid';
-let gateUnsub = null, memberUnsub = null;
+let gateUnsub = null, memberUnsub = null, myMember = null;
 
 const isMember = () => localStorage.getItem(GATE_KEY) === '1';
 const isSeeker = () => !isMember() && localStorage.getItem(SEEKER_KEY) === '1';
@@ -1884,7 +1981,7 @@ function watchRequest(reqId){
 }
 
 // سحب الصلاحية من جهاز عضو أُوقف أو حُذف طلبه (يستمع لحالة طلبه في قاعدة البيانات)
-function stopMemberWatch(){ if(memberUnsub){ memberUnsub(); memberUnsub = null; } }
+function stopMemberWatch(){ if(memberUnsub){ memberUnsub(); memberUnsub = null; } myMember = null; }
 function startMemberWatch(){
   stopMemberWatch();
   if(!db || !uid || isOwner || !isMember()) return;
@@ -1896,7 +1993,9 @@ function startMemberWatch(){
       if(snap.metadata && snap.metadata.fromCache) return;   // لا نحكم من نسخة محلية فارغة (انقطاع الاتصال)
       if(uid !== myUid || isOwner || !isMember()) return;
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if(docs.some(d => d.status === 'accepted')){ try{ localStorage.setItem(VERIFIED_KEY, '1'); localStorage.setItem(MEMBER_UID_KEY, myUid); }catch{} return; }
+      myMember = docs.find(d => d.status === 'accepted') || null;
+      $('menuMineBtn').textContent = '📋 إعلاناتي' + (myMember && myMember.memberNo ? ' · عضو ' + myMember.memberNo : '');
+      if(myMember){ try{ localStorage.setItem(VERIFIED_KEY, '1'); localStorage.setItem(MEMBER_UID_KEY, myUid); }catch{} return; }
       const bad = docs.find(d => d.status === 'revoked' || d.status === 'rejected');
       if(bad){ revokeMembership(bad.status, bad.id); return; }
       if(!docs.length && localStorage.getItem(VERIFIED_KEY) === '1' && localStorage.getItem(MEMBER_UID_KEY) === myUid) revokeMembership('deleted');
@@ -1998,7 +2097,9 @@ function renderMembersList(){
     <div class="mname">${esc(m.name || '')}</div>
     <div>📞 <a href="tel:${esc(waPhone(m.phone))}">${esc(m.phone || '')}</a></div>
     <div>🪪 رقم الرخصة: ${esc(m.license || '')}</div>
+    <div>🔢 رقم العضو: <b dir="ltr">${esc(m.memberNo || '—')}</b></div>
     <a class="btn-chat" href="https://wa.me/${esc(waPhone(m.phone))}" target="_blank" rel="noopener noreferrer">💬 محادثة فورية</a>
+    <button type="button" class="btn-small btn-accept" data-mlist="${esc(m.ownerId || '')}" data-mno="${esc(m.memberNo || '')}" style="max-width:130px;margin-top:8px;margin-right:6px">📋 إعلاناته</button>
     <button type="button" class="btn-small btn-delete" data-mrevoke="${esc(m.id)}" style="max-width:150px;margin-top:8px;margin-right:6px">🚫 إيقاف العضوية</button>
   </div>`).join('');
 }
@@ -2010,11 +2111,14 @@ $('menuDotBtn').addEventListener('click', e => {
   $('menuMembersBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuImportBtn').style.display = isOwner && !gate ? 'flex' : 'none';
+  $('menuNumberBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
   $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
 });
 $('membersList').addEventListener('click', async e => {
+  const ml = e.target.closest('button[data-mlist]');
+  if(ml){ if(!ml.dataset.mlist){ toast('لا إعلانات مرتبطة بهذا العضو'); return; } ownerFilter = ml.dataset.mlist; ownerFilterName = ml.dataset.mno ? 'العضو ' + ml.dataset.mno : 'هذا العضو'; $('membersOverlay').classList.remove('show'); showLibrary('عرض'); return; }
   const b = e.target.closest('button[data-mrevoke]'); if(!b) return;
   const id = b.dataset.mrevoke, r = joinRequests.find(x => x.id === id);
   if(!confirm('إيقاف عضوية ' + ((r && r.name) || 'هذا العضو') + '؟ سيُغلق التطبيق على جهازه ويظهر له أن عضويته موقوفة.')) return;
@@ -2083,7 +2187,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792357024';
+const APP_VERSION = '1792409587';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
