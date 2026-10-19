@@ -187,6 +187,12 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .card.flash{outline:3px solid var(--accent);outline-offset:2px}
 .wa-app-btn{display:block;width:100%;background:#f1e4c3;border:1px solid #d9c79b;color:#000;padding:13px;border-radius:10px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;margin-bottom:10px}
 .wa-group-btn{display:block;background:#1f8a4c;color:#fff;padding:13px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none}
+.member-panel{margin:6px 0 10px}
+.mp-info{background:#f1e4c3;border:1px solid #d9c79b;border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.9;margin-bottom:8px;color:#1f2430}
+.mtabs{display:flex;gap:6px}
+.mtab{flex:1;padding:9px 4px;border:1px solid var(--border);border-radius:10px;background:#f3f3f3;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:#1f2430}
+.mtab.active{background:var(--primary-dark);color:#fff;border-color:var(--primary-dark)}
+#libraryView.member-mode .filter-bar{display:none}
 .owner-bar{align-items:center;justify-content:space-between;gap:8px;background:#e8f1ec;border:1px solid #cfe0d6;border-radius:12px;padding:8px 12px;margin:6px 0;font-size:13px;font-weight:700;color:var(--primary-dark)}
 .code-tag{font-weight:800;color:var(--primary-dark);background:#e8f1ec;border-radius:6px;padding:1px 7px;font-size:12.5px;direction:ltr;unicode-bidi:isolate;cursor:pointer}
 .person-tag{font-size:11.5px;color:#5b4a1f;background:#f1e4c3;border:1px solid #d9c79b;border-radius:8px;padding:2px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -253,7 +259,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
         <button type="button" class="fav-toggle" id="fltSave">🔔 حفظ هذا البحث</button>
       </div>
     </div>
-    <div id="ownerFilterBar" class="owner-bar" style="display:none"></div>
+    <div id="memberPanel" class="member-panel" style="display:none"></div>
     <div id="listArea"></div>
   </div>
 
@@ -769,36 +775,35 @@ function render(){
   if(!lib) return;
   const area = $('listArea'); area.className = '';
   if(!listingsLoaded){ area.innerHTML = skeletonHTML(); return; }
-  $('fltArchive').classList.toggle('active', showArchive);
-  $('fltSave').textContent = savedSearch ? '🔕 إلغاء البحث المحفوظ' : '🔔 حفظ هذا البحث';
-  let rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب') && (showArchive ? !isActive(l) : isActive(l)));
-  const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
-  if(fc) rows = rows.filter(l => l.city === fc);
-  if(ft) rows = rows.filter(l => l.propertyType === ft);
-  if(q) rows = rows.filter(l => textMatch(l, q));
-  if(favOnly) rows = rows.filter(l => favs.includes(l.id));
-  if(ownerFilter) rows = rows.filter(l => l.ownerId === ownerFilter);
-  const ob = $('ownerFilterBar');
-  if(ownerFilter){
-    const mine = listings.filter(l => l.ownerId === ownerFilter && isActive(l)), nOff = mine.filter(l => l.type !== 'طلب').length;
-    ob.style.display = 'flex';
-    ob.innerHTML = `<span>👤 ${esc(ownerFilterName)} · عروض ${nOff} · طلبات ${mine.length - nOff}</span><button type="button" id="ownerFilterClear" class="link-btn" style="color:var(--danger)">✕ إلغاء</button>`;
-  }else ob.style.display = 'none';
-  const sortBy = $('fltSort').value;
-  rows = rows.slice().sort((a, b) => {
-    if(sortBy === 'old') return effDate(a) - effDate(b);
-    if(sortBy === 'high' || sortBy === 'low'){
-      const pa = priceNum(a.price), pb = priceNum(b.price);
-      if(pa == null && pb == null) return 0;
-      if(pa == null) return 1;
-      if(pb == null) return -1;
-      return sortBy === 'high' ? pb - pa : pa - pb;
-    }
-    return effDate(b) - effDate(a);
-  });
-  rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  $('memberPanel').style.display = memberMode ? 'block' : 'none';
+  if(memberMode) renderMemberPanel();
+  let rows;
+  if(memberMode){ rows = memberRows(); }
+  else{
+    $('fltArchive').classList.toggle('active', showArchive);
+    $('fltSave').textContent = savedSearch ? '🔕 إلغاء البحث المحفوظ' : '🔔 حفظ هذا البحث';
+    rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب') && (showArchive ? !isActive(l) : isActive(l)));
+    const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
+    if(fc) rows = rows.filter(l => l.city === fc);
+    if(ft) rows = rows.filter(l => l.propertyType === ft);
+    if(q) rows = rows.filter(l => textMatch(l, q));
+    if(favOnly) rows = rows.filter(l => favs.includes(l.id));
+    const sortBy = $('fltSort').value;
+    rows = rows.slice().sort((a, b) => {
+      if(sortBy === 'old') return effDate(a) - effDate(b);
+      if(sortBy === 'high' || sortBy === 'low'){
+        const pa = priceNum(a.price), pb = priceNum(b.price);
+        if(pa == null && pb == null) return 0;
+        if(pa == null) return 1;
+        if(pb == null) return -1;
+        return sortBy === 'high' ? pb - pa : pa - pb;
+      }
+      return effDate(b) - effDate(a);
+    });
+    rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  }
   if(!rows.length){
-    area.innerHTML = `<div class="empty">${favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : (showArchive ? 'لا توجد إعلانات في الأرشيف 📦' : 'لا توجد نتائج مطابقة لبحثك 🔍')}</div>`;
+    area.innerHTML = `<div class="empty">${memberMode ? 'لا توجد إعلانات في هذا القسم' : (favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : (showArchive ? 'لا توجد إعلانات في الأرشيف 📦' : 'لا توجد نتائج مطابقة لبحثك 🔍'))}</div>`;
     observeViews(); return;
   }
   const deals = {}; listings.forEach(l => { if(l.sold && l.ownerId) deals[l.ownerId] = (deals[l.ownerId] || 0) + 1; });
@@ -1356,12 +1361,13 @@ async function numberOldListings(){
 }
 $('menuNumberBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); numberOldListings(); });
 $('listArea').addEventListener('click', e => {
-  const c = e.target.closest('.code-tag'); if(!c || !c.dataset.owner) return;
-  ownerFilter = c.dataset.owner; ownerFilterName = c.dataset.owner === uid ? 'إعلاناتك' : (c.dataset.no === '0' ? 'الإدارة' : 'العضو ' + c.dataset.no);
-  render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  const c = e.target.closest('.code-tag'); if(!c || !c.dataset.owner || memberMode) return;
+  const o = c.dataset.owner;
+  openMember(o, o === uid ? 'إعلاناتي' : (c.dataset.no === '0' ? 'الإدارة' : 'العضو ' + c.dataset.no));
+  window.scrollTo({ top: 0 });
 });
-$('ownerFilterBar').addEventListener('click', e => { if(e.target.closest('#ownerFilterClear')){ ownerFilter = null; render(); } });
-$('menuMineBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); ownerFilter = uid; ownerFilterName = 'إعلاناتك'; showLibrary('عرض'); });
+$('memberPanel').addEventListener('click', e => { const t = e.target.closest('[data-mtab]'); if(!t || !memberMode) return; memberMode.tab = t.dataset.mtab; render(); });
+$('menuMineBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openMember(uid, 'إعلاناتي'); });
 $('menuImportBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openImport(); });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
@@ -1671,13 +1677,49 @@ $('menuInstallBtn').addEventListener('click', async () => {
   else toast('من متصفحك: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»', 6000);
 });
 
+// ===== شاشة العضو المستقلة: عروضه وطلباته وأرشيفه =====
+function openMember(ownerId, name){
+  if(!ownerId){ toast('لا إعلانات مرتبطة بهذا العضو'); return; }
+  memberMode = { ownerId, name, tab: 'offers', back: lib };
+  view = 'member'; lib = 'عرض';
+  $('homeButtons').style.display = 'none'; $('joinRequestsView').style.display = 'none';
+  $('libraryView').style.display = 'block'; $('libraryView').classList.add('member-mode');
+  $('libTitle').textContent = name;
+  render();
+}
+function exitMember(){
+  const back = memberMode && memberMode.back;
+  memberMode = null; $('libraryView').classList.remove('member-mode');
+  if(back) showLibrary(back); else showHome();
+}
+function renderMemberPanel(){
+  const m = memberMode, mine = listings.filter(l => l.ownerId === m.ownerId);
+  const nOff = mine.filter(l => isActive(l) && l.type !== 'طلب').length, nReq = mine.filter(l => isActive(l) && l.type === 'طلب').length, nArc = mine.filter(l => !isActive(l)).length;
+  const req = isOwner ? joinRequests.find(r => r.ownerId === m.ownerId) : null;
+  const mineNo = (m.ownerId === uid && myMember && myMember.memberNo) ? myMember.memberNo : null;
+  let info = '';
+  if(req){
+    info = `<div class="mp-info">🪪 ${esc(req.name || '')}${req.memberNo ? ' · عضو ' + esc(req.memberNo) : ''}<br>📞 <a href="tel:${esc(waPhone(req.phone))}">${esc(req.phone || '')}</a> · <a href="https://wa.me/${esc(waPhone(req.phone))}" target="_blank" rel="noopener noreferrer">💬 واتساب</a> · رخصة ${esc(req.license || '')}</div>`;
+  }else if(mineNo) info = `<div class="mp-info">رقم عضويتك: <b dir="ltr">${esc(mineNo)}</b></div>`;
+  const tab = (k, label, n) => `<button type="button" class="mtab${m.tab === k ? ' active' : ''}" data-mtab="${k}">${label} (${n})</button>`;
+  $('memberPanel').innerHTML = info + `<div class="mtabs">${tab('offers', 'العروض', nOff)}${tab('requests', 'الطلبات', nReq)}${tab('archive', '📦 الأرشيف', nArc)}</div>`;
+}
+function memberRows(){
+  const m = memberMode, mine = listings.filter(l => l.ownerId === m.ownerId);
+  const rows = (m.tab === 'archive' ? mine.filter(l => !isActive(l)) : mine.filter(l => isActive(l) && (m.tab === 'requests') === (l.type === 'طلب')))
+    .sort((a, b) => effDate(b) - effDate(a));
+  return rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+}
+
 function showHome(){
+  if(memberMode){ memberMode = null; $('libraryView').classList.remove('member-mode'); }
   view = 'home'; lib = null;
   $('homeButtons').style.display = 'block';
   $('libraryView').style.display = 'none';
   $('joinRequestsView').style.display = 'none';
 }
 function showLibrary(t){
+  if(memberMode){ memberMode = null; $('libraryView').classList.remove('member-mode'); }
   view = 'library'; lib = t;
   $('homeButtons').style.display = 'none';
   $('libraryView').style.display = 'block';
@@ -1748,7 +1790,7 @@ $('fSource').addEventListener('change', () => {
 $('fListingType').addEventListener('change', () => { fillSources($('fSource').value, false); srcPrev = $('fSource').value; syncSourceNames(); syncPersonLabel(); });
 
 // ===== اسم الشخص (مالك العرض / صاحب الطلب): ملاحظة خاصة لا يراها إلا صاحب الإعلان والمدير =====
-let notesMap = {}, notesUnsub = null, ownerFilter = null, ownerFilterName = '';
+let notesMap = {}, notesUnsub = null, memberMode = null;
 function stopNotes(){ if(notesUnsub){ notesUnsub(); notesUnsub = null; } notesMap = {}; }
 function startNotes(){
   stopNotes();
@@ -1799,7 +1841,7 @@ function closeModal(){ $('overlay').classList.remove('show'); }
 $('openAddBtn').addEventListener('click', () => openModal(null));
 $('openOffersBtn').addEventListener('click', () => showLibrary('عرض'));
 $('openRequestsBtn').addEventListener('click', () => showLibrary('طلب'));
-$('libBackBtn').addEventListener('click', showHome);
+$('libBackBtn').addEventListener('click', () => memberMode ? exitMember() : showHome());
 $('fltSearch').addEventListener('input', render);
 $('fltCity').addEventListener('change', render);
 $('fltType').addEventListener('change', render);
@@ -2124,7 +2166,7 @@ $('menuDotBtn').addEventListener('click', e => {
 });
 $('membersList').addEventListener('click', async e => {
   const ml = e.target.closest('button[data-mlist]');
-  if(ml){ if(!ml.dataset.mlist){ toast('لا إعلانات مرتبطة بهذا العضو'); return; } ownerFilter = ml.dataset.mlist; ownerFilterName = ml.dataset.mno ? 'العضو ' + ml.dataset.mno : 'هذا العضو'; $('membersOverlay').classList.remove('show'); showLibrary('عرض'); return; }
+  if(ml){ if(!ml.dataset.mlist){ toast('لا إعلانات مرتبطة بهذا العضو'); return; } $('membersOverlay').classList.remove('show'); openMember(ml.dataset.mlist, ml.dataset.mno ? 'العضو ' + ml.dataset.mno : 'العضو'); return; }
   const b = e.target.closest('button[data-mrevoke]'); if(!b) return;
   const id = b.dataset.mrevoke, r = joinRequests.find(x => x.id === id);
   if(!confirm('إيقاف عضوية ' + ((r && r.name) || 'هذا العضو') + '؟ سيُغلق التطبيق على جهازه ويظهر له أن عضويته موقوفة.')) return;
@@ -2193,7 +2235,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792412296';
+const APP_VERSION = '1792413212';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
