@@ -8,9 +8,6 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#12160e">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="وسطاء المملكة">
@@ -19,7 +16,7 @@
 <style>
 :root{--primary:#1f6f54;--primary-dark:#164f3c;--accent:#d98a3d;--text:#1f2430;--muted:#6b7280;--border:#e5e7eb;--danger:#c0392b}
 *{box-sizing:border-box}
-body{margin:0;font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
+body{margin:0;font-family:-apple-system,system-ui,'Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
 button{font-family:inherit}
 header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 100% no-repeat,linear-gradient(#1f6f54,#12160e);position:relative;z-index:1}
 .container{max-width:720px;margin:-30vw auto 0;padding:14px 16px;position:relative;z-index:2}
@@ -174,7 +171,7 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .allmap-filters .chip.active{background:#1f6f54;border-color:#1f6f54;color:#fff}
 .allmap-count{font-size:12px;color:#9fb09a;margin-right:auto}
 #allMap{flex:1;min-height:0;width:100%;direction:ltr;background:#e8ebe9}
-.mp{min-width:210px;direction:rtl;text-align:right;font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif}
+.mp{min-width:210px;direction:rtl;text-align:right;font-family:inherit}
 .mp .mp-title{font-weight:700;font-size:14px;margin-bottom:4px}
 .mp .mp-type{font-size:11px;padding:2px 8px;border-radius:999px;margin-right:6px}
 .mp .mp-type.off{background:#e3f3ec;color:#164f3c}
@@ -721,7 +718,7 @@ function cardHTML(it, ctx){
   const mine = !!(uid && it.ownerId === uid), id = esc(it.id);
   const sold = isSold(it), expired = isExpired(it), active = !sold && !expired;
   const canDelete = mine || isOwner;
-  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.code ? '🔖 رقم الإعلان: ' + it.code + '\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.code ? '🔖 رقم الإعلان: \u200E' + it.code + '\u200E\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
   let actions = '';
   if(active){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
@@ -1022,8 +1019,7 @@ function wrapText(c, text, maxW, maxLines){
   return lines;
 }
 async function buildShareImage(it){
-  const W = 1080, H = 1350, F = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
-  try{ await Promise.all([document.fonts.load('700 40px Tajawal', 'عربي'), document.fonts.load('400 40px Tajawal', 'عربي')]); }catch{}
+  const W = 1080, H = 1350, F = "-apple-system,system-ui,'Segoe UI',Tahoma,Arial,sans-serif";
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
   x.direction = 'rtl'; x.textAlign = 'right'; x.textBaseline = 'alphabetic';
@@ -1040,7 +1036,7 @@ async function buildShareImage(it){
   const isReq = it.type === 'طلب';
   x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 840, 195, 170, 64, 32); x.fill();
   x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240);
-  if(it.code){ x.fillStyle = '#f1e4c3'; rrect(x, 680, 195, 140, 64, 32); x.fill(); x.fillStyle = '#000000'; x.font = '700 36px ' + F; x.fillText(it.code, 750, 240); }
+  if(it.code){ x.fillStyle = '#f1e4c3'; rrect(x, 680, 195, 140, 64, 32); x.fill(); x.fillStyle = '#000000'; x.font = '700 36px ' + F; x.direction = 'ltr'; x.fillText(it.code, 750, 240); x.direction = 'rtl'; }
   x.textAlign = 'right';
   let y = 800;
   x.fillStyle = '#ffffff'; fitFont(x, `${it.propertyType || 'عقار'} - ${it.city || ''}`, 64, '700', F, 960);
@@ -1402,7 +1398,6 @@ function vLogo(x, logo, cx, cy, r){ if(!logo) return; x.save(); x.beginPath(); x
 function vHeader(x, logo){ vLogo(x, logo, 654, 92, 30); vText(x, 'وسطاء المملكة', 610, 104, 38, '700', '#e6c07b'); }
 
 async function prepareMontage(it){
-  try{ await Promise.all([document.fonts.load('700 40px Tajawal', 'عربي'), document.fonts.load('400 40px Tajawal', 'عربي')]); }catch{}
   let logo = null; try{ logo = await loadImg('icon.png'); }catch{}
   const photos = [];
   for(const src of imagesOf(it).map(safeImg).filter(Boolean).slice(0, 4)){ try{ photos.push(await loadImg(src)); }catch{} }
@@ -1424,7 +1419,12 @@ async function prepareMontage(it){
     withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
     withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cfd6c4', 'center'); });
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
-    withAlpha(x, (t - 1.45) / 0.4, () => { if(it.code) vText(x, 'رقم الإعلان  ' + it.code, 360, 1045, 36, '700', '#e6c07b', 'center'); });
+    withAlpha(x, (t - 1.45) / 0.4, () => {
+      if(!it.code) return;
+      const label = 'رقم الإعلان'; x.font = '700 36px ' + VF; x.direction = 'rtl'; const lw = x.measureText(label).width; x.direction = 'ltr'; const cw = x.measureText(it.code).width;
+      const xr = 360 + (lw + 18 + cw) / 2;
+      vText(x, label, xr, 1045, 36, '700', '#e6c07b', 'right'); vTextLtr(x, it.code, xr - lw - 18 - cw, 1045, 36, '700', '#e6c07b', 'left');
+    });
   };
   // خلفية ضبابية من الصورة نفسها (تصغير ثم تكبير على مرحلتين، بلا اعتماد على ctx.filter)
   const photoBgs = photos.map(img => {
@@ -2231,7 +2231,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792470138';
+const APP_VERSION = '1792470741';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
