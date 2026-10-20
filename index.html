@@ -1347,6 +1347,20 @@ async function numberOldListings(){
     toast('تم ترقيم ' + noNo.length + ' عضو و' + noCode.length + ' إعلان ✅', 4500);
   }catch(e){ fail('number-old', e); }
 }
+let membersMap = {}, membersUnsub = null;
+function stopMembersWatch(){ if(membersUnsub){ membersUnsub(); membersUnsub = null; } membersMap = {}; }
+function startMembersWatch(){
+  stopMembersWatch();
+  if(!db || !isOwner) return;
+  try{ membersUnsub = db.collection('members').onSnapshot(snap => { const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); }); membersMap = m; }, e => console.warn('members-listen', e)); }
+  catch(e){ console.warn('members-listen', e); }
+}
+// هل يوجد عضو مقبول/موقوف لم يُسجَّل (أو يختلف سجله) على الخادم؟
+function membersNeedSync(){
+  const want = {};
+  joinRequests.forEach(r => { if(!r.ownerId) return; if(r.status === 'accepted' || (r.status === 'revoked' && want[r.ownerId] !== 'accepted')) want[r.ownerId] = r.status; });
+  return Object.entries(want).some(([o, st]) => !membersMap[o] || membersMap[o].status !== st);
+}
 async function syncMembers(){
   if(!isOwner) return;
   const by = {};
@@ -1966,7 +1980,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
       stopMemberWatch();
-      startNotes();
+      startNotes(); startMembersWatch();
       subscribeJoinRequests();
       subscribeReports();
     }
@@ -1983,6 +1997,7 @@ async function ownerLogout(){
     isOwner = false;
     unsubscribeJoinRequests();
     unsubscribeReports();
+    stopMembersWatch();
     startMemberWatch();
     startNotes();
     if(view === 'join') showHome();
@@ -2166,8 +2181,9 @@ $('menuDotBtn').addEventListener('click', e => {
   $('menuMembersBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuImportBtn').style.display = isOwner && !gate ? 'flex' : 'none';
-  $('menuNumberBtn').style.display = isOwner && !gate ? 'flex' : 'none';
-  $('menuSyncBtn').style.display = isOwner && !gate ? 'flex' : 'none';
+  const needNumbers = isOwner && (joinRequests.some(r => r.status === 'accepted' && !r.memberNo) || listings.some(l => !l.code));
+  $('menuNumberBtn').style.display = !gate && needNumbers ? 'flex' : 'none';
+  $('menuSyncBtn').style.display = !gate && isOwner && membersNeedSync() ? 'flex' : 'none';
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
   $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
   $('menuDropdown').classList.toggle('show');
@@ -2243,7 +2259,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792489983';
+const APP_VERSION = '1792491545';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
