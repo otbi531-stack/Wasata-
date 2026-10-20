@@ -1379,8 +1379,8 @@ $('impList').addEventListener('change', e => { const cb = e.target.closest('inpu
 
 // ===== فيديو ترويجي للإعلان: يُرسم على Canvas ويُسجَّل داخل المتصفح (بلا خوادم) =====
 const VW = 720, VH = 1280, VFPS = 30, XFADE = 0.45;
-const VSLOW = 1.7;   // عامل إبطاء الفيديو: 1 = السرعة الأصلية. الأقصى بأربع صور نحو 30 ثانية (حدّ حالة واتساب)
-const VF = "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif";
+const VSLOW = 2.2;   // عامل إبطاء الفيديو: 1 = السرعة الأصلية. بأربع صور نحو 36 ثانية (حالة واتساب تقصّ عند 30)
+const VF = "-apple-system,system-ui,'Segoe UI',Tahoma,Arial,sans-serif";   // خط النظام في الجهاز (نفس خط التطبيقات والمحادثة)، وتتكيّف النصوص مع عرضه تلقائياً
 const eOut = v => 1 - Math.pow(1 - v, 3);
 const eIO = v => v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
 const eBack = v => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(v - 1, 3) + c1 * Math.pow(v - 1, 2); };
@@ -1400,12 +1400,6 @@ function vCenter(x, s, cx, cy, size, weight, color, maxW, ltr){
 function vFit(x, s, size, weight, maxW){ while(size > 24){ x.font = weight + ' ' + size + 'px ' + VF; if(x.measureText(s).width <= maxW) break; size -= 2; } return size; }
 function vLogo(x, logo, cx, cy, r){ if(!logo) return; x.save(); x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.clip(); x.drawImage(logo, cx - r, cy - r, r * 2, r * 2); x.restore(); }
 function vHeader(x, logo){ vLogo(x, logo, 654, 92, 30); vText(x, 'وسطاء المملكة', 610, 104, 38, '700', '#e6c07b'); }
-function vFooter(x, it){
-  x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, 1170, VW, 110);
-  const lab = it.agent ? 'للتواصل مع ' + it.agent : 'للتواصل';
-  vText(x, lab, 360, 1208, vFit(x, lab, 28, '400', 660), '400', '#cfd6c4', 'center');
-  if(it.phone) vCenter(x, it.phone, 360, 1245, 52, '700', '#e6c07b', 640, true);
-}
 
 async function prepareMontage(it){
   try{ await Promise.all([document.fonts.load('700 40px Tajawal', 'عربي'), document.fonts.load('400 40px Tajawal', 'عربي')]); }catch{}
@@ -1432,23 +1426,26 @@ async function prepareMontage(it){
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
     withAlpha(x, (t - 1.45) / 0.4, () => { if(it.code) vText(x, 'رقم الإعلان  ' + it.code, 360, 1045, 36, '700', '#e6c07b', 'center'); });
   };
+  // خلفية ضبابية من الصورة نفسها (تصغير ثم تكبير على مرحلتين، بلا اعتماد على ctx.filter)
+  const photoBgs = photos.map(img => {
+    const mk = (w, h, src, sw, sh) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+      const k = Math.max(w / sw, h / sh); g.drawImage(src, (w - sw * k) / 2, (h - sh * k) / 2, sw * k, sh * k); return c; };
+    const small = mk(36, 64, img, img.width, img.height);
+    return mk(144, 256, small, 36, 64);
+  });
+  // الصورة وحدها: كاملة بلا قصّ، كبيرة في الوسط، بتقريب هادئ جداً
   const photoScene = (x, t, img, i) => {
-    vBg(x); vHeader(x, logo);
-    const cx = 40, cy = 160, cw = 640, ch = 600, pr = c01(t / 2.8);
-    const z = 1 + 0.10 * eIO(pr), pan = (pr - 0.5) * 28 * (i % 2 ? -1 : 1);
-    x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 24; x.shadowOffsetY = 8; x.fillStyle = '#000'; rrect(x, cx, cy, cw, ch, 28); x.fill(); x.restore();
-    x.save(); rrect(x, cx, cy, cw, ch, 28); x.clip();
-    const k = Math.max(cw / img.width, ch / img.height) * z, dw = img.width * k, dh = img.height * k;
-    x.drawImage(img, cx + (cw - dw) / 2 + pan, cy + (ch - dh) / 2, dw, dh);
+    vBg(x);
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    x.drawImage(photoBgs[i], 0, 0, VW, VH); x.fillStyle = 'rgba(6,10,6,.58)'; x.fillRect(0, 0, VW, VH);
+    const bx = 24, by = 90, bw = VW - 48, bh = VH - 180, pr = c01(t / 2.4);
+    const k0 = Math.min(bw / img.width, bh / img.height), fw = img.width * k0, fh = img.height * k0, fx = bx + (bw - fw) / 2, fy = by + (bh - fh) / 2;
+    const z = 1 + 0.06 * eIO(pr), pan = (pr - 0.5) * 18 * (i % 2 ? -1 : 1);
+    x.save(); x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 30; x.shadowOffsetY = 10; x.fillStyle = '#000'; rrect(x, fx, fy, fw, fh, 26); x.fill(); x.restore();
+    x.save(); rrect(x, fx, fy, fw, fh, 26); x.clip();
+    const dw = fw * z, dh = fh * z; x.drawImage(img, fx + (fw - dw) / 2 + pan, fy + (fh - dh) / 2, dw, dh);
     x.restore();
-    if(photos.length > 1){ x.fillStyle = 'rgba(0,0,0,.55)'; rrect(x, 60, 180, 96, 44, 22); x.fill(); vTextLtr(x, (i + 1) + ' / ' + photos.length, 108, 211, 26, '700', '#ffffff', 'center'); }
-    const u = eOut(c01((t - 0.15) / 0.6)), dy = (1 - u) * 40;
-    withAlpha(x, u, () => {
-      const sz = vFit(x, title, 54, '700', 640); vText(x, title, 680, 850 + dy, sz, '700', '#ffffff');
-      if(it.price){ const s2 = vFit(x, it.price, 62, '700', 640); vText(x, it.price, 680, 935 + dy, s2, '700', '#e6c07b'); }
-      if(sub) vText(x, sub, 680, 1000 + dy, vFit(x, sub, 34, '400', 640), '400', '#cfd6c4');
-    });
-    vFooter(x, it);
+    if(photos.length > 1){ x.fillStyle = 'rgba(0,0,0,.55)'; rrect(x, 36, 34, 108, 46, 23); x.fill(); vTextLtr(x, (i + 1) + ' / ' + photos.length, 90, 66, 26, '700', '#ffffff', 'center'); }
   };
   const details = (x, t) => {
     vBg(x); vHeader(x, logo);
@@ -1471,7 +1468,6 @@ async function prepareMontage(it){
       x.font = '400 32px ' + VF;
       wrapText(x, it.desc, 640, 3).forEach((l, i) => vText(x, l, 680, py + 190 + i * 46, 32, '400', '#b9c4b2'));
     });
-    vFooter(x, it);
   };
   const outro = (x, t) => {
     vBg(x);
@@ -1495,8 +1491,8 @@ async function prepareMontage(it){
   };
 
   const scenes = [{ dur: 2.4, draw: intro }];
-  photos.forEach((img, i) => scenes.push({ dur: 2.8, draw: (x, t) => photoScene(x, t, img, i) }));
-  scenes.push({ dur: 3.4, draw: details }, { dur: 3.2, draw: outro });
+  photos.forEach((img, i) => scenes.push({ dur: 2.4, draw: (x, t) => photoScene(x, t, img, i) }));
+  scenes.push({ dur: 3.8, draw: details }, { dur: 3.4, draw: outro });
   let st = 0; scenes.forEach(sc => { sc.start = st; st += sc.dur - XFADE; });
   const last = scenes[scenes.length - 1], total = last.start + last.dur;
   function draw(x, t){
@@ -2235,7 +2231,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792413212';
+const APP_VERSION = '1792470138';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
