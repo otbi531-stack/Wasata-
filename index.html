@@ -101,13 +101,8 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .gate-back{background:none;border:none;color:var(--primary-dark);font-weight:700;font-size:14px;cursor:pointer;padding:0 0 10px;font-family:inherit}
 .welcome-page{z-index:998;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#12160e;padding-bottom:24px}
 .welcome-page.show{display:block}
-.welcome-page .container{padding-top:0}
 .welcome-page .footer-row{margin-top:14px}
-.welcome-page .map-all-btn{font-size:15px;padding:11px;margin-bottom:12px}
-@media (min-aspect-ratio:3/5){
-  .welcome-page header{aspect-ratio:auto;height:100vh;height:100dvh;background-size:cover;background-position:center 6%}
-  .welcome-page .container{margin-top:-235px}
-}
+.welcome-page .map-all-btn{font-size:15px;padding:11px;margin-bottom:12px;background:#f1e4c3;border:1px solid #d9c79b;color:#000}
 .seeker-bar{position:relative;display:flow-root}
 @media (max-width:379px){ body.seeker #seekerRegisterBtn{padding-right:84px;padding-left:10px} }   /* الشاشات الضيقة: مكان «رجوع» دون تلامس */
 .seeker-back{position:absolute;top:0;bottom:14px;right:4px;display:none;align-items:center;border:0;background:none;color:#fff;font-size:14px;font-weight:700;font-family:inherit;padding:0 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -2326,7 +2321,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792579928';
+const APP_VERSION = '1792580909';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
