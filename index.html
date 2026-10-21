@@ -95,6 +95,25 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .overlay.show{display:flex}
 .gate-overlay{z-index:999;background:#12160e}
 .gate-overlay .modal{max-width:460px}
+.owner-saved .link-btn{color:var(--primary-dark);font-weight:700}
+.owner-saved{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f3f3f3;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
+#ownerOverlay{z-index:1001}
+.gate-back{background:none;border:none;color:var(--primary-dark);font-weight:700;font-size:14px;cursor:pointer;padding:0 0 10px;font-family:inherit}
+.welcome-page{z-index:998;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#12160e;padding-bottom:24px}
+.welcome-page.show{display:block}
+.welcome-page .container{padding-top:0}
+.welcome-page .footer-row{margin-top:14px}
+.welcome-page .map-all-btn{font-size:15px;padding:11px;margin-bottom:12px}
+@media (min-aspect-ratio:3/5){
+  .welcome-page header{aspect-ratio:auto;height:100vh;height:100dvh;background-size:cover;background-position:center 6%}
+  .welcome-page .container{margin-top:-235px}
+}
+.seeker-bar{position:relative;display:flow-root}
+@media (max-width:379px){ body.seeker #seekerRegisterBtn{padding-right:84px;padding-left:10px} }   /* الشاشات الضيقة: مكان «رجوع» دون تلامس */
+.seeker-back{position:absolute;top:0;bottom:14px;right:4px;display:none;align-items:center;border:0;background:none;color:#fff;font-size:14px;font-weight:700;font-family:inherit;padding:0 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#seekerRegisterBtn,#seekerBackBtn{display:none}
+body.seeker #seekerRegisterBtn{display:block}
+body.seeker #seekerBackBtn{display:flex}
 .modal{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:18px 18px 22px;max-height:88vh;overflow-y:auto}
 .modal h2{margin:0 0 14px;font-size:18px}
 .field{margin-bottom:12px}
@@ -216,6 +235,10 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
   <button class="add-btn" id="openAddBtn">+ إضافة جديد</button>
 
   <div id="homeButtons">
+    <div class="seeker-bar">
+      <button class="add-btn" id="seekerRegisterBtn">🏢 تسجيل وسيط عقاري</button>
+      <button type="button" class="seeker-back" id="seekerBackBtn">→ رجوع</button>
+    </div>
     <div class="lib-buttons">
       <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
       <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
@@ -300,8 +323,9 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 <div class="overlay" id="ownerOverlay">
   <div class="modal">
     <h2>دخول المدير</h2>
-    <div class="field"><label>البريد الإلكتروني</label><input type="email" id="ownerEmail" autocomplete="username"></div>
-    <div class="field"><label>كلمة المرور</label><input type="password" id="ownerPass" autocomplete="current-password"></div>
+    <div class="field" id="ownerEmailField"><label>البريد الإلكتروني (يُطلب مرة واحدة على هذا الجهاز)</label><input type="email" id="ownerEmail" autocomplete="username"></div>
+    <div class="field" id="ownerSavedField" style="display:none"><label>الحساب</label><div class="owner-saved"><span id="ownerSavedMask" dir="ltr"></span><button type="button" class="link-btn" id="ownerChangeBtn">تغيير الحساب</button></div></div>
+    <div class="field"><label>الرقم السري</label><input type="password" id="ownerPass" autocomplete="current-password"></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="ownerCancelBtn">إلغاء</button>
       <button class="btn-save" id="ownerSubmitBtn">دخول</button>
@@ -310,8 +334,20 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 </div>
 
 <!-- بوابة الدخول الإلزامية: لا يُعرض التطبيق إلا بعد تعبئتها -->
-<div class="overlay show gate-overlay" id="joinOverlay">
+<!-- واجهة الترحيب: نسخة من الصفحة الأساسية (الغلاف + الحاوية) وفيها خياران -->
+<div class="overlay show welcome-page" id="welcomeOverlay">
+  <header aria-label="وسطاء المملكة"></header>
+  <div class="container">
+    <button type="button" class="map-all-btn" id="welcomeLoginBtn">🏢 تسجيل وسيط عقاري</button>
+    <button type="button" class="map-all-btn" id="welcomeSeekerBtn">🔎 باحث عن عقار</button>
+    <div class="footer-row"><a class="link-btn" id="welcomeSupport" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a><button type="button" class="link-btn" id="welcomeOwnerBtn">دخول المدير</button></div>
+    <div class="ver" id="appVer2" title="اضغط للتحقق من آخر إصدار"></div>
+  </div>
+</div>
+
+<div class="overlay gate-overlay" id="joinOverlay">
   <div class="modal">
+    <button type="button" class="gate-back" id="gateBackBtn">→ رجوع</button>
     <h2>الدخول إلى وسطاء المملكة</h2>
     <div id="gateForm">
       <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
@@ -364,8 +400,6 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 
 <!-- القائمة العامة (نقاط الأفق) -->
 <div class="menu-dropdown" id="menuDropdown">
-  <button class="menu-item gate-only" id="menuSeekerBtn">🔎 باحث عن عقار</button>
-  <button class="menu-item seeker-only" id="menuRegisterBtn">🏢 التسجيل كوسيط عقاري</button>
   <button class="menu-item broker-only member-only" id="menuCalcBtn">🧮 حاسبة السعي</button>
   <button class="menu-item member-only" id="menuBoardBtn">🏆 المتميزون</button>
   <button class="menu-item member-only" id="menuMineBtn">📋 إعلاناتي</button>
@@ -1956,16 +1990,28 @@ $('saveBtn').addEventListener('click', async () => {
 });
 
 // دخول/خروج المدير
-$('ownerLoginBtn').addEventListener('click', () => $('ownerOverlay').classList.add('show'));
+const OWNER_EMAIL_KEY = 'wasata_owner_email';
+function syncOwnerForm(){
+  const saved = localStorage.getItem(OWNER_EMAIL_KEY) || '';
+  $('ownerEmailField').style.display = saved ? 'none' : 'block';
+  $('ownerSavedField').style.display = saved ? 'block' : 'none';
+  if(saved){ const at = saved.indexOf('@'); $('ownerSavedMask').textContent = saved.slice(0, Math.min(3, at)) + '***' + saved.slice(at); }
+  $('ownerPass').value = '';
+  setTimeout(() => $(saved ? 'ownerPass' : 'ownerEmail').focus(), 60);
+}
+function openOwnerLogin(){ $('ownerOverlay').classList.add('show'); syncOwnerForm(); }
+$('ownerLoginBtn').addEventListener('click', openOwnerLogin);
+$('welcomeOwnerBtn').addEventListener('click', openOwnerLogin);
+$('ownerChangeBtn').addEventListener('click', () => { localStorage.removeItem(OWNER_EMAIL_KEY); syncOwnerForm(); });
 $('ownerCancelBtn').addEventListener('click', () => $('ownerOverlay').classList.remove('show'));
 $('ownerOverlay').addEventListener('click', e => { if(e.target === $('ownerOverlay')) $('ownerOverlay').classList.remove('show'); });
 
 $('ownerSubmitBtn').addEventListener('click', async () => {
-  const email = $('ownerEmail').value.trim(), pass = $('ownerPass').value;
-  if(!email || !pass){ toast('أدخل البريد وكلمة المرور'); return; }
+  const savedEmail = localStorage.getItem(OWNER_EMAIL_KEY) || '', email = (savedEmail || $('ownerEmail').value).trim(), pass = $('ownerPass').value;
+  if(!email || !pass){ toast(savedEmail ? 'أدخل الرقم السري' : 'أدخل البريد والرقم السري'); return; }
   $('ownerSubmitBtn').disabled = true;
   try{
-    await firebase.auth().signOut();
+    // لا نُنهي الجلسة الحالية قبل التحقق: الخطأ في الرقم لا يجب أن يفقد العضو هويته
     const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
     uid = cred.user.uid;
     isOwner = uid === OWNER_UID;
@@ -1976,6 +2022,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       uid = firebase.auth().currentUser.uid;
       isOwner = false;
     }else{
+      try{ localStorage.setItem(OWNER_EMAIL_KEY, email); }catch{}   // يُحفظ بعد نجاح الدخول فقط
       toast('تم تسجيل الدخول كمدير 👑');
       $('ownerOverlay').classList.remove('show');
       $('ownerEmail').value = ''; $('ownerPass').value = '';
@@ -1983,9 +2030,15 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
       startNotes(); startMembersWatch();
       subscribeJoinRequests();
       subscribeReports();
+      try{ localStorage.setItem(GATE_KEY, '1'); }catch{}   // جهاز المدير يدخل التطبيق مباشرة بعد ذلك
+      hideGate(); applyMode();
     }
     render();
-  }catch(e){ fail('owner-login', e); }
+  }catch(e){
+    console.error('owner-login', e); const c = (e && e.code) || '';
+    toast(c === 'auth/too-many-requests' ? 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة' : (/invalid-credential|wrong-password|invalid-login|user-not-found|invalid-email/.test(c) ? 'الرقم السري غير صحيح' : 'خطأ: ' + (c || (e && e.message))), 4500);
+    $('ownerPass').value = '';
+  }
   finally{ $('ownerSubmitBtn').disabled = false; }
 });
 
@@ -2017,8 +2070,10 @@ let gateUnsub = null, memberUnsub = null, myMember = null;
 const isMember = () => localStorage.getItem(GATE_KEY) === '1';
 const isSeeker = () => !isMember() && localStorage.getItem(SEEKER_KEY) === '1';
 function applyMode(){ document.body.classList.toggle('seeker', isSeeker() && !isOwner); }
-function showGate(){ $('joinOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; document.body.classList.add('gate-open'); }
-function hideGate(){ $('joinOverlay').classList.remove('show'); document.body.style.overflow = ''; document.body.classList.remove('gate-open'); }
+function showGate(){ $('welcomeOverlay').classList.remove('show'); $('joinOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; document.body.classList.add('gate-open'); }
+function hideGate(){ $('joinOverlay').classList.remove('show'); $('welcomeOverlay').classList.remove('show'); document.body.style.overflow = ''; document.body.classList.remove('gate-open'); }
+function showWelcome(){ $('joinOverlay').classList.remove('show'); $('welcomeOverlay').classList.add('show'); document.body.style.overflow = 'hidden'; document.body.classList.add('gate-open'); }
+let gateChosen = false;   // اختار «تسجيل الدخول» في هذه الجلسة
 
 function showGateForm(){ $('gateForm').style.display = 'block'; $('gatePending').style.display = 'none'; $('gateRejected').style.display = 'none'; syncTermsIcon(); }
 function showGatePending(){ $('gateForm').style.display = 'none'; $('gatePending').style.display = 'block'; $('gateRejected').style.display = 'none'; }
@@ -2085,28 +2140,40 @@ function checkGate(){
   const pendingId = localStorage.getItem(REQ_KEY);
   if(isMember()){ hideGate(); }
   else if(isSeeker()){ hideGate(); if(pendingId) watchRequest(pendingId); }
-  else{ showGate(); if(pendingId) watchRequest(pendingId); else showGateForm(); }
+  else if(pendingId){ showGate(); watchRequest(pendingId); }   // من لديه طلب سابق يرى حالته مباشرة
+  else if(gateChosen){ showGate(); showGateForm(); }
+  else showWelcome();
   applyMode();
 }
 
 // إخفاء البوابة فوراً (دون انتظار Firebase) لمن دخل سابقاً، حتى لا تومض شاشة الدخول
-if(isMember() || isSeeker()) hideGate(); else document.body.classList.add('gate-open');
+if(isMember() || isSeeker()) hideGate(); else if(localStorage.getItem(REQ_KEY)) showGate(); else showWelcome();
 applyMode();
 
-$('menuSeekerBtn').addEventListener('click', () => {
-  $('menuDropdown').classList.remove('show');
+function enterAsSeeker(){
   localStorage.setItem(SEEKER_KEY, '1');
   hideGate(); applyMode(); render();
+  const pendingId = localStorage.getItem(REQ_KEY); if(pendingId) watchRequest(pendingId);
   toast('أهلاً بك! تصفّح العروض والطلبات 🔎');
-});
+}
+// واجهة الترحيب: تسجيل الدخول (شاشة الطلب) أو باحث عن عقار (تصفّح فوري)
+$('welcomeLoginBtn').addEventListener('click', () => { gateChosen = true; showGate(); if(!localStorage.getItem(REQ_KEY)) showGateForm(); });
+$('welcomeSeekerBtn').addEventListener('click', enterAsSeeker);
+$('gateBackBtn').addEventListener('click', () => { if(isSeeker()){ hideGate(); return; } gateChosen = false; showWelcome(); });   // الباحث يرجع لتصفحه، وغيره للترحيب
+$('welcomeSupport').href = 'https://wa.me/' + SUPPORT_PHONE;
 $('termsIconBtn').addEventListener('click', () => $('termsOverlay').classList.add('show'));
 function syncTermsIcon(){ $('termsIconBtn').style.display = $('jOath').checked ? 'none' : 'inline-block'; }   // الأيقونة تظهر حتى تُفعَّل الموافقة
 $('jOath').addEventListener('change', syncTermsIcon);
 $('termsCloseBtn').addEventListener('click', () => $('termsOverlay').classList.remove('show'));
 $('termsOverlay').addEventListener('click', e => { if(e.target === $('termsOverlay')) $('termsOverlay').classList.remove('show'); });
-$('menuRegisterBtn').addEventListener('click', () => {
-  $('menuDropdown').classList.remove('show');
-  showGate();
+// الباحث الذي يريد التسجيل لاحقاً: زر ظاهر في الصفحة الأساسية بدل بند القائمة
+// رجوع الباحث إلى صفحة الترحيب ليختار من جديد (وسيط أو باحث)
+$('seekerBackBtn').addEventListener('click', () => {
+  localStorage.removeItem(SEEKER_KEY); gateChosen = false;
+  applyMode(); showWelcome();
+});
+$('seekerRegisterBtn').addEventListener('click', () => {
+  gateChosen = true; showGate();
   if(!localStorage.getItem(REQ_KEY)) showGateForm();
 });
 
@@ -2259,7 +2326,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792491545';
+const APP_VERSION = '1792579928';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
@@ -2284,7 +2351,9 @@ checkForUpdate();
 (function showVersion(){
   const d = new Date(Number(APP_VERSION) * 1000), z = n => String(n).padStart(2, '0');
   $('appVer').textContent = isNaN(d) ? '' : `إصدار ${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  $('appVer2').textContent = $('appVer').textContent;
   $('appVer').addEventListener('click', () => checkForUpdate(true));
+  $('appVer2').addEventListener('click', () => checkForUpdate(true));
 })();
 
 init();
