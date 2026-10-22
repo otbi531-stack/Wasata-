@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#12160e">
+<meta name="theme-color" content="#314a3c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="وسطاء المملكة">
@@ -16,9 +16,9 @@
 <style>
 :root{--primary:#1f6f54;--primary-dark:#164f3c;--accent:#d98a3d;--text:#1f2430;--muted:#6b7280;--border:#e5e7eb;--danger:#c0392b}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,system-ui,'Segoe UI',Tahoma,Arial,sans-serif;background:#12160e;color:var(--text);padding-bottom:40px}
+body{margin:0;font-family:-apple-system,system-ui,'Segoe UI',Tahoma,Arial,sans-serif;background:#F1E9D4;color:var(--text);padding-bottom:40px}
 button{font-family:inherit}
-header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 100% no-repeat,linear-gradient(#1f6f54,#12160e);position:relative;z-index:1}
+header{width:100%;aspect-ratio:9/16;background:url(header-cover.jpg) center top/100% 100% no-repeat,linear-gradient(#314a3c,#22352b);position:relative;z-index:1}
 .container{max-width:720px;margin:-30vw auto 0;padding:14px 16px;position:relative;z-index:2}
 .add-btn{width:100%;padding:12px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
 .lib-buttons{display:flex;gap:10px;margin-bottom:10px}
@@ -93,13 +93,13 @@ header{width:100%;aspect-ratio:9/16;background:url(header.jpg) center top/100% 1
 .loading{text-align:center;padding:40px;color:#cfd6c4;font-size:14px}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .overlay.show{display:flex}
-.gate-overlay{z-index:999;background:#12160e}
+.gate-overlay{z-index:999;background:#F1E9D4}
 .gate-overlay .modal{max-width:460px}
 #ownerChangeBtn{color:var(--primary-dark);font-weight:700}
 .owner-saved{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f3f3f3;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:700}
 #ownerOverlay{z-index:1001}
 .gate-back{background:none;border:none;color:var(--primary-dark);font-weight:700;font-size:14px;cursor:pointer;padding:0 0 10px;font-family:inherit}
-.welcome-page{z-index:998;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#12160e;padding-bottom:24px}
+.welcome-page{z-index:998;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#F1E9D4;padding-bottom:24px}
 .welcome-page.show{display:block}
 .welcome-page .footer-row{margin-top:14px}
 .welcome-page .map-all-btn{font-size:15px;padding:11px;margin-bottom:12px;background:#f1e4c3;border:1px solid #d9c79b;color:#000}
@@ -215,6 +215,118 @@ body.seeker .footer-row [id^="backupBtn"]{display:none}
 .imp-row .bad{color:var(--danger)}
 .ver{text-align:center;color:#6f7d68;font-size:11px;margin-top:10px;cursor:pointer;user-select:none}
 .toast.show{opacity:1}
+/* ===== لوحة الألوان: سماوي #C5E8F5 · تركوازي #28B6B1 · أخضر بترولي #086B6D · أبيض #FFFFFF · أزرق رمادي #EAF3F7 ===== */
+:root{--sky:#C5E8F5;--turq:#28B6B1;--petrol:#086B6D;--mist:#EAF3F7;--primary:#1b9a96;--primary-dark:#086B6D;--accent:#28B6B1;--border:#d4e3ea}
+header{background:url(header-cover.jpg) center top/100% 100% no-repeat,linear-gradient(#314a3c,#22352b)}
+/* الأزرار الرئيسية: تركوازي (مع تعميق طفيف ليبقى النص الأبيض مقروءاً) */
+.add-btn,.btn-save,.wa-app-btn,.sb-open,.mp .mp-open{background:linear-gradient(180deg,#2cbbb6,#1b9a96);color:#fff;border:0}
+.add-btn{font-weight:700;border:1px solid rgba(255,255,255,.6);box-shadow:0 3px 12px rgba(8,107,109,.5)}
+/* البطاقات والحقول */
+.lib-text,.map-all-btn{color:var(--petrol)}
+.lib-requests .lib-count{background:var(--petrol)}
+.lib-btn,.map-all-btn,.jcard,.member-card,.card,.lib-header{border-color:var(--border)}
+.modal h2{color:var(--petrol)}
+.field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{background:var(--mist);border-color:#cfe0e8}
+.btn-cancel{background:var(--mist);color:var(--petrol)}
+.oath-box,.calc-result,.rcard,.modal .empty{background:var(--mist);border-color:var(--border)}
+.menu-item:hover{background:var(--mist)}
+/* الشارات والحالات */
+.badge.offer,.new-badge,.sold-badge,.jstatus.accepted,.btn-accept,.code-tag,.owner-bar,.mp .mp-type.off{background:#dcf3f1;color:var(--petrol)}
+.mp .mp-price{color:var(--petrol)}
+/* أزرار البطاقات (بيج سابقاً) صارت من اللوحة */
+.card .btn-small,.mp .mp-actions a{background:var(--mist);border-color:#cfe0e8;color:var(--petrol)}
+.person-tag,.mp-info,.terms-icon{background:var(--mist);border-color:#cfe0e8;color:var(--petrol)}
+.map-pick-btn{border-color:var(--turq);background:var(--mist);color:var(--petrol)}
+.mtab.active{background:var(--petrol);border-color:var(--petrol)}
+.vid-progress div{background:var(--turq)}
+/* شريط المدير والتنبيهات */
+.owner-badge{background:rgba(40,182,177,.22);border-color:var(--turq);color:#d9f7f5}
+.join-owner-btn{border-color:var(--turq);background:rgba(40,182,177,.16);color:#d9f7f5}
+.saved-banner{background:rgba(234,243,247,.97);color:var(--petrol)}
+/* صفحة الترحيب: أبيض مثل بطاقات الصفحة الأساسية */
+.welcome-page .map-all-btn{background:rgba(255,255,255,.96);border:1px solid var(--border);color:var(--petrol)}
+/* خريطة الإعلانات */
+.allmap-filters .chip{border-color:#2f6264}
+.allmap-filters .chip.active{background:#1b9a96;border-color:#1b9a96}
+.allmap-bar button{color:#8fe3df}
+
+/* ===== خلفية الصفحة: عاجي دافئ ينسجم مع الغلاف الأخضر والحقول الكريمية ===== */
+body{background:#F1E9D4}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:24vw;max-height:260px;pointer-events:none;background:linear-gradient(to bottom,rgba(241,233,212,0) 0%,rgba(241,233,212,.55) 55%,#F1E9D4 100%)}   /* حدّ الغلاف السفلي يذوب في السماوي */
+.welcome-page,.gate-overlay{background:#F1E9D4}
+.allmap{background:#0b4547}
+/* نقاط القائمة: كبسولة بترولية تبقى ظاهرة فوق أي خلفية */
+.menu-dot{background:rgba(255,255,255,.93);color:var(--petrol);border-radius:999px;width:46px;height:34px;top:16px;left:14px;font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+/* نصوص كانت مصمّمة للخلفية الداكنة */
+.link-btn{color:var(--petrol)}
+.ver{color:#4f8a8c}
+.loading{color:var(--petrol)}
+.empty{color:var(--petrol);background:rgba(255,255,255,.88)}
+.owner-badge{background:rgba(40,182,177,.28);color:var(--petrol)}
+.owner-badge .link-btn{color:var(--petrol)!important}
+.join-owner-btn{background:rgba(40,182,177,.22);color:var(--petrol)}
+/* ظلال أخفّ فوق الخلفية الفاتحة */
+.lib-btn,.map-all-btn,.card,.jcard,.member-card,.lib-header{box-shadow:0 2px 10px rgba(8,107,109,.16)}
+/* روابط أسفل الصفحة: كبسولات بيضاء تُقرأ فوق الغلاف التركوازي وفوق الخلفية السماوية معاً */
+.footer-row > .link-btn{background:rgba(255,255,255,.92);color:var(--petrol);padding:6px 14px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 1px 6px rgba(8,107,109,.2)}
+.ver{display:table;margin:10px auto 0;background:rgba(255,255,255,.8);color:#2f6f73;padding:3px 12px;border-radius:999px}
+/* ===== الحقول والأزرار: مزيج أبيض وبيج (كريمي) ينسجم مع الغلاف الأخضر ===== */
+:root{--cream:#FCF8EE;--cream2:#F4EAD0;--beige-line:#D8C79A;--forest:#27402f;--mist:#F8F2E2;--petrol:#27402f;--primary:#3b6b52;--primary-dark:#27402f;--accent:#C9A45C;--turq:#C9A45C;--border:#E5D9B8}
+.add-btn,.btn-save,.wa-app-btn,.sb-open,.mp .mp-open{background:linear-gradient(180deg,#faf1d9,#ecdcb2);color:var(--forest);border:1px solid var(--beige-line);font-weight:700}
+.add-btn{box-shadow:0 3px 12px rgba(0,0,0,.28)}
+.seeker-back{color:var(--forest)}
+.lib-btn,.map-all-btn,.welcome-page .map-all-btn{background:linear-gradient(180deg,#fffdf8,#f6eedc);border:1px solid var(--border);color:var(--forest)}
+.lib-text{color:var(--forest)}
+.lib-count{background:var(--primary);color:#fff}
+.lib-requests .lib-count{background:var(--forest)}
+.modal h2{color:var(--forest)}
+.field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{background:var(--cream);border-color:var(--border)}
+.btn-cancel{background:var(--cream2);color:var(--forest)}
+.oath-box,.calc-result,.rcard,.modal .empty{background:var(--mist);border-color:var(--border)}
+.menu-item:hover{background:var(--mist)}
+.badge.offer,.new-badge,.sold-badge,.jstatus.accepted,.btn-accept,.code-tag,.owner-bar,.mp .mp-type.off{background:#e9efe2;color:var(--forest)}
+.card .btn-small,.mp .mp-actions a,.person-tag,.mp-info,.terms-icon{background:var(--cream2);border-color:var(--beige-line);color:var(--forest)}
+.map-pick-btn{border-color:var(--accent);background:var(--mist);color:var(--forest)}
+.mtab.active{background:var(--forest);border-color:var(--forest)}
+.owner-badge{background:rgba(252,248,238,.95);border-color:var(--beige-line);color:var(--forest)}
+.owner-badge .link-btn{color:var(--forest)!important}
+.join-owner-btn{border-color:var(--beige-line);background:rgba(252,248,238,.95);color:var(--forest)}
+.saved-banner{background:rgba(252,248,238,.97);color:var(--forest)}
+.filter-bar input[type=text],.filter-row select,.fav-toggle{background:var(--cream)}
+.lib-header{background:rgba(255,253,248,.96)}
+.menu-dot{background:rgba(252,248,238,.96);color:var(--forest)}
+.footer-row > .link-btn{background:rgba(252,248,238,.96);color:var(--forest);box-shadow:0 1px 6px rgba(0,0,0,.22)}
+.ver{background:rgba(252,248,238,.85);color:#5d6b52}
+.link-btn,.loading{color:var(--forest)}
+.empty{background:rgba(252,248,238,.92);color:var(--forest)}
+.lib-btn,.map-all-btn,.card,.jcard,.member-card,.lib-header{box-shadow:0 2px 10px rgba(39,64,47,.2)}
+.allmap{background:#22352b}
+.allmap-filters .chip{border-color:#4a6a57}
+.allmap-filters .chip.active{background:var(--primary);border-color:var(--primary)}
+.allmap-bar button{color:#e9d9ae}
+/* ===== خط الحقول والأزرار: أعرض وأثقل لوضوح أكبر (خط النظام نفسه) ===== */
+.add-btn{font-size:17px;font-weight:800;padding:12px}
+.lib-text{font-size:16px;font-weight:800}
+.lib-icon{font-size:28px}
+.lib-count{font-size:13px;font-weight:800}
+.map-all-btn{font-size:15.5px;font-weight:800}
+.welcome-page .map-all-btn{font-size:17px;font-weight:800;padding:12px}
+.seeker-back{font-size:15px;font-weight:800}
+.lib-title{font-size:17px;font-weight:800}
+.lib-back{font-size:15px;font-weight:800}
+.menu-item{font-size:15px;font-weight:700}
+.footer-row > .link-btn{font-size:13.5px;font-weight:800}
+.btn-save,.btn-cancel,.wa-app-btn,.sb-open,.mp .mp-open{font-size:16px;font-weight:800}
+.card .btn-small,.mp .mp-actions a{font-weight:800}
+/* حقول النماذج والبحث: 16px تمنع تكبير آيفون للصفحة عند الضغط على الحقل، ووزن أثقل ولون أغمق */
+.field label{font-size:14px;font-weight:800;color:var(--forest)}
+.field input[type=text],.field input[type=email],.field input[type=password],.field textarea,.field select{font-size:16px;font-weight:600;color:#17261d;padding:11px}
+.field input::placeholder,.field textarea::placeholder{font-weight:500;color:#8b8f83}
+.filter-bar input[type=text]{font-size:15.5px;font-weight:600;color:#17261d}
+.filter-row select,.fav-toggle{font-size:14.5px;font-weight:700;color:#17261d}
+@media (max-width:430px){ body.seeker #seekerRegisterBtn{padding-right:84px;padding-left:10px;font-size:16px} }
+@media (max-width:379px){ #seekerRegisterBtn{font-size:15.5px} .lib-text{font-size:15px} .map-all-btn{font-size:14.5px} }
+@media (max-width:339px){ body.seeker #seekerRegisterBtn{font-size:14px;padding-right:80px} .add-btn{font-size:16px} .welcome-page .map-all-btn{font-size:16px} }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1156,7 +1268,7 @@ function refreshAllMap(fit){
   items.forEach(it => {
     const c = listingPoint(it);
     if(!c){ missing++; return; }
-    const m = L.marker([c.lat, c.lng], { icon: pinIcon(it.type === 'طلب' ? '#d98a3d' : '#1f8a4c') });
+    const m = L.marker([c.lat, c.lng], { icon: pinIcon(it.type === 'طلب' ? '#d98a3d' : '#3b6b52') });
     m.bindPopup(popupFor(it), { maxWidth: 260 });
     allGroup.addLayer(m); shown++;
   });
@@ -2372,7 +2484,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792611198';
+const APP_VERSION = '1792644765';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
