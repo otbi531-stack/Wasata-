@@ -165,6 +165,7 @@ body.seeker .broker-only{display:none}
 .oath-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .terms-icon{border:1px solid #d9c79b;background:#f1e4c3;color:#000;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
 body.seeker #openAddBtn{display:none}
+body.hub-open #openAddBtn{display:none!important}
 body.seeker .footer-row [id^="backupBtn"]{display:none}
 /* أزرار البطاقات: لون بيج موحّد وكتابة سوداء وحجم أصغر */
 .card .btn-small{flex:1;min-width:74px;padding:5px 8px;border-radius:8px;border:1px solid #d9c79b;background:#f1e4c3;color:#000;font-size:12px;font-weight:600}
@@ -429,12 +430,6 @@ body.gate-open .bell-btn{display:none}
 .stat-ic .ic{width:22px;height:22px}
 .pill-row .map-all-btn{display:flex;align-items:center;justify-content:center;gap:6px}
 .pill-row .map-all-btn .ic{width:20px;height:20px}
-.promo{position:relative;direction:ltr;display:flex;align-items:center;min-height:120px;border-radius:22px;overflow:hidden;background:linear-gradient(90deg,#e6f0e8 0%,#dcebf0 100%);margin:4px 0 6px;box-shadow:0 2px 10px rgba(39,64,47,.16)}
-.promo img{position:absolute;right:0;top:0;height:100%;width:58%;object-fit:cover;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 30%);mask-image:linear-gradient(to right,transparent 0,#000 30%)}
-.promo-txt{position:relative;z-index:1;direction:rtl;text-align:right;padding:14px 16px;max-width:52%}
-.promo-txt b{display:block;font-size:19px;line-height:1.5;color:var(--forest);font-weight:800;margin-bottom:10px}
-.promo-txt button{display:inline-flex;align-items:center;gap:4px;border:0;background:var(--primary);color:#fff;padding:9px 16px;border-radius:999px;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;box-shadow:0 3px 10px rgba(47,106,63,.35)}
-.promo-txt button .ic{width:16px;height:16px}
 #seekerRegisterBtn{position:relative}
 body.seeker #seekerRegisterBtn{background:linear-gradient(180deg,#f1f8f3,#e4f0e8);border:1px solid #cfe3d6;color:var(--forest);box-shadow:none}
 .seek-chev{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px}
@@ -443,14 +438,11 @@ body.seeker #seekerRegisterBtn{background:linear-gradient(180deg,#f1f8f3,#e4f0e8
 .bn-i .ic{width:24px;height:24px}
 .bottom-nav button{color:#55655a}
 .fin-big small{color:#55655a}
-@media (max-width:360px){ .stat-num{font-size:22px} .lib-btn{padding:8px 8px 8px 12px!important} .stat-ic{width:36px;height:36px} .promo-txt b{font-size:17px} }
+@media (max-width:360px){ .stat-num{font-size:22px} .lib-btn{padding:8px 8px 8px 12px!important} .stat-ic{width:36px;height:36px} }
 /* تعديلات بعد المراجعة */
-.promo-txt{max-width:60%;padding:14px 14px 14px 10px}
-.promo-txt b{font-size:18px;white-space:nowrap}
 body.seeker #seekerRegisterBtn{padding-left:40px!important}
 .welcome-page .container{min-height:calc(100vh - var(--medal) - 72px)}
 @supports (height:1dvh){ .welcome-page .container{min-height:calc(100dvh - var(--medal) - 72px)} }
-@media (max-width:360px){ .promo-txt b{font-size:16px} }
 @media (max-width:349px){ body.seeker #seekerRegisterBtn{padding-right:70px!important;padding-left:34px!important;font-size:13px!important;white-space:nowrap} }
 /* ===== أقسام: المطورون / العميل / البنوك ===== */
 .hub-row{display:flex;gap:8px;margin-bottom:10px}
@@ -654,10 +646,6 @@ body.seeker #seekerRegisterBtn:active,
       <button type="button" class="hub-btn" data-hub="dev"><span class="hub-lbl">المطورون</span><span class="stat-ic"><svg class="ic"><use href="#i-dev"/></svg></span></button>
       <button type="button" class="hub-btn" data-hub="cust"><span class="hub-lbl">العميل</span><span class="stat-ic"><svg class="ic"><use href="#i-user"/></svg></span></button>
       <button type="button" class="hub-btn" data-hub="bank"><span class="hub-lbl">البنوك</span><span class="stat-ic"><svg class="ic"><use href="#i-bank"/></svg></span></button>
-    </div>
-    <div class="promo" id="promoBanner">
-      <div class="promo-txt"><b>عقارك ...<br>في المكان الصحيح</b><button type="button" id="promoBtn">استعرض الآن <svg class="ic"><use href="#i-chev"/></svg></button></div>
-      <img src="promo.jpg" alt="" loading="lazy">
     </div>
     <div id="savedBanner"></div>
     <div id="ownerExtra"></div>
@@ -2311,7 +2299,6 @@ $('bellNotifRow').addEventListener('click', () => { setBell(false); openNotif();
 bellPanel.addEventListener('click', e => { if(e.target.closest('.more-row:not(#bellNotifRow), .footer-row > *')) setBell(false); });   // بعد اختيار أي أداة تُغلق اللوحة
 document.addEventListener('click', e => { if(bellPanel.style.display !== 'none' && !bellPanel.contains(e.target)) setBell(false); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') setBell(false); });
-$('promoBtn').addEventListener('click', () => goSearch({}));
 // ----- الإشعارات -----
 function openNotif(){
   const mm = savedSearch ? savedMatches() : [], day = listings.filter(l => isActive(l) && l.ownerId !== uid && (l.createdAt || 0) > Date.now() - 864e5).length, nf = listings.filter(l => favs.includes(l.id) && isActive(l)).length;
@@ -2401,7 +2388,7 @@ const HUBS = {
 let hubItems = [];
 function showHub(k){
   const h = HUBS[k]; if(!h) return;
-  showHome(); view = 'hub'; setNav('home');
+  showHome(); view = 'hub'; setNav('home'); document.body.classList.add('hub-open');
   $('homeButtons').style.display = 'none'; $('libraryView').style.display = 'none'; $('hubView').style.display = 'block';
   $('hubTitle').textContent = h.title; $('hubIntro').textContent = h.intro;
   hubItems = []; let html = '';
@@ -2767,14 +2754,14 @@ function showHome(){
   $('homeButtons').style.display = 'block';
   $('libraryView').style.display = 'none';
   $('joinRequestsView').style.display = 'none';
-  $('hubView').style.display = 'none'; setNav('home');
+  $('hubView').style.display = 'none'; document.body.classList.remove('hub-open'); setNav('home');
 }
 function showLibrary(t){
   if(memberMode){ memberMode = null; $('libraryView').classList.remove('member-mode'); }
   view = 'library'; lib = t;
   $('homeButtons').style.display = 'none';
   $('libraryView').style.display = 'block';
-  $('joinRequestsView').style.display = 'none'; $('hubView').style.display = 'none';
+  $('joinRequestsView').style.display = 'none'; $('hubView').style.display = 'none'; document.body.classList.remove('hub-open');
   $('libTitle').textContent = t === 'all' ? 'نتائج البحث' : (t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض');
   document.querySelectorAll('#libTabs button').forEach(b => b.classList.toggle('on', b.dataset.l === t));
   setNav(favOnly ? 'fav' : 'search');
@@ -2784,7 +2771,7 @@ function showJoinRequests(){
   view = 'join'; lib = null;
   $('homeButtons').style.display = 'none';
   $('libraryView').style.display = 'none';
-  $('joinRequestsView').style.display = 'block'; $('hubView').style.display = 'none';
+  $('joinRequestsView').style.display = 'block'; $('hubView').style.display = 'none'; document.body.classList.remove('hub-open');
   renderJoinRequests();
 }
 $('joinBackBtn').addEventListener('click', showHome);
@@ -3369,7 +3356,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792704885';
+const APP_VERSION = '1792705900';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
