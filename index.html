@@ -344,6 +344,67 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
 #waFillBtn{background:linear-gradient(180deg,#faf1d9,#ecdcb2)}
 .imp-desc{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
 #impSummary{white-space:pre-line}
+/* ===== حاسبة التمويل العقاري ===== */
+.fin-modal{max-height:92vh}
+.fin-chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.fin-chips button,.fin-seg button{flex:1;padding:8px 6px;border-radius:9px;border:1px solid var(--beige-line);background:var(--cream2);color:var(--forest);font-weight:800;font-size:13px;font-family:inherit;cursor:pointer}
+.fin-seg{display:flex;gap:6px;margin-top:8px}
+.fin-seg button.on,.fin-chips button.on{background:var(--forest);color:#fff;border-color:var(--forest)}
+.field input[type=range]{width:100%;padding:0;accent-color:var(--primary)}
+.fin-result{background:var(--mist);border:1px solid var(--border);border-radius:14px;padding:14px;margin:14px 0}
+.fin-big{font-size:30px;font-weight:800;color:var(--forest);line-height:1.2}
+.fin-big small{font-size:14px;font-weight:700;color:var(--muted)}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.fin-grid div{background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.fin-grid span{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.fin-grid b{font-size:15px;color:var(--forest)}
+.fin-afford{margin-top:10px;padding:9px 11px;border-radius:10px;font-size:13.5px;font-weight:700;line-height:1.6}
+.fin-afford.ok{background:#e9f3e6;color:#245a2c}.fin-afford.warn{background:#fdf0e0;color:#8a5200}
+.fin-h{margin:6px 0 4px;font-size:16px;font-weight:800;color:var(--forest)}
+.fin-offer{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;background:#fff}
+.fin-offer.best{border-color:var(--primary);box-shadow:0 0 0 2px rgba(47,106,63,.18)}
+.fin-offer-top{display:flex;gap:6px;align-items:center}
+.fin-offer-top input{padding:9px!important;font-size:15px!important}
+.fin-offer-top .fo-name{flex:1 1 auto;min-width:0;width:auto}.fin-offer-top .fo-rate{flex:0 0 76px;min-width:0;width:76px;text-align:center}
+.fin-offer-top .fo-del{border:0;background:none;color:#a33;font-size:20px;cursor:pointer;padding:0 6px}
+.fin-offer-res{font-size:13px;color:var(--text);margin-top:7px;line-height:1.7}
+.fin-offer-res .tag{display:inline-block;padding:1px 8px;border-radius:999px;font-weight:800;font-size:12px;margin-inline-start:6px}
+.fin-offer-res .tag.best{background:var(--primary);color:#fff}.fin-offer-res .tag.diff{background:#fdf0e0;color:#8a5200}
+.fin-add{width:100%;padding:10px;border:1px dashed var(--accent);background:var(--mist);color:var(--forest);border-radius:10px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:2px}
+/* ===== الواجهة الجديدة: بحث + فئات بيضاوية + شريط تنقل سفلي ===== */
+body{padding-bottom:104px}
+.toast{bottom:92px}
+body:not(.gate-open) .menu-dot{display:none!important}
+.home-search{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 8px;box-shadow:0 3px 14px rgba(39,64,47,.22);margin-bottom:12px}
+.home-search input{flex:1;min-width:0;border:0;outline:0;background:none;font-size:16px;font-weight:600;font-family:inherit;padding:9px 6px;color:#17261d}
+.home-search input::placeholder{color:#8b8f83;font-weight:500}
+.hs-btn,.hs-filter{border:0;background:none;font-size:20px;padding:6px 10px;cursor:pointer;line-height:1}
+.hs-filter{border-inline-start:1px solid var(--border);padding-inline-start:12px}
+.pill-row{display:flex;gap:8px;margin-bottom:10px}
+.pill{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 4px;border-radius:999px;border:1px solid var(--border);background:linear-gradient(180deg,#fffdf8,#f6eedc);color:var(--forest);font-weight:800;font-size:13.5px;font-family:inherit;cursor:pointer;box-shadow:0 2px 8px rgba(39,64,47,.16);white-space:nowrap}
+.lib-buttons{gap:8px;margin-bottom:10px}
+.lib-btn{flex-direction:row!important;justify-content:center;padding:10px 8px!important;border-radius:999px!important;gap:6px!important;background:linear-gradient(180deg,#fffdf8,#f6eedc)}
+.lib-btn .lib-icon{font-size:20px}
+.lib-btn .lib-count{margin-top:0!important}
+.pill-row .map-all-btn{flex:1;width:auto;margin-bottom:0;border-radius:999px;padding:10px 8px;font-size:14.5px}
+.lib-tabs{display:flex;gap:6px;margin:0 0 10px}
+.lib-tabs button{flex:1;padding:8px;border-radius:999px;border:1px solid var(--border);background:var(--cream);color:var(--forest);font-weight:800;font-size:14px;font-family:inherit;cursor:pointer}
+.lib-tabs button.on{background:var(--forest);color:#fff;border-color:var(--forest)}
+.adv-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--mist);border:1px solid var(--border);border-radius:12px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--forest)}
+.adv-bar button{border:0;background:none;color:var(--forest);font-weight:800;text-decoration:underline;font-family:inherit;font-size:13px;cursor:pointer;padding:2px 6px}
+.af-range{display:flex;gap:8px}.af-range input{flex:1;min-width:0}
+.bottom-nav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));margin:0 auto;max-width:520px;height:64px;display:flex;align-items:stretch;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:28px;box-shadow:0 6px 24px rgba(0,0,0,.24);z-index:15}
+.bottom-nav button{flex:1;position:relative;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:inherit;cursor:pointer;color:#6f7a6e;-webkit-tap-highlight-color:transparent;padding:0}
+.bn-i{font-size:21px;line-height:1;filter:grayscale(1) opacity(.7)}
+.bn-t{font-size:11.5px;font-weight:700}
+.bottom-nav button.on{color:var(--forest)}
+.bottom-nav button.on .bn-i{filter:none}
+.bottom-nav button.on::after{content:"";position:absolute;bottom:7px;width:26px;height:3px;border-radius:3px;background:var(--primary)}
+.bn-dot{position:absolute;top:10px;left:calc(50% + 6px);width:9px;height:9px;border-radius:50%;background:#d94b3d;display:none}
+.acct-item{display:flex;width:100%;align-items:center;gap:8px;padding:13px 14px;border-radius:12px;border:1px solid var(--border);background:var(--cream);color:var(--forest);font-weight:800;font-size:15px;font-family:inherit;margin-bottom:8px;text-align:right;cursor:pointer}
+.nt-card{border:1px solid var(--border);background:var(--cream);border-radius:12px;padding:12px;margin-bottom:8px;font-size:14px;line-height:1.7;color:var(--text)}
+.nt-card b{color:var(--forest)}.nt-card button{margin-top:6px;padding:7px 14px;border-radius:999px;border:1px solid var(--beige-line);background:linear-gradient(180deg,#faf1d9,#ecdcb2);color:var(--forest);font-weight:800;font-family:inherit;cursor:pointer}
+@media (max-width:360px){ .pill{font-size:12.5px;padding:9px 2px} }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -363,11 +424,25 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
       <button class="add-btn" id="seekerRegisterBtn">🏢 تسجيل وسيط عقاري</button>
       <button type="button" class="seeker-back" id="seekerBackBtn">→ رجوع</button>
     </div>
-    <div class="lib-buttons">
-      <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">مكتبة العروض</span><span class="lib-count" id="offersCount">0</span></button>
-      <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">مكتبة الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
+    <form class="home-search" id="homeSearchForm" autocomplete="off">
+      <button type="submit" class="hs-btn" aria-label="بحث">🔍</button>
+      <input type="search" id="homeSearch" placeholder="ابحث عن عقار ..." enterkeyhint="search">
+      <button type="button" class="hs-filter" id="homeFilterBtn" aria-label="تصفية البحث">⚙️</button>
+    </form>
+    <div class="pill-row cats" id="catRow">
+      <button type="button" class="pill" data-cat="استثمار">🏗️ مشاريع</button>
+      <button type="button" class="pill" data-cat="أرض">🏞️ أراضي</button>
+      <button type="button" class="pill" data-cat="شقة">🏢 شقق</button>
+      <button type="button" class="pill" data-cat="فيلا">🏠 فلل</button>
     </div>
-    <button class="map-all-btn" id="openAllMapBtn">🗺️ خريطة العروض والطلبات <span class="lib-count" id="mapCount">0</span></button>
+    <div class="lib-buttons">
+      <button class="lib-btn" id="openOffersBtn"><span class="lib-icon">🏢</span><span class="lib-text">العروض</span><span class="lib-count" id="offersCount">0</span></button>
+      <button class="lib-btn lib-requests" id="openRequestsBtn"><span class="lib-icon">📋</span><span class="lib-text">الطلبات</span><span class="lib-count" id="requestsCount">0</span></button>
+    </div>
+    <div class="pill-row">
+      <button class="map-all-btn" id="openAllMapBtn">🗺️ الخريطة <span class="lib-count" id="mapCount">0</span></button>
+      <button class="map-all-btn" id="openFinBtn">🏦 حاسبة التمويل</button>
+    </div>
     <div id="savedBanner"></div>
     <div id="ownerExtra"></div>
     <div class="footer-row" id="footerRow">
@@ -383,6 +458,7 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
       <button class="lib-back" id="libBackBtn">→ رجوع</button>
       <h2 class="lib-title" id="libTitle">مكتبة العروض</h2>
     </div>
+    <div class="lib-tabs" id="libTabs"><button type="button" data-l="all">الكل</button><button type="button" data-l="عرض">العروض</button><button type="button" data-l="طلب">الطلبات</button></div>
     <div class="filter-bar">
       <input type="text" id="fltSearch" placeholder="🔍 ابحث: حي، وسيط، رقم الإعلان 12-A3">
       <div class="filter-row">
@@ -403,6 +479,7 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
         <button type="button" class="fav-toggle" id="fltSave">🔔 حفظ هذا البحث</button>
       </div>
     </div>
+    <div class="adv-bar" id="advBar" style="display:none"><span>🎛️ تصفية متقدمة مفعّلة (<b id="advCount">0</b>)</span><span><button type="button" id="advEdit">تعديل</button><button type="button" id="advClear">مسح</button></span></div>
     <div id="memberPanel" class="member-panel" style="display:none"></div>
     <div id="listArea"></div>
   </div>
@@ -565,6 +642,65 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
     <span class="allmap-count" id="allMapCount"></span>
   </div>
   <div id="allMap"></div>
+</div>
+
+<!-- شريط التنقل السفلي -->
+<nav class="bottom-nav" id="bottomNav" aria-label="التنقل">
+  <button type="button" data-nav="acct"><span class="bn-i">👤</span><span class="bn-t">حسابي</span></button>
+  <button type="button" data-nav="notif"><span class="bn-i">🔔</span><span class="bn-t">الإشعارات</span><span class="bn-dot" id="navDot"></span></button>
+  <button type="button" data-nav="fav"><span class="bn-i">🤍</span><span class="bn-t">المفضلة</span></button>
+  <button type="button" data-nav="search"><span class="bn-i">🔍</span><span class="bn-t">البحث</span></button>
+  <button type="button" data-nav="home" class="on"><span class="bn-i">🏠</span><span class="bn-t">الرئيسية</span></button>
+</nav>
+
+<!-- نافذة التصفية -->
+<div class="overlay" id="filterOverlay" style="z-index:30">
+  <div class="modal">
+    <h2>⚙️ تصفية البحث</h2>
+    <div class="field"><label>نوع الإعلان</label><div class="fin-seg" id="afKind"><button type="button" data-k="">الكل</button><button type="button" data-k="عرض">عروض</button><button type="button" data-k="طلب">طلبات</button><button type="button" data-k="استثمار">استثمار</button></div></div>
+    <div class="field"><label>نوع العقار</label><select id="afProp"></select></div>
+    <div class="field"><label>المدينة</label><select id="afCity"></select></div>
+    <div class="field"><label>الحي أو كلمة بحث</label><input type="text" id="afText" placeholder="مثال: الملقا"></div>
+    <div class="field"><label>السعر (ريال)</label><div class="af-range"><input type="text" id="afPMin" inputmode="numeric" placeholder="من"><input type="text" id="afPMax" inputmode="numeric" placeholder="إلى"></div></div>
+    <div class="field"><label>المساحة (م²)</label><div class="af-range"><input type="text" id="afAMin" inputmode="numeric" placeholder="من"><input type="text" id="afAMax" inputmode="numeric" placeholder="إلى"></div></div>
+    <div class="field"><label>الإعلان من</label><select id="afSrc"></select></div>
+    <div class="field"><label>الترتيب</label><select id="afSort"></select></div>
+    <div class="field"><label class="oath-check"><input type="checkbox" id="afFav"> المفضلة فقط</label></div>
+    <div class="modal-actions"><button class="btn-cancel" id="afReset">إعادة ضبط</button><button class="btn-save" id="afApply">عرض النتائج</button></div>
+  </div>
+</div>
+
+<!-- نافذة الإشعارات -->
+<div class="overlay" id="notifOverlay" style="z-index:30"><div class="modal"><h2>🔔 الإشعارات</h2><div id="notifBody"></div><div class="modal-actions"><button class="btn-save" id="notifClose" style="flex:1">إغلاق</button></div></div></div>
+
+<!-- نافذة حسابي -->
+<div class="overlay" id="acctOverlay" style="z-index:30"><div class="modal"><h2 id="acctRole">حسابي</h2><div id="acctBody"></div><div class="modal-actions"><button class="btn-cancel" id="acctClose" style="flex:1">إغلاق</button></div></div></div>
+
+<!-- حاسبة التمويل العقاري (الخطوة 1: تقديرية) -->
+<div class="overlay" id="finOverlay" style="z-index:45">
+  <div class="modal fin-modal">
+    <h2>🏦 حاسبة التمويل العقاري</h2>
+    <div class="picker-hint">أرقام تقديرية وغير ملزمة، وليست عرضاً من أي بنك. العروض المعبأة <b>أمثلة تجريبية</b>: عدّلها بنسب البنوك الفعلية.</div>
+    <div class="field"><label>سعر العقار (ريال)</label><input type="text" id="finPrice" inputmode="numeric" placeholder="مثال: 1,000,000"></div>
+    <div class="field"><label>الدفعة المقدمة (ريال)</label><input type="text" id="finDown" inputmode="numeric" placeholder="مثال: 200,000">
+      <div class="fin-chips" id="finChips"><button type="button" data-p="10">10%</button><button type="button" data-p="15">15%</button><button type="button" data-p="20">20%</button><button type="button" data-p="25">25%</button><button type="button" data-p="30">30%</button></div>
+      <div class="picker-hint" id="finDownPct"></div></div>
+    <div class="field"><label>مدة التمويل: <b id="finYearsVal">25</b> سنة</label><input type="range" id="finYears" min="1" max="30" step="1" value="25"></div>
+    <div class="field"><label>نسبة الأرباح السنوية (%)</label><input type="text" id="finRate" inputmode="decimal" placeholder="مثال: 5">
+      <div class="fin-seg" id="finSeg"><button type="button" data-t="flat">ثابتة (على كامل المبلغ)</button><button type="button" data-t="reduce">متناقصة (على الرصيد)</button></div></div>
+    <div class="field"><label>الراتب الشهري (اختياري)</label><input type="text" id="finSalary" inputmode="numeric" placeholder="مثال: 15,000"></div>
+    <div class="field"><label>الالتزامات الشهرية القائمة (اختياري)</label><input type="text" id="finDebts" inputmode="numeric" placeholder="أقساط قروض وبطاقات"></div>
+    <div class="field"><label>الحد الأقصى للالتزامات من الراتب (%)</label><input type="text" id="finDbr" inputmode="decimal" placeholder="55"><div class="picker-hint">قيمة افتراضية قابلة للتعديل: تختلف بحسب البنك وشريحة الدخل وضوابط البنك المركزي وقد تتغير.</div></div>
+    <div class="fin-result" id="finResult"></div>
+    <h3 class="fin-h">مقارنة العروض</h3>
+    <div class="picker-hint">اكتب اسم كل بنك أو عرض ونسبته، ويُبرز التطبيق الأقل تكلفة ويريك الفرق.</div>
+    <div id="finOffers"></div>
+    <button type="button" class="fin-add" id="finAddOffer">+ إضافة عرض</button>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="finShareBtn">📤 مشاركة النتيجة</button>
+      <button class="btn-save" id="finCloseBtn">إغلاق</button>
+    </div>
+  </div>
 </div>
 
 <!-- استيراد إعلانات من ملف (للمدير) -->
@@ -951,8 +1087,9 @@ function render(){
   $('mapCount').textContent = act.filter(l => listingPoint(l)).length;
   if(allMapOpen) refreshAllMap(false);
   renderOwnerUI();
-  renderSavedBanner();
+  renderSavedBanner(); updateNavDot();
   if(!lib) return;
+  updateAdvBar();
   const area = $('listArea'); area.className = '';
   if(!listingsLoaded){ area.innerHTML = skeletonHTML(); return; }
   $('memberPanel').style.display = memberMode ? 'block' : 'none';
@@ -962,12 +1099,13 @@ function render(){
   else{
     $('fltArchive').classList.toggle('active', showArchive);
     $('fltSave').textContent = savedSearch ? '🔕 إلغاء البحث المحفوظ' : '🔔 حفظ هذا البحث';
-    rows = listings.filter(l => (lib === 'طلب') === (l.type === 'طلب') && (showArchive ? !isActive(l) : isActive(l)));
+    rows = listings.filter(l => (lib === 'all' || (lib === 'طلب') === (l.type === 'طلب')) && (showArchive ? !isActive(l) : isActive(l)));
     const q = $('fltSearch').value.trim().toLowerCase(), fc = $('fltCity').value, ft = $('fltType').value;
     if(fc) rows = rows.filter(l => l.city === fc);
     if(ft) rows = rows.filter(l => l.propertyType === ft);
     if(q) rows = rows.filter(l => textMatch(l, q));
     if(favOnly) rows = rows.filter(l => favs.includes(l.id));
+    rows = advFilter(rows);
     const sortBy = $('fltSort').value;
     rows = rows.slice().sort((a, b) => {
       if(sortBy === 'old') return effDate(a) - effDate(b);
@@ -1157,7 +1295,7 @@ function savedMatches(){
   if(!savedSearch) return [];
   const q = (savedSearch.q || '').toLowerCase();
   return listings.filter(l => isActive(l) && l.ownerId !== uid && (l.createdAt || 0) > savedSearch.since
-    && (savedSearch.lib === 'طلب') === (l.type === 'طلب')
+    && (savedSearch.lib === 'all' || (savedSearch.lib === 'طلب') === (l.type === 'طلب'))
     && (!savedSearch.city || l.city === savedSearch.city)
     && (!savedSearch.type || l.propertyType === savedSearch.type)
     && textMatch(l, q));
@@ -1795,6 +1933,194 @@ $('listArea').addEventListener('click', e => {
 $('memberPanel').addEventListener('click', e => { const t = e.target.closest('[data-mtab]'); if(!t || !memberMode) return; memberMode.tab = t.dataset.mtab; render(); });
 $('menuMineBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openMember(uid, 'إعلاناتي'); });
 $('menuImportBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); openImport(); });
+
+// ===== حاسبة التمويل العقاري (الخطوة 1): تقديرية، والنسب الافتراضية أمثلة تجريبية =====
+const FIN_KEY = 'wasata_fin_v1';
+const FIN_DEFAULTS = { price: 1000000, down: 200000, years: 25, rate: 5, type: 'flat', salary: '', debts: '', dbr: 55, offers: [{ n: 'عرض تجريبي ١', r: 4.5 }, { n: 'عرض تجريبي ٢', r: 5 }, { n: 'عرض تجريبي ٣', r: 5.5 }] };
+let fin = JSON.parse(JSON.stringify(FIN_DEFAULTS));
+function finLoad(){
+  try{ const o = JSON.parse(localStorage.getItem(FIN_KEY) || 'null'); if(o && typeof o === 'object') fin = { ...FIN_DEFAULTS, ...o, offers: Array.isArray(o.offers) && o.offers.length ? o.offers.slice(0, 8).map(x => ({ n: String(x.n || '').slice(0, 40), r: +x.r || 0 })) : FIN_DEFAULTS.offers }; }catch{}
+}
+function finSave(){ try{ localStorage.setItem(FIN_KEY, JSON.stringify(fin)); }catch{} }
+const finNum = v => { const n = parseFloat(String(toWestern(v)).replace(/[^\d.]/g, '')); return isNaN(n) ? 0 : n; };
+const finFmt = n => Math.round(n).toLocaleString('en-US');
+function finCalc(P, years, rate, type){
+  const n = Math.max(1, Math.round(years * 12));
+  if(P <= 0) return { inst: 0, total: 0, profit: 0, n };
+  let inst;
+  if(type === 'reduce'){ const i = rate / 100 / 12; inst = i === 0 ? P / n : P * i / (1 - Math.pow(1 + i, -n)); }
+  else inst = (P + P * (rate / 100) * years) / n;
+  const total = inst * n; return { inst, total, profit: total - P, n };
+}
+function finMaxPrincipal(maxInst, years, rate, type){
+  const n = Math.max(1, Math.round(years * 12)); if(maxInst <= 0) return 0;
+  if(type === 'reduce'){ const i = rate / 100 / 12; return i === 0 ? maxInst * n : maxInst * (1 - Math.pow(1 + i, -n)) / i; }
+  return maxInst * n / (1 + (rate / 100) * years);
+}
+function finReadInputs(){
+  fin.price = finNum($('finPrice').value); fin.down = finNum($('finDown').value); fin.years = +$('finYears').value || 25;
+  fin.rate = finNum($('finRate').value); fin.salary = finNum($('finSalary').value); fin.debts = finNum($('finDebts').value); fin.dbr = finNum($('finDbr').value) || 55;
+}
+function finWriteInputs(){
+  $('finPrice').value = fin.price ? finFmt(fin.price) : ''; $('finDown').value = fin.down ? finFmt(fin.down) : '';
+  $('finYears').value = fin.years; $('finRate').value = fin.rate || ''; $('finSalary').value = fin.salary ? finFmt(fin.salary) : ''; $('finDebts').value = fin.debts ? finFmt(fin.debts) : ''; $('finDbr').value = fin.dbr || 55;
+  document.querySelectorAll('#finSeg button').forEach(b => b.classList.toggle('on', b.dataset.t === fin.type));
+}
+function finRender(){
+  finReadInputs();
+  const { price, down, years, rate, salary, debts, dbr, type } = fin;
+  $('finYearsVal').textContent = years;
+  document.querySelectorAll('#finSeg button').forEach(b => b.classList.toggle('on', b.dataset.t === type));
+  const P = Math.max(0, price - down), pct = price > 0 ? down / price * 100 : 0;
+  $('finDownPct').textContent = price > 0 ? 'الدفعة المقدمة ' + pct.toFixed(1) + '% · مبلغ التمويل ' + finFmt(P) + ' ريال' : '';
+  const box = $('finResult');
+  if(price <= 0){ box.innerHTML = '<div class="picker-hint" style="margin:0">أدخل سعر العقار لتظهر النتيجة.</div>'; $('finOffers').dataset.ready = ''; finRenderOffers(false); return; }
+  if(P <= 0){ box.innerHTML = '<div class="fin-afford ok">الدفعة المقدمة تغطي السعر كاملاً، فلا حاجة إلى تمويل.</div>'; finRenderOffers(false); return; }
+  const r = finCalc(P, years, rate, type);
+  let aff = '';
+  if(salary > 0){
+    const maxInst = salary * dbr / 100 - debts, maxFin = finMaxPrincipal(maxInst, years, rate, type);
+    if(maxInst <= 0) aff = '<div class="fin-afford warn">⚠️ الالتزامات الحالية تستهلك الحد المسموح من الراتب، فلا يتبقى قسط جديد.</div>';
+    else if(r.inst <= maxInst) aff = '<div class="fin-afford ok">✅ القسط ضمن الحد التقديري (أقصى قسط ' + finFmt(maxInst) + ' ريال شهرياً). أقصى مبلغ تمويل تقديري بهذه المدة والنسبة: ' + finFmt(maxFin) + ' ريال.</div>';
+    else aff = '<div class="fin-afford warn">⚠️ القسط أعلى من الحد التقديري بمقدار ' + finFmt(r.inst - maxInst) + ' ريال شهرياً (أقصى قسط ' + finFmt(maxInst) + '). أقصى مبلغ تمويل تقديري: ' + finFmt(maxFin) + ' ريال، فزِد الدفعة المقدمة أو المدة.</div>';
+  }
+  box.innerHTML = '<div class="fin-big">' + finFmt(r.inst) + ' <small>ريال / شهر</small></div>'
+    + '<div class="fin-grid"><div><span>مبلغ التمويل</span><b>' + finFmt(P) + '</b></div><div><span>إجمالي الأرباح</span><b>' + finFmt(r.profit) + '</b></div>'
+    + '<div><span>إجمالي المسدَّد</span><b>' + finFmt(r.total) + '</b></div><div><span>عدد الأقساط</span><b>' + r.n + '</b></div></div>' + aff;
+  finRenderOffers(false);
+  finSave();
+}
+function finOffersHTML(){
+  return fin.offers.map((o, i) => '<div class="fin-offer" data-i="' + i + '"><div class="fin-offer-top"><input type="text" class="fo-name" maxlength="40" placeholder="اسم البنك أو العرض" value="' + esc(o.n) + '"><input type="text" class="fo-rate" inputmode="decimal" placeholder="%" value="' + (o.r || '') + '"><button type="button" class="fo-del" aria-label="حذف">×</button></div><div class="fin-offer-res"></div></div>').join('');
+}
+function finRenderOffers(rebuild){
+  const wrap = $('finOffers'); if(rebuild || !wrap.children.length) wrap.innerHTML = finOffersHTML();
+  const P = Math.max(0, fin.price - fin.down), rows = [...wrap.querySelectorAll('.fin-offer')];
+  const res = fin.offers.map(o => (P > 0 && o.r > 0) ? finCalc(P, fin.years, o.r, fin.type) : null);
+  const valid = res.filter(Boolean); const best = valid.length ? Math.min(...valid.map(x => x.inst)) : null;
+  rows.forEach((row, i) => {
+    const r = res[i], box = row.querySelector('.fin-offer-res'); row.classList.toggle('best', !!(r && best != null && Math.abs(r.inst - best) < 0.5 && valid.length > 1));
+    if(!r){ box.textContent = P > 0 ? 'أدخل النسبة لتظهر النتيجة' : 'أدخل سعر العقار أولاً'; return; }
+    const isBest = Math.abs(r.inst - best) < 0.5, dm = r.inst - best, dt = r.total - Math.min(...valid.map(x => x.total));
+    box.innerHTML = 'القسط <b>' + finFmt(r.inst) + '</b> ريال · الأرباح <b>' + finFmt(r.profit) + '</b>'
+      + (valid.length > 1 ? (isBest ? '<span class="tag best">الأقل تكلفة</span>' : '<span class="tag diff">+' + finFmt(dm) + ' شهرياً · +' + finFmt(dt) + ' إجمالاً</span>') : '');
+  });
+}
+function openFin(price){
+  finLoad(); if(price && price > 0){ fin.price = price; fin.down = Math.round(price * 0.2); }
+  finWriteInputs(); $('finOffers').innerHTML = ''; finRender(); finRenderOffers(true); finRender();
+  $('finOverlay').classList.add('show');
+}
+function finShareText(){
+  const P = Math.max(0, fin.price - fin.down), r = finCalc(P, fin.years, fin.rate, fin.type);
+  return '🏦 حاسبة التمويل العقاري (تقديرية)\nسعر العقار: ' + finFmt(fin.price) + ' ريال\nالدفعة المقدمة: ' + finFmt(fin.down) + ' ريال\nمبلغ التمويل: ' + finFmt(P) + ' ريال\nالمدة: ' + fin.years + ' سنة · النسبة: ' + fin.rate + '% (' + (fin.type === 'flat' ? 'ثابتة' : 'متناقصة') + ')\nالقسط الشهري التقديري: ' + finFmt(r.inst) + ' ريال\nإجمالي الأرباح: ' + finFmt(r.profit) + ' ريال\n\nوسطاء المملكة: https://otbi531-stack.github.io/Wasata-/';
+}
+['finPrice', 'finDown', 'finRate', 'finSalary', 'finDebts', 'finDbr', 'finYears'].forEach(id => $(id).addEventListener('input', finRender));
+['finPrice', 'finDown', 'finSalary', 'finDebts'].forEach(id => $(id).addEventListener('blur', () => { const n = finNum($(id).value); $(id).value = n ? finFmt(n) : ''; }));
+$('finChips').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; const price = finNum($('finPrice').value); if(price <= 0){ toast('أدخل سعر العقار أولاً'); return; } $('finDown').value = finFmt(price * (+b.dataset.p) / 100); finRender(); });
+$('finSeg').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; fin.type = b.dataset.t; finRender(); });
+$('finOffers').addEventListener('input', e => {
+  const row = e.target.closest('.fin-offer'); if(!row) return; const i = +row.dataset.i;
+  if(e.target.classList.contains('fo-name')) fin.offers[i].n = e.target.value; else if(e.target.classList.contains('fo-rate')) fin.offers[i].r = finNum(e.target.value);
+  finRenderOffers(false); finSave();
+});
+$('finOffers').addEventListener('click', e => { const d = e.target.closest('.fo-del'); if(!d) return; const i = +d.closest('.fin-offer').dataset.i; fin.offers.splice(i, 1); finRenderOffers(true); finSave(); });
+$('finAddOffer').addEventListener('click', () => { if(fin.offers.length >= 8){ toast('الحد الأقصى 8 عروض'); return; } fin.offers.push({ n: '', r: 0 }); finRenderOffers(true); finSave(); const ins = $('finOffers').querySelectorAll('.fo-name'); if(ins.length) ins[ins.length - 1].focus(); });
+$('finShareBtn').addEventListener('click', () => { finRender(); window.open('https://wa.me/?text=' + encodeURIComponent(finShareText()), '_blank', 'noopener'); });
+$('finCloseBtn').addEventListener('click', () => $('finOverlay').classList.remove('show'));
+$('openFinBtn').addEventListener('click', () => openFin());
+
+// ===== الواجهة الجديدة: بحث + فئات + شريط تنقل + تصفية متقدمة =====
+let adv = { kind: '', src: '', pMin: 0, pMax: 0, aMin: 0, aMax: 0 };
+const ADV_KEYS = ['kind', 'src', 'pMin', 'pMax', 'aMin', 'aMax'];
+const advCount = () => ADV_KEYS.filter(k => adv[k]).length;
+const areaNum = v => { const m = toWestern(String(v || '')).replace(/,/g, '').match(/\d+(?:\.\d+)?/); return m ? parseFloat(m[0]) : null; };
+function advFilter(rows){
+  if(adv.kind) rows = rows.filter(l => adv.kind === 'طلب' ? l.type === 'طلب' : (adv.kind === 'استثمار' ? l.type === 'استثمار' : l.type !== 'طلب'));
+  if(adv.src) rows = rows.filter(l => normSource(l.source) === adv.src);
+  if(adv.pMin || adv.pMax) rows = rows.filter(l => { const p = priceNum(l.price); return p != null && (!adv.pMin || p >= adv.pMin) && (!adv.pMax || p <= adv.pMax); });
+  if(adv.aMin || adv.aMax) rows = rows.filter(l => { const a = areaNum(l.area); return a != null && (!adv.aMin || a >= adv.aMin) && (!adv.aMax || a <= adv.aMax); });
+  return rows;
+}
+function updateAdvBar(){ const n = memberMode ? 0 : advCount(); $('advBar').style.display = n ? 'flex' : 'none'; $('advCount').textContent = n; }
+function updateNavDot(){ try{ $('navDot').style.display = savedSearch && savedMatches().length ? 'block' : 'none'; }catch{} }
+function setNav(k){ document.querySelectorAll('#bottomNav button').forEach(b => b.classList.toggle('on', b.dataset.nav === k)); }
+function setFavUI(){ $('fltFav').classList.toggle('active', favOnly); $('fltFav').textContent = favOnly ? '❤️ المفضلة' : '🤍 المفضلة'; }
+function goSearch(o){
+  o = o || {};
+  adv = { kind: o.kind || '', src: '', pMin: 0, pMax: 0, aMin: 0, aMax: 0 };
+  $('fltSearch').value = o.q || ''; $('fltCity').value = o.city || ''; $('fltType').value = o.prop || ''; $('fltSort').value = 'new';
+  favOnly = !!o.fav; showArchive = false; setFavUI();
+  showLibrary(o.lib || 'all'); window.scrollTo(0, 0);
+  if(o.focus) setTimeout(() => $('fltSearch').focus(), 150);
+}
+$('homeSearchForm').addEventListener('submit', e => { e.preventDefault(); const q = $('homeSearch').value.trim(); $('homeSearch').blur(); goSearch({ q }); $('homeSearch').value = ''; });
+$('catRow').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; goSearch(b.dataset.cat === 'استثمار' ? { kind: 'استثمار' } : { prop: b.dataset.cat }); });
+$('libTabs').addEventListener('click', e => { const b = e.target.closest('button'); if(b) showLibrary(b.dataset.l); });
+$('advClear').addEventListener('click', () => { adv = { kind: '', src: '', pMin: 0, pMax: 0, aMin: 0, aMax: 0 }; render(); });
+$('advEdit').addEventListener('click', () => openAdvSheet());
+// ----- نافذة التصفية -----
+function openAdvSheet(){
+  if(!$('afProp').options.length){
+    $('afProp').innerHTML = '<option value="">الكل</option>' + PROPS.map(x => '<option>' + x + '</option>').join('');
+    $('afCity').innerHTML = '<option value="">كل المدن</option>' + cityOptionsHTML();
+    $('afSrc').innerHTML = '<option value="">الكل</option>' + SOURCES.map(x => '<option>' + x.v + '</option>').join('');
+    $('afSort').innerHTML = $('fltSort').innerHTML;
+  }
+  $('afProp').value = $('fltType').value; $('afCity').value = $('fltCity').value; $('afText').value = $('fltSearch').value; $('afSort').value = $('fltSort').value || 'new'; $('afFav').checked = favOnly; $('afSrc').value = adv.src || '';
+  $('afPMin').value = adv.pMin ? finFmt(adv.pMin) : ''; $('afPMax').value = adv.pMax ? finFmt(adv.pMax) : ''; $('afAMin').value = adv.aMin ? finFmt(adv.aMin) : ''; $('afAMax').value = adv.aMax ? finFmt(adv.aMax) : '';
+  document.querySelectorAll('#afKind button').forEach(b => b.classList.toggle('on', b.dataset.k === (adv.kind || '')));
+  $('filterOverlay').classList.add('show');
+}
+$('afKind').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; document.querySelectorAll('#afKind button').forEach(x => x.classList.toggle('on', x === b)); });
+$('afReset').addEventListener('click', () => {
+  ['afProp', 'afCity', 'afSrc'].forEach(id => { $(id).value = ''; }); ['afText', 'afPMin', 'afPMax', 'afAMin', 'afAMax'].forEach(id => { $(id).value = ''; });
+  $('afSort').value = 'new'; $('afFav').checked = false; document.querySelectorAll('#afKind button').forEach(b => b.classList.toggle('on', b.dataset.k === ''));
+});
+['afPMin', 'afPMax', 'afAMin', 'afAMax'].forEach(id => $(id).addEventListener('blur', () => { const n = finNum($(id).value); $(id).value = n ? finFmt(n) : ''; }));
+$('afApply').addEventListener('click', () => {
+  const on = document.querySelector('#afKind button.on');
+  adv = { kind: on ? on.dataset.k : '', src: $('afSrc').value, pMin: finNum($('afPMin').value), pMax: finNum($('afPMax').value), aMin: finNum($('afAMin').value), aMax: finNum($('afAMax').value) };
+  $('fltType').value = $('afProp').value; $('fltCity').value = $('afCity').value; $('fltSearch').value = $('afText').value.trim(); $('fltSort').value = $('afSort').value || 'new';
+  favOnly = $('afFav').checked; showArchive = false; setFavUI();
+  $('filterOverlay').classList.remove('show'); showLibrary('all'); window.scrollTo(0, 0);
+});
+$('homeFilterBtn').addEventListener('click', openAdvSheet);
+// ----- الإشعارات -----
+function openNotif(){
+  const mm = savedSearch ? savedMatches() : [], day = listings.filter(l => isActive(l) && l.ownerId !== uid && (l.createdAt || 0) > Date.now() - 864e5).length, nf = listings.filter(l => favs.includes(l.id) && isActive(l)).length;
+  const saved = savedSearch
+    ? '<div class="nt-card">🔔 <b>بحثك المحفوظ</b><br>' + (mm.length ? mm.length + (mm.length === 1 ? ' إعلان جديد يطابقه' : ' إعلانات جديدة تطابقه') : 'لا جديد يطابقه حالياً') + '<br><button type="button" data-n="saved">عرض البحث</button></div>'
+    : '<div class="nt-card">🔔 <b>لا يوجد بحث محفوظ</b><br>افتح أي مكتبة واضغط «حفظ هذا البحث»، فيخبرك التطبيق بالجديد عند دخولك.</div>';
+  $('notifBody').innerHTML = saved
+    + '<div class="nt-card">🆕 <b>آخر 24 ساعة</b><br>' + day + ' إعلان جديد<br><button type="button" data-n="new">تصفح الأحدث</button></div>'
+    + '<div class="nt-card">❤️ <b>مفضلتك</b><br>' + nf + ' إعلان<br><button type="button" data-n="fav">فتح المفضلة</button></div>'
+    + '<div class="nt-card" style="color:var(--muted)">الإشعارات الفورية على الجوال قريباً بإذن الله.</div>';
+  $('notifOverlay').classList.add('show');
+}
+$('notifBody').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; $('notifOverlay').classList.remove('show'); const k = b.dataset.n; if(k === 'saved') openSavedSearch(); else if(k === 'fav') goSearch({ fav: true }); else goSearch({}); });
+$('notifClose').addEventListener('click', () => $('notifOverlay').classList.remove('show'));
+// ----- حسابي: يعرض خيارات القائمة المتاحة لدورك -----
+function openAcct(){
+  $('acctRole').textContent = isOwner ? '👑 المدير' : (isMember() ? '🪪 عضو' + (myMember && myMember.memberNo ? ' رقم ' + myMember.memberNo : '') : '🔎 باحث عن عقار');
+  const items = []; syncMenuItems();
+  if(!isOwner && !isMember()){ items.push(['🏢 تسجيل وسيط عقاري', () => $('seekerRegisterBtn').click()]); items.push(['→ العودة لصفحة الاختيار', () => $('seekerBackBtn').click()]); }
+  document.querySelectorAll('#menuDropdown .menu-item').forEach(el => { if(el.classList.contains('member-only') && !isMember() && !isOwner) return; if(getComputedStyle(el).display !== 'none') items.push([el.textContent.trim(), () => el.click()]); });
+  items.push(['💬 قروب واتساب', () => window.open(WA_GROUP, '_blank', 'noopener')]);
+  $('acctBody').innerHTML = items.map((it, i) => '<button type="button" class="acct-item" data-i="' + i + '">' + esc(it[0]) + '</button>').join('');
+  $('acctBody').onclick = e => { const b = e.target.closest('.acct-item'); if(!b) return; $('acctOverlay').classList.remove('show'); items[+b.dataset.i][1](); };
+  $('acctOverlay').classList.add('show');
+}
+$('acctClose').addEventListener('click', () => $('acctOverlay').classList.remove('show'));
+['filterOverlay', 'notifOverlay', 'acctOverlay'].forEach(id => $(id).addEventListener('click', e => { if(e.target.id === id) $(id).classList.remove('show'); }));
+$('bottomNav').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return; const k = b.dataset.nav;
+  if(k === 'home'){ showHome(); window.scrollTo(0, 0); }
+  else if(k === 'search') goSearch({ focus: true });
+  else if(k === 'fav') goSearch({ fav: true });
+  else if(k === 'notif') openNotif();
+  else if(k === 'acct') openAcct();
+});
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -2143,6 +2469,7 @@ function showHome(){
   $('homeButtons').style.display = 'block';
   $('libraryView').style.display = 'none';
   $('joinRequestsView').style.display = 'none';
+  setNav('home');
 }
 function showLibrary(t){
   if(memberMode){ memberMode = null; $('libraryView').classList.remove('member-mode'); }
@@ -2150,7 +2477,9 @@ function showLibrary(t){
   $('homeButtons').style.display = 'none';
   $('libraryView').style.display = 'block';
   $('joinRequestsView').style.display = 'none';
-  $('libTitle').textContent = t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض';
+  $('libTitle').textContent = t === 'all' ? 'نتائج البحث' : (t === 'طلب' ? 'مكتبة الطلبات' : 'مكتبة العروض');
+  document.querySelectorAll('#libTabs button').forEach(b => b.classList.toggle('on', b.dataset.l === t));
+  setNav(favOnly ? 'fav' : 'search');
   render();
 }
 function showJoinRequests(){
@@ -2655,8 +2984,7 @@ function renderMembersList(){
 }
 
 $('supportLink').href = 'https://wa.me/' + SUPPORT_PHONE;
-$('menuDotBtn').addEventListener('click', e => {
-  e.stopPropagation();
+function syncMenuItems(){   // يحدّد خيارات القائمة المتاحة لدورك (تُستعمل من نقاط القائمة ومن «حسابي»)
   const gate = document.body.classList.contains('gate-open');
   $('menuMembersBtn').style.display = isOwner && !gate ? 'flex' : 'none';
   $('menuReportsBtn').style.display = isOwner && !gate ? 'flex' : 'none';
@@ -2666,6 +2994,10 @@ $('menuDotBtn').addEventListener('click', e => {
   $('menuSyncBtn').style.display = !gate && isOwner && membersNeedSync() ? 'flex' : 'none';
   $('menuReportsBtn').textContent = '🚩 البلاغات' + (reportsData.length ? ' (' + reportsData.length + ')' : '');
   $('menuInstallBtn').style.display = (isStandalone() || gate) ? 'none' : 'flex';
+}
+$('menuDotBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  syncMenuItems();
   $('menuDropdown').classList.toggle('show');
 });
 $('membersList').addEventListener('click', async e => {
@@ -2739,7 +3071,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792668018';
+const APP_VERSION = '1792672431';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
