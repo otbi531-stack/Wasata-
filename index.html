@@ -334,6 +334,16 @@ header{aspect-ratio:auto;height:calc(var(--medal) + 106px);background:url("data:
 header::before{content:"";position:absolute;left:50%;top:56px;width:var(--medal);height:var(--medal);transform:translateX(-50%);border-radius:50%;background:url(emblem.jpg) center/cover no-repeat,#1a321c;box-shadow:0 16px 42px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4)}
 header::after{height:44px;max-height:none;background:linear-gradient(to bottom,rgba(241,233,212,0) 0%,#F1E9D4 100%)}
 .container{margin:-34px auto 0}
+/* ===== لصق إعلان واتساب واستيراد المحادثات ===== */
+.wa-box{margin-bottom:12px}
+.wa-open{width:100%;padding:11px;border:1px dashed var(--accent);background:var(--mist);color:var(--forest);border-radius:10px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer}
+.wa-area{margin-top:8px}
+.wa-area textarea{width:100%;min-height:110px;padding:10px;border-radius:9px;border:1px solid var(--border);background:var(--cream);font-size:16px;font-family:inherit}
+.wa-actions{display:flex;gap:8px;margin-top:8px}
+.wa-actions button{flex:1;padding:10px;border-radius:9px;border:1px solid var(--beige-line);background:var(--cream2);color:var(--forest);font-weight:800;font-family:inherit;cursor:pointer}
+#waFillBtn{background:linear-gradient(180deg,#faf1d9,#ecdcb2)}
+.imp-desc{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+#impSummary{white-space:pre-line}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -410,6 +420,14 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
 <div class="overlay" id="overlay">
   <div class="modal">
     <h2 id="modalTitle">إضافة إعلان</h2>
+    <div class="wa-box" id="waBox">
+      <button type="button" class="wa-open" id="waOpenBtn">📋 الصق إعلانك من واتساب لتعبئة الحقول تلقائياً</button>
+      <div class="wa-area" id="waArea" style="display:none">
+        <textarea id="waText" placeholder="الصق رسالة الإعلان كما كتبتها في واتساب..."></textarea>
+        <div class="wa-actions"><button type="button" id="waFillBtn">✨ تعبئة الحقول</button><button type="button" id="waClearBtn">مسح</button></div>
+        <div class="picker-hint" id="waResult"></div>
+      </div>
+    </div>
     <div class="field"><label>نوع الإعلان</label><select id="fListingType"><option>عرض</option><option>طلب</option><option>استثمار</option></select></div>
     <div class="field"><label id="fPersonLabel">اسم المالك / صاحب العرض (للتذكير، يراه أنت فقط)</label><input type="text" id="fPerson" maxlength="80" placeholder="اختياري"></div>
     <div class="field"><label>من</label>
@@ -553,8 +571,8 @@ header::after{height:44px;max-height:none;background:linear-gradient(to bottom,r
 <div class="overlay" id="importOverlay" style="z-index:40">
   <div class="modal">
     <h2>📥 استيراد إعلانات</h2>
-    <div class="picker-hint">ارفع ملف CSV أو Excel، أو الصق الجدول. أول سطر عناوين الأعمدة (النوع، نوع العقار، المدينة، الحي، المساحة، السعر، الوسيط، الجوال، التفاصيل، التاريخ، من). تُنشر الإعلانات باسم حسابك كمدير.</div>
-    <div class="field"><input type="file" id="impFile" accept=".csv,.tsv,.txt,.xlsx,.xls"></div>
+    <div class="picker-hint">ارفع ملف CSV أو Excel، أو الصق الجدول، أو <b>صدّر محادثة واتساب</b> (ملف .txt أو .zip) فتُستخرج منها الإعلانات تقديرياً لتراجعها قبل النشر، ولا تنشر أرقام الآخرين إلا بموافقتهم. أول سطر عناوين الأعمدة (النوع، نوع العقار، المدينة، الحي، المساحة، السعر، الوسيط، الجوال، التفاصيل، التاريخ، من). تُنشر الإعلانات باسم حسابك كمدير.</div>
+    <div class="field"><input type="file" id="impFile" accept=".csv,.tsv,.txt,.zip,.xlsx,.xls"></div>
     <div class="field"><textarea id="impText" placeholder="أو الصق محتوى الجدول هنا" style="min-height:80px"></textarea></div>
     <div class="picker-actions"><button type="button" id="impTemplateBtn">⬇️ تنزيل نموذج</button><button type="button" id="impPreviewBtn">🔍 معاينة</button></div>
     <div id="impSummary" class="picker-hint" style="font-weight:700;color:var(--text)"></div>
@@ -1344,6 +1362,13 @@ function parseCSV(text){
   if(cur !== '' || row.length) endRow();
   return rows;
 }
+function loadJSZip(){
+  if(window.JSZip) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    sc.onload = res; sc.onerror = () => rej(new Error('zip-load')); document.head.appendChild(sc);
+  });
+}
 function loadXLSX(){
   if(window.XLSX) return Promise.resolve();
   return new Promise((res, rej) => {
@@ -1358,9 +1383,17 @@ async function readImportFile(f){
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
     return rows.map(r => r.map(c => String(c))).filter(r => r.some(x => x.trim() !== ''));
   }
+  if(/\.zip$/i.test(f.name)){   // تصدير واتساب على آيفون يأتي مضغوطاً وفيه _chat.txt
+    await loadJSZip(); const zip = await JSZip.loadAsync(await f.arrayBuffer());
+    const names = Object.keys(zip.files).filter(n => !zip.files[n].dir && /\.txt$/i.test(n));
+    const pick = names.find(n => /(^|\/)_chat\.txt$/i.test(n)) || names[0];
+    if(!pick) throw new Error('zip-empty');
+    const ztext = await zip.files[pick].async('string');
+    return looksLikeWhatsApp(ztext) ? waChatToTable(ztext) : parseCSV(ztext);
+  }
   const buf = await f.arrayBuffer(); let text;
   try{ text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }catch{ text = new TextDecoder('windows-1256').decode(buf); }
-  return parseCSV(text);
+  return looksLikeWhatsApp(text) ? waChatToTable(text) : parseCSV(text);
 }
 function parseDate(v){
   const t = toWestern(v).trim(); if(!t) return null;
@@ -1381,6 +1414,195 @@ function cleanPhone(v){
   const m = t.match(/(?:\+?966|00966|0)?5\d{8}/);
   if(m){ const d = m[0].replace(/^\+?966|^00966|^0/, ''); return '0' + d; }
   const dg = t.replace(/[^\d+]/g, ''); return dg.length >= 8 ? dg : '';
+}
+// ===== قراءة إعلانات واتساب: استخراج تقديري للحقول من نص حر (يحتاج مراجعة قبل النشر) =====
+const WA_INVIS = /[\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g;
+const waNorm = t => normAr(toWestern(t));
+const WA_PROP_RULES = [
+  ['فيلا', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:فيله|فيلا|فلل|فيلات|فلتين|فلته)(?=\s|$|[،,.:!؟?])/],
+  ['شقة', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:شقه|شقق|شقتين|استوديو)(?=\s|$|[،,.:!؟?])/],
+  ['عمارة', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:عماره|عمائر|عمارتين|بنايه)(?=\s|$|[،,.:!؟?])/],
+  ['أرض', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:ارض|اراضي|ارضين|مخطط)(?=\s|$|[،,.:!؟?])/],
+  ['استراحة', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:استراحه|استراحات|شاليه|شاليهات)(?=\s|$|[،,.:!؟?])/],
+  ['فندق', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:فندق|فنادق)(?=\s|$|[،,.:!؟?])/],
+  ['محل تجاري', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:محل|محلات|معرض|معارض)(?=\s|$|[،,.:!؟?])/],
+  ['مستودع', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:مستودع|مستودعات|هنجر|ورشه)(?=\s|$|[،,.:!؟?])/],
+  ['مكتب', /(?:^|\s)(?:و?ال|و|ب|ل)?(?:مكتب|مكاتب)(?=\s|$|[،,.:!؟?])/],
+  ['دور', /(?:^|\s)(?:دور|ادوار)\s+(?:كامل|ارضي|اول|ثاني|ثالث)(?=\s|$)/]
+];
+function waPropType(t){
+  let best = null, bi = 1e9;
+  for(const [name, re] of WA_PROP_RULES){ const m = re.exec(t); if(m && m.index < bi){ bi = m.index; best = name; } }
+  return best;
+}
+const WA_REQ_WORDS = 'مطلوب|مطلوبه|ابي|ابغي|ابغا|نبي|نبغي|ادور|ابحث|محتاج|احتاج|ودي';
+const WA_REQ_HEAD = new RegExp('^(?:\\S+\\s+){0,2}(?:' + WA_REQ_WORDS + ')(?:\\s|$)');
+const WA_REQ_PROP = new RegExp('(?:^|\\s)(?:' + WA_REQ_WORDS + ')\\s+(?:ان\\s+|اشتري\\s+|استاجر\\s+|عن\\s+|للشراء\\s+|للايجار\\s+)?(?:و?ال|ل|ب)?(?:شقه|شقق|فيله|فلل|ارض|اراضي|عماره|عمائر|استراحه|محل|محلات|مكتب|مستودع|فندق|دور|مخطط|شاليه)');
+function waType(t){
+  if(WA_REQ_HEAD.test(t) || WA_REQ_PROP.test(t)) return 'طلب';
+  if(/(?:^|\s)(?:استثمار|استثماري|استثماريه|عوائد|عائد|مدر للدخل)(?=\s|$|[،,.:!؟?])/.test(t)) return 'استثمار';
+  return 'عرض';
+}
+const WA_AMBIG = new Set(['الكامل','مرات','تربه','الدرب','طريف','بدر','حقل','البدع','الوجه','القري','الحريق','الرين','المهد','البرك','الفرشه','الطوال','الدائر','الحرث','ثار','المندق','العقيق','الحجره','بحره','رماح','المويه','ميسان','رنيه','ضرماء','ثادق','مرات']);
+const WA_CITY_ALIASES = { 'مكه': 'مكة المكرمة', 'خميس': 'خميس مشيط', 'المدينه': 'المدينة المنورة', 'المدينه المنوره': 'المدينة المنورة', 'الاحسا': 'الأحساء', 'الاحساء': 'الأحساء' };
+let WA_CITY_RES = null;
+function waCityRes(){
+  if(WA_CITY_RES) return WA_CITY_RES;
+  const END = '(?=$|[\\s،,.:()\\-\\/!؟?])', START = '(?:^|[\\s،,.:()\\-\\/])';
+  const mk = (name, n, ambiguous) => {
+    const hasAl = n.startsWith('ال'), core = n.replace(/^ال/, '');
+    const body = hasAl ? '(?:ال|لل)' + core : core;
+    const pre = ambiguous ? '(?:في|ب|بمدينه|مدينه|بمحافظه|محافظه|منطقه|الي|الى)\\s*' : '(?:و|ب|ل|ف|ك)?';
+    return [name, new RegExp(START + pre + body + END)];
+  };
+  WA_CITY_RES = CITIES.filter(c => c !== 'أخرى').map(c => mk(c, normAr(c), WA_AMBIG.has(normAr(c))));
+  Object.entries(WA_CITY_ALIASES).forEach(([alias, target]) => { if(CITIES.includes(target)) WA_CITY_RES.push(mk(target, alias, alias === 'المدينه' || alias === 'خميس')); });
+  return WA_CITY_RES;
+}
+function waCity(t){
+  let best = null, bi = 1e9;
+  for(const [name, re] of waCityRes()){ const m = re.exec(t); if(m && m.index < bi){ bi = m.index; best = name; } }
+  return best;
+}
+const WA_HOOD_FIRST2 = /^(?:الملك|الامير|الاميره|الملكه|الدار|ام|ابو|ظهره|ظهرة|عين|وادي|الوادي|جامعه|الجامعه|المدينه|مدينه|الشيخ|الامام|الصحابه)$/;
+const WA_HOOD_QUAL = /^(?:الشمالي|الجنوبي|الشرقي|الغربي|الشماليه|الجنوبيه|الشرقيه|الغربيه|الجديد|الجديده|القديم|القديمه|شمال|جنوب|شرق|غرب|الاول|الثاني|الثالث|الاوله|الثانيه|الثالثه)$/;
+function waHood(txt){
+  const WORD = '[^\\s،,.:()\\n\\-]+';
+  let m = txt.match(new RegExp('(?:^|[\\s،,:(\\-])(?:حي|حى)\\s+(' + WORD + ')(?:\\s+(' + WORD + '))?(?:\\s+(' + WORD + '))?'));
+  if(m){
+    const w1 = m[1], w2 = m[2] || '', w3 = m[3] || '';
+    let parts = [w1];
+    if(w2 && (WA_HOOD_FIRST2.test(normAr(w1)) || WA_HOOD_QUAL.test(normAr(w2)))){ parts.push(w2); if(w3 && WA_HOOD_QUAL.test(normAr(w3)) && !WA_HOOD_QUAL.test(normAr(w2))) parts.push(w3); }
+    return parts.join(' ').replace(/[!؟?]+$/, '');
+  }
+  m = txt.match(new RegExp('(?:^|[\\s،,:(\\-])مخطط\\s+(' + WORD + ')'));
+  return m ? 'مخطط ' + m[1] : '';
+}
+function waNum(s){ s = String(s).replace(/,/g, ''); if((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, ''); const n = parseFloat(s); return isNaN(n) ? NaN : n; }
+function waArea(t){
+  let m = t.match(/(?:مساحه|المساحه|مسطح)\s*[:=]?\s*(\d[\d,.]*)/);
+  if(m){ const n = waNum(m[1]); if(n >= 20 && n <= 1e6) return n + ' م²'; }
+  const re = /(\d[\d,.]*)\s*(?:م2|م²|متر(?:\s*مربع)?|م)(?![\u0621-\u064A])/g;
+  while((m = re.exec(t))){
+    const before = t.slice(Math.max(0, m.index - 14), m.index);
+    if(/(?:شارع|شوارع|عرض|واجهه|بعرض|ارتداد|طول|بطول)\s*[:=]?\s*$/.test(before)) continue;   // عرض الشارع لا المساحة
+    const n = waNum(m[1]); if(n >= 20 && n <= 1e6) return n + ' م²';
+  }
+  return '';
+}
+const WA_PRICE_LABEL = /(?:السعر|سعر|بسعر|السوم|سوم|المطلوب|مطلوب|الطلب|المبلغ|بمبلغ|ميزانيتي|ميزانيه|بحدود|حدود|ايجار|الايجار|للايجار|للبيع ب|ب)\s*[:=\-]?\s*$/;
+function waPrice(t, type){
+  const cands = [];
+  const re = /(\d[\d,.]*)\s*(مليون|ميليون|الف|الاف)?((?:\s*و\s*(?:نص|نصف|ربع))|(?:و\s*\d+\s*(?:الف|الاف)))?\s*(ريال|ر\.?س|sar|ريالات)?/gi;
+  let m;
+  while((m = re.exec(t))){
+    if(!m[0].trim()) continue;
+    let n = waNum(m[1]); if(isNaN(n)) continue;
+    const unit = m[2] || '', tail = (m[3] || '').replace(/\s+/g, '');
+    if(/^(?:مليون|ميليون)/.test(unit)){ n *= 1e6; if(/^و(?:نص|نصف)/.test(tail)) n += 5e5; else if(/^وربع/.test(tail)) n += 25e4; else { const mm = tail.match(/^و(\d+)(?:الف|الاف)/); if(mm) n += +mm[1] * 1e3; } }
+    else if(/^(?:الف|الاف)/.test(unit)) n *= 1e3;
+    if(n < 1000 || n > 5e9) continue;
+    const before = t.slice(Math.max(0, m.index - 22), m.index);
+    const after = t.slice(m.index + m[0].length, m.index + m[0].length + 16);
+    if(unit && /^\s*(?:م2|م²|متر|م(?![\u0621-\u064A]))/.test(after)) continue;   // «5 الف م» مساحة لا سعر
+    if(/^\s*(?:ريال\s*)?(?:للمتر|لكل متر|بالمتر|\/\s*م)/.test(after) || /(?:ال)?متر(?:\s*المربع)?\s*[:=\-]?\s*$/.test(before)) continue;   // سعر المتر لا الإجمالي
+    let score = 0; if(WA_PRICE_LABEL.test(before)) score += 3; if(m[4]) score += 2; if(unit) score += 2;
+    if(score >= 2) cands.push({ n, score, at: m.index });
+  }
+  const mm = t.match(/(?:^|\s)(مليونين|مليون(?:\s*(?:و\s*)?(?:نص|نصف|ربع))?)(?=\s|$)/);   // «مليونين»، «مليون ونص» بلا رقم
+  if(mm && !cands.length){ const w = mm[1]; const n = w === 'مليونين' ? 2e6 : (/نص/.test(w) ? 1.5e6 : (/ربع/.test(w) ? 1.25e6 : 1e6)); cands.push({ n, score: 2, at: mm.index }); }
+  if(!cands.length) return '';
+  cands.sort((a, b) => b.score - a.score || a.at - b.at);
+  let out = cands[0].n.toLocaleString('en-US') + ' ريال';
+  if(type === 'طلب' && /(?:حدود|بحدود|لا يتجاوز|ما يتجاوز|ما يزيد|ما يتعدي|اقصي|ميزانيتي|ميزانيه)/.test(t)) out = 'حتى ' + out;
+  if(type !== 'طلب' && /ايجار/.test(t)){ if(/سنوي|بالسنه|في السنه/.test(t)) out += ' سنوياً'; else if(/شهري|بالشهر/.test(t)) out += ' شهرياً'; }
+  return out;
+}
+function waPhones(txt){
+  const res = [], re = /(\+?\s*(?:00)?966|0)?[\s\-]*5(?:[\s\-]*\d){8}/g; let m;
+  while((m = re.exec(txt))){
+    const before = txt[m.index - 1], after = txt[m.index + m[0].length];
+    if((before && /\d/.test(before)) || (after && /\d/.test(after))) continue;   // جزء من رقم أطول (رخصة أو عقد)
+    const p = cleanPhone(m[0]); if(/^05\d{8}$/.test(p)) res.push({ p, at: m.index, len: m[0].length });
+  }
+  return res;
+}
+function waSource(t, type){
+  if(/بدون\s+وسيط|(?:^|\s)(?:مباشر\s+)?من\s+(?:ال)?مالك|(?:^|\s)(?:ال)?مالك(?=\s|$|[،,.:!])/.test(t)) return type === 'طلب' ? '' : 'المالك';
+  if(/(?:^|\s)(?:وكيل|وكيله|بالوكاله)(?=\s|$|[،,.:!])/.test(t)) return 'الوكيل';
+  if(/(?:^|\s)(?:وسيط|وساطه|سمسار)(?=\s|$|[،,.:!])/.test(t)) return 'الوسيط';
+  if(type === 'طلب' && /(?:^|\s)(?:ال)?مشتري/.test(t)) return 'المشتري';
+  return '';
+}
+function waClean(raw){ return toWestern(String(raw || '')).replace(WA_INVIS, '').replace(/\r/g, '').replace(/[*~`]/g, '').replace(/(^|\s)_|_(\s|$)/g, '$1$2').trim(); }
+function waDesc(body){
+  return body.replace(/(?:للتواصل|للاستفسار|واتساب|واتس اب|واتس|جوال|هاتف|رقم الجوال|تواصل|اتصال)\s*[:：\-]?\s*$/gm, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 1000);
+}
+function parseWaAd(raw){
+  const txt = waClean(raw); if(!txt) return null;
+  const phones = waPhones(txt);
+  let body = txt; for(let i = phones.length - 1; i >= 0; i--) body = body.slice(0, phones[i].at) + ' ' + body.slice(phones[i].at + phones[i].len);
+  const t = waNorm(body), type = waType(t), propertyType = waPropType(t), city = waCity(t);
+  const out = { type, propertyType, city, neighborhood: waHood(body), area: waArea(t), price: waPrice(t, type), phone: phones[0] ? phones[0].p : '', source: waSource(t, type), desc: waDesc(body) };
+  const kw = /(?:للبيع|للايجار|للتقبيل|للاستثمار|فرصه|متوفر)/.test(t) || type === 'طلب';
+  out.score = [out.propertyType, out.city, out.area, out.price, out.phone, kw].filter(Boolean).length;
+  return out;
+}
+// ----- قراءة ملف محادثة واتساب المصدَّرة (iOS وAndroid، أرقام عربية أو لاتينية) -----
+const WA_TIME = '(\\d{1,2}:\\d{2})(?::\\d{2})?\\s*([صمAPap]\\.?[Mm]?\\.?)?';
+const WA_DATE = '(\\d{1,4}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{1,4})';
+const WA_MSG_IOS = new RegExp('^\\[' + WA_DATE + '[,\u060c]?\\s+' + WA_TIME + '\\]\\s*(.*)$');
+const WA_MSG_AND = new RegExp('^' + WA_DATE + '[,\u060c]?\\s+' + WA_TIME + '\\s*[-–—]\\s*(.*)$');
+const WA_SKIP = /^(?:<?(?:media|image|video|sticker|audio|document|gif|voice message)\s+omitted>?|<?تم استبعاد\s+\S+>?|<?(?:ملف\s+)?مرفق[^>]*>?|هذه الرسالة محذوفة|تم حذف هذه الرسالة|you deleted this message|this message was deleted|null)$/i;
+function waLines(text){ return String(text).replace(/\r/g, '').split('\n').map(l => toWestern(l).replace(WA_INVIS, '')); }
+function looksLikeWhatsApp(text){
+  let n = 0; for(const l of waLines(String(text).slice(0, 8000))){ if(WA_MSG_IOS.test(l) || WA_MSG_AND.test(l)) n++; if(n >= 3) return true; }
+  return false;
+}
+function hijriToGreg(y, m, d){
+  const jd = Math.floor((11 * y + 3) / 30) + 354 * y + 30 * m - Math.floor((m - 1) / 2) + d + 1948440 - 385;
+  let l = jd + 68569; const n = Math.floor(4 * l / 146097); l -= Math.floor((146097 * n + 3) / 4);
+  const i = Math.floor(4000 * (l + 1) / 1461001); l = l - Math.floor(1461 * i / 4) + 31;
+  const j = Math.floor(80 * l / 2447), day = l - Math.floor(2447 * j / 80); l = Math.floor(j / 11);
+  return [100 * (n - 49) + i + l, j + 2 - 12 * l, day];
+}
+function waIsoDate(ds, order){
+  const p = ds.split(/[\/.\-]/).map(Number); let y, mo, d;
+  if(order === 'ymd'){ [y, mo, d] = p; } else if(order === 'mdy'){ [mo, d, y] = p; } else { [d, mo, y] = p; }
+  if(y < 100) y += 2000;
+  if(y > 1300 && y < 1600){ [y, mo, d] = hijriToGreg(y, mo, d); }   // تاريخ هجري
+  if(!y || !mo || !d) return '';
+  return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+function waParseChat(text){
+  const groups = []; let cur = null; const firsts = [], seconds = [];
+  for(const l of waLines(text)){
+    const m = l.match(WA_MSG_IOS) || l.match(WA_MSG_AND);
+    if(m){ if(cur) groups.push(cur); const dp = m[1].split(/[\/.\-]/).map(Number); firsts.push(dp[0]); seconds.push(dp[1]); cur = { ds: m[1], rest: m[4] }; }
+    else if(cur) cur.rest += '\n' + l;
+  }
+  if(cur) groups.push(cur);
+  const order = firsts.some(x => x > 31) ? 'ymd' : (firsts.some(x => x > 12) ? 'dmy' : (seconds.some(x => x > 12) ? 'mdy' : 'dmy'));
+  const out = [];
+  for(const g of groups){
+    const i = g.rest.indexOf(': '); if(i < 0 || i > 60) continue;   // رسالة نظام بلا مرسل
+    const sender = g.rest.slice(0, i).trim(), body = g.rest.slice(i + 2).trim();
+    if(!body || WA_SKIP.test(body)) continue;
+    out.push({ sender, body, date: waIsoDate(g.ds, order) });
+  }
+  return out;
+}
+const WA_HEADERS = ['النوع', 'نوع العقار', 'المدينة', 'الحي', 'المساحة', 'السعر', 'الوسيط', 'الجوال', 'التفاصيل', 'التاريخ', 'من', 'رابط الخريطة'];
+function waChatToTable(text){
+  const msgs = waParseChat(text), table = [WA_HEADERS];
+  for(const g of msgs){
+    if(g.body.length < 25) continue;
+    const a = parseWaAd(g.body); if(!a || !a.propertyType || a.score < 3) continue;
+    const senderIsPhone = /^\+?[\d\s\-]{8,}$/.test(g.sender);
+    table.push([a.type, a.propertyType, a.city || '', a.neighborhood, a.area, a.price, senderIsPhone ? '' : g.sender, a.phone || (senderIsPhone ? cleanPhone(g.sender) : ''), a.desc, g.date, a.source || '', '']);
+  }
+  table.__wa = { messages: msgs.length, candidates: table.length - 1 };
+  return table;
 }
 function impDupKey(d){
   const ph = String(d.phone || '').replace(/\D/g, ''), pr = toWestern(d.price).replace(/\D/g, ''), ar = toWestern(d.area).replace(/\D/g, '');
@@ -1427,7 +1649,7 @@ function impRowHTML(r, i){
   const head = `${esc(d.type)} · ${esc(d.propertyType)} · ${esc(d.city)}${d.neighborhood ? ' · ' + esc(d.neighborhood) : ''}`;
   const sub = [d.area, d.price].filter(Boolean).map(esc).join(' · '), who = [d.agent, d.phone].filter(Boolean).map(esc).join(' · ');
   const notes = [...r.errors.map(x => `<span class="bad">⛔ ${x}</span>`), r.dup ? '<span class="warn">♻️ مكرر</span>' : '', r.old ? '<span class="warn">📦 قديم (يُؤرشف مباشرة)</span>' : '', ...r.warns.map(x => `<span class="warn">⚠️ ${x}</span>`)].filter(Boolean).join(' · ');
-  return `<label class="imp-row${r.checked ? '' : ' off'}"><input type="checkbox" data-i="${i}"${r.checked ? ' checked' : ''}${r.errors.length ? ' disabled' : ''}><div><b>${head}</b>${sub ? '<br>' + sub : ''}${who ? '<br>' + who : ''}${notes ? '<br>' + notes : ''}</div></label>`;
+  return `<label class="imp-row${r.checked ? '' : ' off'}"><input type="checkbox" data-i="${i}"${r.checked ? ' checked' : ''}${r.errors.length ? ' disabled' : ''}><div><b>${head}</b>${sub ? '<br>' + sub : ''}${who ? '<br>' + who : ''}${d.desc ? '<span class="imp-desc">' + esc(d.desc.replace(/\s+/g, ' ').slice(0, 110)) + '</span>' : ''}${notes ? '<br>' + notes : ''}</div></label>`;
 }
 function impRefresh(){
   $('impList').innerHTML = impRows.map(impRowHTML).join('');
@@ -1448,14 +1670,19 @@ function openImport(){
 async function impPreview(){
   const f = $('impFile').files[0], txt = $('impText').value.trim();
   let table = null;
-  try{ table = txt ? parseCSV(txt) : (f ? await readImportFile(f) : null); }
-  catch(e){ toast(/xlsx-load/.test(String(e && e.message)) ? 'تعذر تحميل مكتبة الإكسل. احفظ الملف بصيغة CSV وأعد المحاولة' : 'تعذر قراءة الملف', 5000); return; }
+  try{ table = txt ? (looksLikeWhatsApp(txt) ? waChatToTable(txt) : parseCSV(txt)) : (f ? await readImportFile(f) : null); }
+  catch(e){
+    const em = String(e && e.message);
+    toast(/xlsx-load/.test(em) ? 'تعذر تحميل مكتبة الإكسل. احفظ الملف بصيغة CSV وأعد المحاولة' : (/zip-load/.test(em) ? 'تعذر تحميل مكتبة فتح الملف المضغوط. افتح الملف وانسخ نص المحادثة والصقه هنا' : (/zip-empty/.test(em) ? 'لا يوجد ملف نصي داخل الملف المضغوط' : 'تعذر قراءة الملف')), 5500); return;
+  }
+  const waInfo = table && table.__wa;
+  if(waInfo && waInfo.candidates === 0){ toast('قرأت ' + waInfo.messages + ' رسالة ولم أجد فيها إعلانات واضحة', 5000); return; }
   if(!table || table.length < 2){ toast('لا توجد بيانات: أول سطر عناوين الأعمدة وبعده الإعلانات', 4000); return; }
   const rows = buildImportRows(table);
   if(!rows){ toast('لم أتعرف على عناوين الأعمدة. حمّل النموذج واتبع عناوينه', 5000); return; }
   impRows = rows;
   const c = k => impRows.filter(r => r[k]).length;
-  $('impSummary').textContent = impRows.length + ' صف · ' + impRows.filter(r => !r.errors.length && !r.dup && !r.old).length + ' صالح · ' + c('dup') + ' مكرر · ' + c('old') + ' قديم · ' + impRows.filter(r => r.errors.length).length + ' فارغ';
+  $('impSummary').textContent = (waInfo ? 'محادثة واتساب: ' + waInfo.messages + ' رسالة ← ' + waInfo.candidates + ' إعلان محتمل (استخراج تقديري، راجعه)\n' : '') + impRows.length + ' صف · ' + impRows.filter(r => !r.errors.length && !r.dup && !r.old).length + ' صالح · ' + c('dup') + ' مكرر · ' + c('old') + ' قديم · ' + impRows.filter(r => r.errors.length).length + ' فارغ';
   impRefresh();
 }
 async function impPublish(){
@@ -2036,8 +2263,29 @@ function openModal(edit){
   syncSourceNames(); srcPrev = $('fSource').value;
   $('fImage').value = '';
   renderImagePreview();
+  $('waBox').style.display = edit ? 'none' : 'block'; $('waArea').style.display = 'none'; $('waText').value = ''; $('waResult').textContent = '';
   $('overlay').classList.add('show');
 }
+// تعبئة النموذج من رسالة واتساب (تقديرية: يراجعها العضو قبل الحفظ)
+function applyWaText(){
+  const a = parseWaAd($('waText').value);
+  if(!a || !(a.propertyType || a.city || a.price || a.area || a.phone || a.neighborhood)){ $('waResult').textContent = '⚠️ لم أتعرف على بيانات في النص. تأكد أنك لصقت رسالة الإعلان كاملة.'; return; }
+  const ok = ['نوع الإعلان'], miss = [];
+  $('fListingType').value = a.type; $('fListingType').dispatchEvent(new Event('change'));
+  if(a.propertyType){ $('fPropertyType').value = a.propertyType; ok.push('نوع العقار'); } else miss.push('نوع العقار');
+  if(a.city){ $('fCity').value = a.city; ok.push('المدينة'); } else miss.push('المدينة');
+  if(a.neighborhood){ $('fNeighborhood').value = a.neighborhood; ok.push('الحي'); }
+  if(a.area){ $('fArea').value = a.area; ok.push('المساحة'); }
+  if(a.price){ $('fPrice').value = a.price; ok.push('السعر'); } else miss.push('السعر');
+  if(a.phone){ $('fPhone').value = a.phone; ok.push('الجوال'); }
+  if(a.desc){ $('fDesc').value = a.desc; ok.push('التفاصيل'); }
+  if(a.source){ fillSources(a.source, false); srcPrev = $('fSource').value; syncSourceNames(); if($('fSource').value === a.source) ok.push('من'); }
+  $('waResult').innerHTML = '✅ تمت تعبئة: ' + ok.join('، ') + '. راجع الحقول قبل الحفظ.' + (miss.length ? '<br>⚠️ لم أجد: ' + miss.join('، ') + ' (أكملها يدويا)' : '');
+  toast('تمت التعبئة، راجع الحقول');
+}
+$('waOpenBtn').addEventListener('click', () => { const a = $('waArea'); a.style.display = a.style.display === 'none' ? 'block' : 'none'; if(a.style.display === 'block') $('waText').focus(); });
+$('waFillBtn').addEventListener('click', applyWaText);
+$('waClearBtn').addEventListener('click', () => { $('waText').value = ''; $('waResult').textContent = ''; $('waText').focus(); });
 function closeModal(){ $('overlay').classList.remove('show'); }
 $('openAddBtn').addEventListener('click', () => openModal(null));
 $('openOffersBtn').addEventListener('click', () => showLibrary('عرض'));
@@ -2491,7 +2739,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792662670';
+const APP_VERSION = '1792668018';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
