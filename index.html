@@ -695,6 +695,12 @@ body.seeker #seekerRegisterBtn:active,
 .ra-st button.on{background:var(--open);border-color:var(--open-line)}
 .ra-st button:active{background:var(--open)}
 .ra-refer{flex-wrap:wrap}
+/* ===== التدشين الرسمي: حسابات وصلاحيات وشروط ===== */
+.lnk{color:var(--primary);font-weight:800;text-decoration:underline;cursor:pointer}
+#rlBody{overflow-y:auto;flex:1;min-height:0;padding-bottom:12px}
+.rl-sel{width:100%;margin-top:8px}
+.rl-row{display:flex;gap:8px;margin-top:8px}.rl-row>*{flex:1}
+#acctBody .rq-sum{margin-bottom:8px}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -737,6 +743,8 @@ body.seeker #seekerRegisterBtn:active,
     <button class="link-btn" id="backupBtn">تنزيل نسخة احتياطية</button>
     <button class="link-btn" id="ownerLoginBtn">الإدارة</button>
   </div>
+  <button type="button" class="more-row" data-legal="terms"><span>الشروط والأحكام</span></button>
+  <button type="button" class="more-row" data-legal="privacy"><span>سياسة الخصوصية</span></button>
 </div>
 
 <header aria-label="وسطاء المملكة"></header>
@@ -1034,6 +1042,43 @@ body.seeker #seekerRegisterBtn:active,
       <button class="btn-cancel" id="finShareBtn">📤 مشاركة النتيجة</button>
       <button class="btn-save" id="finCloseBtn">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- الحسابات: دخول وإنشاء حساب -->
+<div class="overlay" id="authOverlay" style="z-index:54">
+  <div class="modal">
+    <h2 id="authTitle">تسجيل الدخول</h2>
+    <div class="fin-seg" id="authTabs"><button type="button" data-t="in" class="on">دخول</button><button type="button" data-t="up">حساب جديد</button></div>
+    <div id="authUpName" style="display:none"><div class="field"><label>الاسم</label><input type="text" id="auName" maxlength="60" autocomplete="name"></div></div>
+    <div class="field"><label>البريد الإلكتروني</label><input type="email" id="auEmail" autocomplete="email" dir="ltr" placeholder="name@example.com"></div>
+    <div class="field"><label>كلمة المرور</label><input type="password" id="auPass" autocomplete="current-password" dir="ltr" placeholder="6 أحرف على الأقل"></div>
+    <div id="authUpTerms" style="display:none"><div class="field"><label class="oath-check"><input type="checkbox" id="auTerms"> أوافق على <a class="lnk" data-legal="terms">الشروط والأحكام</a> و<a class="lnk" data-legal="privacy">سياسة الخصوصية</a></label></div></div>
+    <div class="picker-hint" id="auHint"></div>
+    <button type="button" class="fin-add" id="auForgot">نسيت كلمة المرور؟</button>
+    <div class="modal-actions"><button class="btn-cancel" id="auCancel">إلغاء</button><button class="btn-save" id="auSubmit">دخول</button></div>
+  </div>
+</div>
+
+<!-- طلب صلاحية شريك -->
+<div class="overlay" id="roleReqOverlay" style="z-index:54">
+  <div class="modal">
+    <h2>طلب صلاحية شريك</h2>
+    <div class="picker-hint">للمطورين العقاريين وموظفي التمويل في البنوك. تراجع الإدارة طلبك قبل منح الصلاحية.</div>
+    <div class="field"><label>الاسم</label><input type="text" id="rrName" maxlength="60"></div>
+    <div class="field"><label>نوع الصلاحية</label><select id="rrRole"><option value="developer">مطور عقاري</option><option value="bank">موظف تمويل في بنك</option></select></div>
+    <div class="field"><label>اسم الشركة أو البنك</label><input type="text" id="rrOrg" maxlength="80"></div>
+    <div class="field"><label>جوال التواصل</label><input type="text" id="rrPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx"></div>
+    <div class="field"><label>ملاحظة (اختياري: رقم الترخيص أو المسمى)</label><input type="text" id="rrNote" maxlength="200"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="rrCancel">إلغاء</button><button class="btn-save" id="rrSend">إرسال الطلب</button></div>
+  </div>
+</div>
+
+<!-- الحسابات والصلاحيات (للإدارة) -->
+<div class="overlay" id="roleAdminOverlay" style="z-index:53">
+  <div class="modal pg">
+    <div class="pg-bar"><button class="lib-back" id="rlClose" type="button">× إغلاق</button><h2>👥 الحسابات والصلاحيات</h2></div>
+    <div id="rlBody"></div>
   </div>
 </div>
 
@@ -1459,8 +1504,7 @@ async function init(){
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     try{
-      await firebase.auth().signInAnonymously();
-      uid = firebase.auth().currentUser.uid;
+      uid = await ensureAuth(firebase.auth());
     }catch(e){ fail('auth', e); }
     db.collection(COL).onSnapshot(s => {
       const sig = !listingsLoaded || s.docChanges().some(ch => {
@@ -1478,6 +1522,7 @@ async function init(){
     startFinance();
     startDevData();
     startMyRequests();
+    startMyRole();
   }catch(e){ fail('init', e); }
 }
 
@@ -2572,7 +2617,7 @@ function openAcct(){
   if(!isOwner && !isMember()){ items.push(['🏢 تسجيل وسيط عقاري', () => $('seekerRegisterBtn').click()]); items.push(['→ العودة لصفحة الاختيار', () => $('seekerBackBtn').click()]); }
   document.querySelectorAll('#menuDropdown .menu-item').forEach(el => { if(el.classList.contains('member-only') && !isMember() && !isOwner) return; if(getComputedStyle(el).display !== 'none') items.push([el.textContent.trim(), () => el.click()]); });
   items.push(['💬 قروب واتساب', () => window.open(WA_GROUP, '_blank', 'noopener')]);
-  $('acctBody').innerHTML = items.map((it, i) => '<button type="button" class="acct-item" data-i="' + i + '">' + esc(it[0]) + '</button>').join('');
+  $('acctBody').innerHTML = authCardHTML() + items.map((it, i) => '<button type="button" class="acct-item" data-i="' + i + '">' + esc(it[0]) + '</button>').join('');
   $('acctBody').onclick = e => { const b = e.target.closest('.acct-item'); if(!b) return; $('acctOverlay').classList.remove('show'); items[+b.dataset.i][1](); };
   $('acctOverlay').classList.add('show');
 }
@@ -2608,7 +2653,9 @@ const HUBS = {
       { ic: 'i-plus', t: 'تسجيل مطور جديد', d: 'طلب انضمام مطور عقاري واعتماده من الإدارة' },
       { ic: 'i-calc', t: 'ربط المشروع بالتمويل', d: 'في كل مشروع حاسبة تمويل وقسط تقديري من نسب البنوك', run: () => openProjects() },
       { ic: 'i-user', t: 'استقبال طلبات العملاء', d: 'العملاء المهتمون بمشروعك يتواصلون معك بموافقتهم' },
-      { ic: 'i-sliders', t: 'إدارة المطورين والمشاريع', d: 'إضافة المطورين والمشاريع وتعديلها وحذفها (للإدارة)', own: true, run: () => openDpAdmin() }
+      { ic: 'i-sliders', t: 'إدارة المطورين والمشاريع', d: 'إضافة المطورين والمشاريع وتعديلها وحذفها (للإدارة)', own: true, run: () => openDpAdmin() },
+      { ic: 'i-sliders', t: 'لوحة المطور', d: 'إدارة ملف شركتك ومشاريعك', role: 'developer', run: () => openPortal() },
+      { ic: 'i-user', t: 'الحسابات والصلاحيات', d: 'اعتماد طلبات المطورين وموظفي البنوك وسحب الصلاحيات (للإدارة)', own: true, run: () => openRoleAdmin() }
     ]]
   ] },
   cust: { title: 'العميل', intro: 'رحلتك كباحث عن عقار: تصفّح العروض والطلبات، واختر المطور، ثم قارن التمويل وتواصل مع البنك.', secs: [
@@ -2624,6 +2671,7 @@ const HUBS = {
       { ic: 'i-plus', t: 'أضف طلبك', d: 'اكتب ما تبحث عنه ليصلك المطورون والوسطاء', lock: true, run: () => postAs('طلب') },
       { ic: 'i-dev', t: 'ابدأ رحلة التمويل', d: 'اختر مشروعاً ثم بنكاً وأرسل طلبك بموافقتك الصريحة', run: () => rqOpen({ kind: 'project' }) },
       { ic: 'i-doc', t: 'طلباتي', d: 'متابعة طلبات التمويل التي أرسلتها، وحذفها متى شئت', run: () => openMyRequests() },
+      { ic: 'i-user', t: 'حسابي وخصوصيتي', d: 'إنشاء حساب لحفظ طلباتك، والشروط وسياسة الخصوصية', run: () => openAcct() },
       { ic: 'i-user', t: 'الدعم والمساعدة', d: 'نساعدك في أي استفسار عن المنصة', run: () => window.open('https://wa.me/' + SUPPORT_PHONE, '_blank', 'noopener') }
     ]]
   ] },
@@ -2638,7 +2686,9 @@ const HUBS = {
       { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها' },
       { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() },
       { ic: 'i-sliders', t: 'إدارة مستشاري البنوك', d: 'إضافة المستشارين وتعديلهم وحذفهم (للإدارة)', own: true, run: () => openDpAdmin('adv') },
-      { ic: 'i-doc', t: 'طلبات التمويل', d: 'متابعة طلبات العملاء وتحديث حالتها وإحالتها للمستشارين', own: true, run: () => openReqAdmin() }
+      { ic: 'i-doc', t: 'طلبات التمويل', d: 'متابعة طلبات العملاء وتحديث حالتها وإحالتها للمستشارين', own: true, run: () => openReqAdmin() },
+      { ic: 'i-sliders', t: 'لوحة البنك', d: 'إدارة نسب بنكك ومستشاريه', role: 'bank', run: () => openPortal() },
+      { ic: 'i-user', t: 'الحسابات والصلاحيات', d: 'اعتماد طلبات المطورين وموظفي البنوك وسحب الصلاحيات (للإدارة)', own: true, run: () => openRoleAdmin() }
     ]]
   ] }
 };
@@ -2650,7 +2700,7 @@ function showHub(k){
   $('hubTitle').textContent = h.title; $('hubIntro').textContent = h.intro;
   hubItems = []; let html = '';
   h.secs.forEach(([name, items]) => {
-    const rows = items.filter(it => !it.own || isOwner); if(!rows.length) return;
+    const rows = items.filter(it => (!it.own || isOwner) && (!it.role || (myRole && myRole.role === it.role))); if(!rows.length) return;
     html += '<div class="hub-h">' + name + '</div>';
     rows.forEach(it => {
       const idx = hubItems.push(it) - 1;
@@ -2769,7 +2819,7 @@ document.addEventListener('click', e => {
 let faEditId = null, faType = 'flat';
 function faShowList(){ faEditId = null; $('faForm').style.display = 'none'; $('faAdd').style.display = ''; $('faList').style.display = ''; $('faFooter').style.display = ''; faRenderList(); }
 function faRenderList(){
-  const all = finLive.slice().sort((a, b) => (b.active !== false) - (a.active !== false) || a.rate - b.rate);
+  const all = finLive.filter(o => !faScope || o.bank === faScope).sort((a, b) => (b.active !== false) - (a.active !== false) || a.rate - b.rate);
   $('faList').innerHTML = all.length ? all.map(o => '<button type="button" class="fa-row' + (o.active === false ? ' off' : '') + '" data-id="' + esc(o.id) + '"><span class="fa-t"><b>' + esc(o.bank) + '</b><span>' + esc(o.product || '') + (o.active === false ? ' · مخفي' : '') + '</span></span><span class="fa-r">' + finPct(o.rate) + '</span></button>').join('') : '<div class="picker-hint">لا توجد عروض بعد. اضغط «إضافة عرض بنك».</div>';
 }
 function faOpenForm(o){
@@ -2778,14 +2828,17 @@ function faOpenForm(o){
   $('faBank').value = o ? o.bank : ''; $('faProduct').value = o ? (o.product || '') : ''; $('faRate').value = o ? o.rate : ''; $('faNote').value = o ? (o.note || '') : ''; $('faActive').checked = o ? o.active !== false : true;
   document.querySelectorAll('#faType button').forEach(b => b.classList.toggle('on', b.dataset.t === faType));
   $('faDelete').style.display = o ? '' : 'none'; $('faForm').style.display = ''; $('faAdd').style.display = 'none'; $('faList').style.display = 'none'; $('faFooter').style.display = 'none';
+  if(faScope){ $('faBank').value = faScope; $('faBank').readOnly = true; } else $('faBank').readOnly = false;
   setTimeout(() => $(o ? 'faRate' : 'faBank').focus(), 60);
 }
-function openFinAdmin(){
-  if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; }
+let faScope = null;   // عند موظف البنك: اسم بنكه
+function openFinAdmin(scopeBank){
+  faScope = scopeBank || null;
+  if(!isOwner && !(faScope && myRole && myRole.role === 'bank' && myRole.org === faScope)){ toast('هذه الصفحة للإدارة أو لموظفي البنك المعتمدين فقط'); return; }
   $('ratesOverlay').classList.remove('show'); faShowList(); $('finAdminOverlay').classList.add('show');
 }
 async function faSave(){
-  const bank = $('faBank').value.trim(), product = $('faProduct').value.trim(), note = $('faNote').value.trim(), rate = finNum($('faRate').value), active = $('faActive').checked;
+  const bank = faScope || $('faBank').value.trim(), product = $('faProduct').value.trim(), note = $('faNote').value.trim(), rate = finNum($('faRate').value), active = $('faActive').checked;
   if(bank.length < 2){ toast('اكتب اسم البنك'); return; }
   if(!(rate > 0 && rate <= 30)){ toast('النسبة بين 0.01 و30'); return; }
   const now = Date.now(); $('faSave').disabled = true;
@@ -2813,7 +2866,7 @@ $('faDelete').addEventListener('click', async () => {
 $('faClose').addEventListener('click', () => $('finAdminOverlay').classList.remove('show'));
 
 // ===== المطورون والمشاريع (الخطوة 3): بيانات يديرها المدير، وصفحات عرض مرتبطة بنسب البنوك =====
-const APP_URL = 'https://otbi531-stack.github.io/Wasata-/';
+const APP_URL = /^https?:/.test(location.protocol) ? location.origin + location.pathname.replace(/[^/]*$/, '') : 'https://otbi531-stack.github.io/Wasata-/';   // يتبع النطاق الفعلي تلقائياً
 let dvList = [], pjList = [];
 const PJ_STATUS = ['قيد البيع على الخارطة', 'قيد الإنشاء', 'جاهز للتسليم', 'تم التسليم'];
 const PJ_TYPES = ['شقق', 'فلل', 'تاون هاوس', 'أراضي', 'عمائر', 'محلات تجارية', 'مكاتب'];
@@ -2850,7 +2903,7 @@ function pgBack(){ pgStack.pop(); if(!pgStack.length){ $('pgOverlay').classList.
 function pgClose(){ pgStack = []; $('pgOverlay').classList.remove('show'); $('pgOverlay').style.zIndex = '44'; }
 function pgRender(keep){
   const t = pgStack[pgStack.length - 1]; if(!t) return;
-  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj, advs: pgAdvs, reqs: pgReqs })[t.v](t.id);
+  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj, advs: pgAdvs, reqs: pgReqs, legal: pgLegal, portal: pgPortal })[t.v](t.id);
   $('pgTitle').textContent = pg.title; $('pgBody').innerHTML = pg.html; $('pgBody').scrollTop = keep ? st : 0;
 }
 function openDevs(){ pgStack = []; pgOpen('devs'); }
@@ -2917,6 +2970,7 @@ $('pgBody').addEventListener('click', e => {
   else if(a === 'req') rqOpen({ projId: t.dataset.pid });
   else if(a === 'rq-new') rqOpen({ kind: 'custom' });
   else if(a === 'rq-del') rqDelete(t.dataset.id);
+  else if(a === 'portal') openScoped(t.dataset.k);
   else if(a === 'rq-adv'){ const r = myReqs.find(x => x.id === t.dataset.id); if(r){ advCtx = 'بخصوص طلبي رقم ' + String(r.id).slice(0, 6).toUpperCase() + ': ' + r.subject + '، السعر ' + finFmt(r.price) + ' ريال.'; pgAdvBank = ''; pgOpen('advs'); } }
   else if(a === 'adv'){ advCtx = t.dataset.ctx || ''; pgAdvBank = ''; pgOpen('advs'); }
   else if(a === 'invest'){ pgClose(); goSearch({ kind: 'استثمار' }); }
@@ -2925,24 +2979,26 @@ $('pgBody').addEventListener('change', e => { const m = ({ pgFCity: 'city', pgFS
 $('pgBack').addEventListener('click', pgBack);
 // ----- إدارة المطورين والمشاريع (للمدير) -----
 let dpTab = 'dev', dvEditId = null, pjEditId = null, dvLogo = '', pjImgs = [], pjTypesSel = [];
-function dpShowList(){ dvEditId = pjEditId = null; $('dpDevForm').style.display = 'none'; $('dpProjForm').style.display = 'none'; $('dpAdvForm').style.display = 'none'; adEditId = null; $('dpListBox').style.display = ''; $('dpTabs').style.display = ''; $('dpFooter').style.display = ''; dpRenderList(); }
+function dpShowList(){ dvEditId = pjEditId = null; $('dpDevForm').style.display = 'none'; $('dpProjForm').style.display = 'none'; $('dpAdvForm').style.display = 'none'; adEditId = null; $('dpListBox').style.display = ''; $('dpTabs').style.display = dpScope ? 'none' : ''; $('dpFooter').style.display = ''; dpRenderList(); }
 function dpRenderList(){
   document.querySelectorAll('#dpTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === dpTab));
-  $('dpAdd').textContent = ({ dev: '+ إضافة مطور', proj: '+ إضافة مشروع', adv: '+ إضافة مستشار' })[dpTab];
+  $('dpAdd').textContent = ({ dev: '+ إضافة مطور', proj: '+ إضافة مشروع', adv: '+ إضافة مستشار' })[dpTab]; $('dpAdd').style.display = (dpScope && dpTab === 'dev') ? 'none' : '';
   if(dpTab === 'dev'){
     const cnt = {}; pjList.forEach(p => { cnt[p.devId] = (cnt[p.devId] || 0) + 1; });
-    const a = dvList.slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar'));
+    const a = dvList.filter(d => !dpScope || d.id === dpScope.devId).sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar'));
     $('dpList').innerHTML = a.length ? a.map(d => '<button type="button" class="fa-row' + (d.active === false ? ' off' : '') + '" data-id="' + esc(d.id) + '"><span class="fa-t"><b>' + esc(d.name) + (d.verified ? ' ✓' : '') + '</b><span>' + (cnt[d.id] || 0) + ' مشروع' + (d.active === false ? ' · مخفي' : '') + '</span></span></button>').join('') : '<div class="picker-hint">لا يوجد مطورون بعد. اضغط «إضافة مطور».</div>';
   }else if(dpTab === 'proj'){
-    const a = pjList.slice().sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0));
+    const a = pjList.filter(p => !dpScope || p.devId === dpScope.devId).sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0));
     $('dpList').innerHTML = a.length ? a.map(p => '<button type="button" class="fa-row' + (p.active === false ? ' off' : '') + '" data-id="' + esc(p.id) + '"><span class="fa-t"><b>' + esc(p.name) + '</b><span>' + esc(pjDevName(p)) + ' · ' + esc(p.city || '') + (p.active === false ? ' · مخفي' : '') + '</span></span><span class="fa-r" style="font-size:13px">' + (p.priceFrom ? pjNf(p.priceFrom) : '') + '</span></button>').join('') : '<div class="picker-hint">لا توجد مشاريع بعد. أضف مطوراً أولاً ثم «إضافة مشروع».</div>';
   }else{
-    const a = adList.slice().sort((x, y) => String(x.bank).localeCompare(String(y.bank), 'ar') || String(x.name).localeCompare(String(y.name), 'ar'));
+    const a = adList.filter(m => !dpScope || m.bank === dpScope.bank).sort((x, y) => String(x.bank).localeCompare(String(y.bank), 'ar') || String(x.name).localeCompare(String(y.name), 'ar'));
     $('dpList').innerHTML = a.length ? a.map(m => '<button type="button" class="fa-row' + (m.active === false ? ' off' : '') + '" data-id="' + esc(m.id) + '"><span class="fa-t"><b>' + esc(m.name) + (m.verified ? ' ✓' : '') + '</b><span>' + esc(m.bank) + (m.title ? ' · ' + esc(m.title) : '') + (m.active === false ? ' · مخفي' : '') + '</span></span></button>').join('') : '<div class="picker-hint">لا يوجد مستشارون بعد. اضغط «إضافة مستشار».</div>';
   }
 }
-function openDpAdmin(tab, id){
-  if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; }
+let dpScope = null;   // عند الشريك: { role:'developer', devId } أو { role:'bank', bank }
+function openDpAdmin(tab, id, scope){
+  dpScope = scope || null;
+  if(!isOwner && !(dpScope && myRole && myRole.role === dpScope.role)){ toast('هذه الصفحة للإدارة أو للشركاء المعتمدين فقط'); return; }
   if(tab) dpTab = tab; $('dpAdminOverlay').classList.add('show'); dpShowList();
   if(id){ if(dpTab === 'dev') dvOpenForm(devOf(id)); else if(dpTab === 'adv') adOpenForm(adList.find(x => x.id === id)); else pjOpenForm(pjList.find(x => x.id === id)); }
 }
@@ -2952,13 +3008,14 @@ function dvOpenForm(d){
   dvEditId = d ? d.id : null; dvLogo = d ? safeImg(d.logo) : '';
   $('dvFormTitle').textContent = d ? 'تعديل: ' + d.name : 'مطور جديد';
   $('dvName').value = d ? d.name : ''; $('dvAbout').value = d ? (d.about || '') : ''; $('dvCities').value = d ? (d.cities || '') : ''; $('dvPhone').value = d ? (d.phone || '') : ''; $('dvLicense').value = d ? (d.license || '') : '';
-  $('dvVerified').checked = !!(d && d.verified); $('dvActive').checked = d ? d.active !== false : true; $('dvDelete').style.display = d ? '' : 'none'; renderDvLogo(); dpFormView('dev');
+  $('dvVerified').checked = !!(d && d.verified); $('dvActive').checked = d ? d.active !== false : true; $('dvDelete').style.display = d && !dpScope ? '' : 'none'; ['dvVerified', 'dvActive', 'dvLicense'].forEach(k => { $(k).closest('.field').style.display = dpScope ? 'none' : ''; }); renderDvLogo(); dpFormView('dev');
 }
 async function dvSave(){
   const name = $('dvName').value.trim(), phoneRaw = $('dvPhone').value.trim();
   if(name.length < 2){ toast('اكتب اسم المطور'); return; }
   const phone = phoneRaw ? cleanPhone(phoneRaw) : ''; if(phoneRaw && !phone){ toast('رقم الجوال غير صحيح'); return; }
   const data = { name, about: $('dvAbout').value.trim(), cities: $('dvCities').value.trim(), license: $('dvLicense').value.trim(), phone, logo: dvLogo, verified: $('dvVerified').checked, active: $('dvActive').checked, updatedAt: Date.now() };
+  if(dpScope){ delete data.license; delete data.verified; delete data.active; }   // الشريك لا يغيّر التوثيق ولا الظهور
   $('dvSave').disabled = true;
   try{ if(dvEditId) await db.collection('developers').doc(dvEditId).update(data); else await db.collection('developers').add({ ...data, createdAt: Date.now() }); toast('تم الحفظ ✅'); dpShowList(); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الحفظ', 5000); }
@@ -2973,13 +3030,13 @@ function pjOpenForm(p){
   $('pjDev').innerHTML = '<option value="">اختر المطور</option>' + dvList.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'ar')).map(d => '<option value="' + esc(d.id) + '">' + esc(d.name) + '</option>').join('');
   $('pjCity').innerHTML = '<option value="">اختر المدينة</option>' + CITIES.map(c => '<option>' + c + '</option>').join('');
   $('pjStatus').innerHTML = PJ_STATUS.map(x => '<option>' + x + '</option>').join('');
-  $('pjDev').value = p ? p.devId : ''; $('pjName').value = p ? p.name : ''; $('pjCity').value = p ? (p.city || '') : ''; $('pjHood').value = p ? (p.neighborhood || '') : ''; $('pjStatus').value = p && p.status ? p.status : PJ_STATUS[0];
+  $('pjDev').value = p ? p.devId : ''; if(dpScope){ $('pjDev').value = dpScope.devId; $('pjDev').disabled = true; } else $('pjDev').disabled = false; $('pjName').value = p ? p.name : ''; $('pjCity').value = p ? (p.city || '') : ''; $('pjHood').value = p ? (p.neighborhood || '') : ''; $('pjStatus').value = p && p.status ? p.status : PJ_STATUS[0];
   $('pjPriceFrom').value = p && p.priceFrom ? p.priceFrom : ''; $('pjPriceTo').value = p && p.priceTo ? p.priceTo : ''; $('pjAreaFrom').value = p && p.areaFrom ? p.areaFrom : ''; $('pjAreaTo').value = p && p.areaTo ? p.areaTo : '';
   $('pjHandover').value = p ? (p.handover || '') : ''; $('pjDesc').value = p ? (p.desc || '') : ''; $('pjFeatures').value = p ? (p.features || []).join('، ') : ''; $('pjMap').value = p ? (p.mapLink || '') : ''; $('pjPhone').value = p ? (p.phone || '') : '';
   $('pjActive').checked = p ? p.active !== false : true; $('pjDelete').style.display = p ? '' : 'none'; renderPjImgs(); renderPjTypes(); dpFormView('proj');
 }
 async function pjSave(){
-  const devId = $('pjDev').value, name = $('pjName').value.trim(), city = $('pjCity').value, phoneRaw = $('pjPhone').value.trim(), mapLink = $('pjMap').value.trim();
+  const devId = dpScope ? dpScope.devId : $('pjDev').value, name = $('pjName').value.trim(), city = $('pjCity').value, phoneRaw = $('pjPhone').value.trim(), mapLink = $('pjMap').value.trim();
   const priceFrom = finNum($('pjPriceFrom').value), priceTo = finNum($('pjPriceTo').value), areaFrom = finNum($('pjAreaFrom').value), areaTo = finNum($('pjAreaTo').value);
   if(!devId){ toast('اختر المطور'); return; } if(name.length < 2){ toast('اكتب اسم المشروع'); return; } if(!city){ toast('اختر المدينة'); return; }
   if(priceFrom && priceTo && priceTo < priceFrom){ toast('السعر الأعلى أقل من الأدنى'); return; }
@@ -3059,12 +3116,14 @@ function adOpenForm(a){
   $('adFormTitle').textContent = a ? 'تعديل: ' + a.name : 'مستشار جديد';
   $('adBankList').innerHTML = knownBanks().map(b => '<option value="' + esc(b) + '">').join('');
   $('adName').value = a ? a.name : ''; $('adBank').value = a ? a.bank : ''; $('adTitle').value = a ? (a.title || '') : 'مستشار تمويل عقاري'; $('adPhone').value = a ? (a.phone || '') : ''; $('adCities').value = a ? (a.cities || '') : ''; $('adNote').value = a ? (a.note || '') : '';
-  $('adVerified').checked = !!(a && a.verified); $('adActive').checked = a ? a.active !== false : true; $('adDelete').style.display = a ? '' : 'none'; renderAdPhoto(); dpFormView('adv');
+  $('adVerified').checked = !!(a && a.verified); $('adActive').checked = a ? a.active !== false : true; $('adDelete').style.display = a ? '' : 'none'; if(dpScope){ $('adBank').value = dpScope.bank; $('adBank').readOnly = true; $('adVerified').closest('.field').style.display = 'none'; } else { $('adBank').readOnly = false; $('adVerified').closest('.field').style.display = ''; }
+  renderAdPhoto(); dpFormView('adv');
 }
 async function adSave(){
-  const name = $('adName').value.trim(), bank = $('adBank').value.trim(), phone = cleanPhone($('adPhone').value.trim());
+  const name = $('adName').value.trim(), bank = dpScope ? dpScope.bank : $('adBank').value.trim(), phone = cleanPhone($('adPhone').value.trim());
   if(name.length < 2){ toast('اكتب اسم المستشار'); return; } if(bank.length < 2){ toast('اكتب اسم البنك'); return; } if(!phone){ toast('رقم الجوال مطلوب وصحيح'); return; }
   const data = { name, bank, title: $('adTitle').value.trim(), phone, cities: $('adCities').value.trim(), note: $('adNote').value.trim(), photo: adPhoto, verified: $('adVerified').checked, active: $('adActive').checked, updatedAt: Date.now() };
+  if(dpScope) delete data.verified;   // التوثيق للإدارة فقط
   $('adSave').disabled = true;
   try{ if(adEditId) await db.collection('advisors').doc(adEditId).update(data); else await db.collection('advisors').add({ ...data, createdAt: Date.now() }); toast('تم الحفظ ✅'); dpShowList(); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الحفظ', 5000); }
@@ -3143,7 +3202,7 @@ function rqRender(){
       + '<div class="field"><label>أنسب وقت للتواصل (اختياري)</label><select id="rqTime"><option value="">أي وقت</option><option' + (rq.time === 'صباحاً' ? ' selected' : '') + '>صباحاً</option><option' + (rq.time === 'مساءً' ? ' selected' : '') + '>مساءً</option></select></div>'
       + '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rqNote" maxlength="160" value="' + esc(rq.note) + '"></div>'
       + '<div class="field"><label class="oath-check"><input type="checkbox" id="rqConsent"' + (rq.consent ? ' checked' : '') + '> ' + RQ_CONSENT + '</label></div>'
-      + '<div class="picker-hint">لا نطلب الراتب ولا رقم الهوية. تستطيع حذف طلبك وسحب موافقتك في أي وقت من «طلباتي».</div>'
+      + '<div class="picker-hint">لا نطلب الراتب ولا رقم الهوية. تستطيع حذف طلبك وسحب موافقتك في أي وقت من «طلباتي». اطّلع على <a class="lnk" data-legal="terms">الشروط</a> و<a class="lnk" data-legal="privacy">الخصوصية</a>.</div>'
       + '<div class="modal-actions"><button class="btn-cancel" id="rqPrev">رجوع</button><button class="btn-save" id="rqSend">إرسال الطلب</button></div>';
   }else{
     const d = rq.done, advs = rqAdvisorsFor(d.data), txt = rqSummaryText(d.data, d.ref, false);
@@ -3248,6 +3307,215 @@ $('raBody').addEventListener('click', async e => {
   const st = e.target.closest('[data-st]'), del = e.target.closest('[data-del]');
   if(st){ try{ await db.collection('financeRequests').doc(st.dataset.id).update({ status: st.dataset.st, updatedAt: Date.now() }); }catch(err){ console.error(err); toast('تعذر تحديث الحالة', 4000); } return; }
   if(del){ const r = raReqs.find(x => x.id === del.dataset.del); if(!r || !confirm('حذف طلب «' + r.name + '» نهائياً؟')) return; try{ await db.collection('financeRequests').doc(r.id).delete(); toast('تم الحذف'); }catch(err){ console.error(err); toast('تعذر الحذف', 4000); } }
+});
+
+// ===== التدشين الرسمي (الخطوة 6): حسابات وصلاحيات وشروط وخصوصية =====
+const LEGAL_VER = '2026-10', LEGAL_DRAFT = true;   // LEGAL_DRAFT: اجعلها false بعد المراجعة القانونية
+const LEGAL = {
+  terms: { title: 'الشروط والأحكام', secs: [
+    ['1. التعريف بالمنصة', ['«وسطاء المملكة» تطبيق ويب يعرض إعلانات عقارية وطلبات ومشاريع ونسب تمويل، ويُسهّل التواصل بين الوسطاء والمطورين والعملاء والبنوك.', 'المنصة وسيلة عرض وتواصل فقط، وليست طرفاً في أي عقد بيع أو إيجار أو تمويل يُبرم بين المستخدمين.']],
+    ['2. استخدام المنصة', ['تلتزم بتقديم بيانات صحيحة، وبعدم نشر محتوى مضلل أو مخالف للأنظمة المعمول بها في المملكة العربية السعودية.', 'للإدارة حذف أي محتوى أو إيقاف أي حساب أو عضوية مخالفة دون إشعار مسبق.']],
+    ['3. الإعلانات والوسطاء', ['المعلن مسؤول عن صحة إعلانه وعن حصوله على التراخيص النظامية اللازمة لنشره، ومنها ما تشترطه الجهات المختصة للإعلان والوساطة العقارية.', 'لا تضمن المنصة صحة الإعلانات ولا توافر العقارات المعروضة.']],
+    ['4. نسب التمويل والحاسبة', ['النسب المعروضة تُدخلها إدارة المنصة أو ممثلو البنوك بحسب إعلاناتهم، وهي تقديرية وقد تختلف عند التقديم الفعلي.', 'حاسبة التمويل والأقساط التقديرية للاسترشاد فقط، ولا تُعدّ عرضاً ملزماً ولا استشارة مالية. القرار والموافقة النهائيان للبنك المعني.']],
+    ['5. طلبات التمويل', ['إرسال الطلب يعني موافقتك الصريحة على مشاركة الاسم والجوال وبيانات الطلب مع إدارة المنصة والبنوك والمستشارين الذين اخترتهم أو تُحال إليهم بخصوص طلبك فقط.', 'تستطيع حذف طلبك في أي وقت من «طلباتي»، وهذا يسحب موافقتك.']],
+    ['6. الحسابات والصلاحيات', ['أنت مسؤول عن سرية كلمة مرورك وعن كل نشاط يتم عبر حسابك.', 'تُمنح صلاحيات المطورين وموظفي البنوك بموافقة الإدارة، وتُسحب عند الإخلال بالشروط أو عند انتهاء العلاقة مع الجهة.']],
+    ['7. حدود المسؤولية', ['إلى الحد الذي يسمح به النظام، لا تتحمل المنصة أي خسارة ناتجة عن الاعتماد على الإعلانات أو النسب أو الأقساط التقديرية أو عن أي اتفاق بين الأطراف.']],
+    ['8. الملكية الفكرية', ['شعار المنصة وتصميمها وبرمجياتها محفوظة لها، ويحتفظ كل مستخدم بحقوق المحتوى الذي ينشره ويمنح المنصة ترخيصاً بعرضه داخلها.']],
+    ['9. التعديل والنظام المطبّق', ['يجوز تحديث هذه الشروط، واستمرار استخدامك بعد التحديث يعني قبولك لها.', 'تخضع هذه الشروط لأنظمة المملكة العربية السعودية، وتختص الجهات القضائية المختصة فيها بالنظر في أي نزاع.']]
+  ] },
+  privacy: { title: 'سياسة الخصوصية', secs: [
+    ['1. البيانات التي نجمعها', ['بيانات الحساب: البريد الإلكتروني والاسم عند إنشاء حساب.', 'بيانات الطلبات: الاسم ورقم الجوال وبيانات العقار والتمويل (السعر والدفعة والمدة) والوقت المفضل للتواصل والملاحظة ووقت موافقتك.', 'بيانات الوسطاء: الاسم والجوال ورقم الترخيص عند طلب العضوية.', 'بيانات تقنية: معرّف مجهول للجهاز، وتفضيلاتك (المفضلة وآخر بحث) تُحفظ في متصفحك.', 'لا نطلب راتبك ولا رقم هويتك.']],
+    ['2. لماذا نستخدمها', ['لتشغيل الخدمة، وللتواصل معك بخصوص طلبك، ولتحسين المنصة، وللالتزام بالأنظمة.']],
+    ['3. مع من نشاركها', ['لا نبيع بياناتك. لا يطّلع على طلبك إلا أنت وإدارة المنصة، ولا نشاركه مع بنك أو مستشار إلا من اخترتَهم أو من تُحيل الإدارة طلبك إليهم بموافقتك.', 'نستخدم خدمات Google Firebase لاستضافة البيانات وتسجيل الدخول.']],
+    ['4. مدة الاحتفاظ والحذف', ['نحتفظ بالبيانات بالقدر اللازم لتقديم الخدمة. تستطيع حذف طلباتك وحسابك وبياناتك في أي وقت من «حسابي» ← «حذف حسابي وبياناتي».']],
+    ['5. حقوقك', ['لك حق الاطلاع على بياناتك وتصحيحها وحذفها وسحب موافقتك والاعتراض على معالجتها، عبر التواصل مع الدعم.']],
+    ['6. حماية البيانات', ['نقيّد الوصول إلى البيانات بقواعد صلاحيات على الخادم، لكن لا توجد وسيلة نقل أو تخزين آمنة بالكامل.']],
+    ['7. التخزين المحلي', ['نستخدم التخزين المحلي في المتصفح لحفظ تفضيلاتك وحالة دخولك، ولا نستخدم ملفات تعريف ارتباط إعلانية.']],
+    ['8. الفئة العمرية', ['الخدمة موجهة لمن بلغ 18 عاماً فأكثر.']],
+    ['9. التواصل والتحديث', ['لأي استفسار أو طلب بخصوص بياناتك تواصل مع الدعم. قد نحدّث هذه السياسة، وسنعرض تاريخ آخر تحديث.']]
+  ] }
+};
+function pgLegal(kind){
+  const L = LEGAL[kind] || LEGAL.terms;
+  return { title: L.title, html: (LEGAL_DRAFT ? '<div class="hub-intro" style="margin-bottom:10px">نسخة مبدئية قيد المراجعة القانونية، وقد تتغير قبل الإطلاق الرسمي.</div>' : '')
+    + L.secs.map(x => '<div class="hub-h">' + esc(x[0]) + '</div>' + x[1].map(t => '<p class="pg-about">' + esc(t) + '</p>').join('')).join('')
+    + '<div class="picker-hint">آخر تحديث: ' + LEGAL_VER + '</div><div class="pg-actions"><a href="https://wa.me/' + SUPPORT_PHONE + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>تواصل مع الدعم</a></div>' };
+}
+function openLegal(kind){ pgStack = []; $('pgOverlay').style.zIndex = '56'; pgOpen('legal', kind); }
+
+// ----- الحسابات -----
+async function ensureAuth(auth){
+  await new Promise(res => { let done = false; const fin = () => { if(!done){ done = true; res(); } }; try{ const un = auth.onAuthStateChanged(() => { try{ un(); }catch{} fin(); }); }catch{ fin(); } setTimeout(fin, 4000); });
+  if(auth.currentUser && auth.currentUser.uid === OWNER_UID){ try{ await auth.signOut(); }catch{} }   // جلسة المدير لا تُحفظ بين الفتحات
+  if(!auth.currentUser) await auth.signInAnonymously();
+  return auth.currentUser.uid;
+}
+function reloadApp(){ location.reload(); }
+const authUser = () => { try{ return firebase.auth().currentUser; }catch{ return null; } };
+const isRegistered = () => { const u = authUser(); return !!(u && !u.isAnonymous && u.uid !== OWNER_UID); };
+const AUTH_ERR = { 'auth/email-already-in-use': 'هذا البريد مسجل مسبقاً. استخدم «دخول»', 'auth/credential-already-in-use': 'هذا البريد مرتبط بحساب آخر. استخدم «دخول»', 'auth/weak-password': 'كلمة المرور ضعيفة (6 أحرف على الأقل)', 'auth/invalid-email': 'البريد الإلكتروني غير صحيح', 'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة', 'auth/wrong-password': 'البريد أو كلمة المرور غير صحيحة', 'auth/user-not-found': 'البريد أو كلمة المرور غير صحيحة', 'auth/invalid-login-credentials': 'البريد أو كلمة المرور غير صحيحة', 'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة', 'auth/network-request-failed': 'تحقق من اتصالك بالإنترنت', 'auth/operation-not-allowed': 'تسجيل الحسابات بالبريد غير مفعّل في Firebase', 'auth/requires-recent-login': 'لأمانك، سجّل الخروج ثم الدخول من جديد وأعد المحاولة' };
+const authMsg = e => AUTH_ERR[(e && e.code) || ''] || 'تعذر تنفيذ العملية. حاول مجدداً';
+let authMode = 'in', myRole = null, myRoleReq = null;
+function authCardHTML(){
+  if(isOwner) return '';
+  const u = authUser();
+  if(!isRegistered()) return '<div class="rq-sum"><b>أنت تتصفح كزائر</b><br>أنشئ حساباً لتحفظ طلباتك وعضويتك على كل أجهزتك.</div><div class="pg-actions pg-row2" style="margin:0 0 10px"><button type="button" class="main" data-au="up">إنشاء حساب</button><button type="button" data-au="in">تسجيل الدخول</button></div>';
+  const roleTxt = myRole ? (myRole.role === 'developer' ? 'مطور: ' : 'موظف بنك: ') + (myRole.orgName || '') : 'عميل';
+  const rr = !myRole && myRoleReq ? '<div class="picker-hint">' + (myRoleReq.status === 'pending' ? 'طلب صلاحية الشريك قيد المراجعة.' : (myRoleReq.status === 'rejected' ? 'لم يُعتمد طلب الصلاحية السابق، ويمكنك إرسال طلب جديد.' : '')) + '</div>' : '';
+  return '<div class="rq-sum"><b>' + esc((u && u.email) || '') + '</b><br>الدور: ' + esc(roleTxt) + '</div>' + rr + '<div class="pg-actions" style="margin:0 0 10px">'
+    + (myRole ? '<button type="button" class="main" data-au="portal">لوحة الشراكة</button>' : (myRoleReq && myRoleReq.status === 'pending' ? '' : '<button type="button" data-au="rolereq">طلب صلاحية شريك (مطور أو بنك)</button>'))
+    + '<button type="button" data-au="out">تسجيل الخروج</button><button type="button" data-au="reset">تغيير كلمة المرور (رابط بالبريد)</button><button type="button" data-au="del" style="color:#8c2f2f">حذف حسابي وبياناتي</button></div>';
+}
+function openAuth(mode){
+  authMode = mode === 'up' ? 'up' : 'in';
+  $('authTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === authMode));
+  $('authTitle').textContent = authMode === 'up' ? 'إنشاء حساب' : 'تسجيل الدخول'; $('auSubmit').textContent = authMode === 'up' ? 'إنشاء الحساب' : 'دخول';
+  $('authUpName').style.display = $('authUpTerms').style.display = authMode === 'up' ? '' : 'none'; $('auForgot').style.display = authMode === 'up' ? 'none' : '';
+  $('auHint').textContent = authMode === 'up' ? 'سيُربط الحساب بجهازك الحالي، فتبقى طلباتك وعضويتك معك.' : 'سيحل الدخول محل هويتك الحالية على هذا الجهاز.';
+  $('authOverlay').classList.add('show');
+}
+async function saveProfile(name){ const now = Date.now(); try{ await db.collection('profiles').doc(authUser().uid).set({ name, termsVer: LEGAL_VER, termsAt: now, createdAt: now, updatedAt: now }, { merge: true }); }catch(e){ console.warn('profile', e); } }
+async function restoreMembership(u){
+  [GATE_KEY, VERIFIED_KEY, MEMBER_UID_KEY].forEach(k => { try{ localStorage.removeItem(k); }catch{} });   // هوية الجهاز السابقة لا تنتقل للحساب الجديد
+  try{
+    const q = await db.collection('joinRequests').where('ownerId', '==', u).get();
+    if(q.docs.find(d => (d.data() || {}).status === 'accepted')){ localStorage.setItem(GATE_KEY, '1'); localStorage.setItem(VERIFIED_KEY, '1'); localStorage.setItem(MEMBER_UID_KEY, u); localStorage.removeItem(REQ_KEY); localStorage.removeItem(SEEKER_KEY); }
+  }catch(e){ console.warn('restore-member', e); }
+}
+async function authSubmit(){
+  const email = $('auEmail').value.trim(), pass = $('auPass').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){ toast('اكتب بريداً إلكترونياً صحيحاً'); return; } if(pass.length < 6){ toast('كلمة المرور 6 أحرف على الأقل'); return; }
+  const auth = firebase.auth();
+  if(authMode === 'up'){
+    const name = $('auName').value.trim(); if(name.length < 2){ toast('اكتب اسمك'); return; } if(!$('auTerms').checked){ toast('يلزم الموافقة على الشروط وسياسة الخصوصية', 4000); return; }
+    $('auSubmit').disabled = true;
+    try{
+      const u = auth.currentUser;
+      if(u && u.isAnonymous) await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email, pass)); else await auth.createUserWithEmailAndPassword(email, pass);
+      await saveProfile(name); $('authOverlay').classList.remove('show'); $('auPass').value = ''; toast('تم إنشاء حسابك ✅'); startMyRole();
+    }catch(e){ console.error(e); toast(authMsg(e), 5000); }
+    finally{ $('auSubmit').disabled = false; }
+    return;
+  }
+  const u0 = authUser(); if(u0 && u0.isAnonymous && (myReqs.length || isMember()) && !confirm('سيحل الدخول محل هويتك الحالية على هذا الجهاز، فلن تظهر طلباتك أو عضويتك الحالية إلا إن كانت مرتبطة بالحساب الذي تدخل إليه. المتابعة؟')) return;
+  $('auSubmit').disabled = true;
+  try{
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    if(cred.user.uid === OWNER_UID){ await auth.signOut(); await auth.signInAnonymously(); toast('للدخول إلى الإدارة استخدم زر «الإدارة»', 4500); return; }
+    await restoreMembership(cred.user.uid); reloadApp();
+  }catch(e){ console.error(e); toast(authMsg(e), 5000); }
+  finally{ $('auSubmit').disabled = false; }
+}
+async function authSignOut(){
+  try{ [GATE_KEY, VERIFIED_KEY, MEMBER_UID_KEY].forEach(k => { try{ localStorage.removeItem(k); }catch{} }); await firebase.auth().signOut(); await firebase.auth().signInAnonymously(); }catch(e){ console.error(e); }
+  reloadApp();
+}
+async function authReset(email){
+  const em = email || (authUser() || {}).email || $('auEmail').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(em || '')){ toast('اكتب بريدك في خانة البريد أولاً'); return; }
+  try{ await firebase.auth().sendPasswordResetEmail(em); toast('أُرسل رابط تغيير كلمة المرور إلى ' + em, 5000); }catch(e){ console.error(e); toast(authMsg(e), 5000); }
+}
+async function authDeleteMe(){
+  const u = authUser(); if(!u || u.isAnonymous) return;
+  if(!confirm('سيُحذف حسابك وطلباتك وبياناتك نهائياً ولا يمكن التراجع. هل أنت متأكد؟')) return;
+  try{
+    for(const r of myReqs.slice()) await db.collection('financeRequests').doc(r.id).delete();
+    await db.collection('roleRequests').doc(u.uid).delete(); await db.collection('profiles').doc(u.uid).delete();
+    await u.delete();
+    [GATE_KEY, VERIFIED_KEY, MEMBER_UID_KEY].forEach(k => { try{ localStorage.removeItem(k); }catch{} });
+    toast('تم حذف حسابك وبياناتك'); setTimeout(reloadApp, 900);
+  }catch(e){ console.error(e); toast((e && e.code === 'auth/requires-recent-login') ? 'حُذفت بياناتك. ولحذف الحساب نفسه سجّل الخروج ثم الدخول وأعد المحاولة' : authMsg(e), 6000); }
+}
+document.addEventListener('click', e => {
+  const lg = e.target.closest('[data-legal]'); if(lg){ e.preventDefault(); openLegal(lg.dataset.legal); return; }
+  const au = e.target.closest('[data-au]'); if(!au) return; const k = au.dataset.au;
+  if(k === 'up' || k === 'in'){ $('acctOverlay').classList.remove('show'); openAuth(k); }
+  else if(k === 'out') authSignOut(); else if(k === 'reset') authReset(); else if(k === 'del') authDeleteMe();
+  else if(k === 'rolereq'){ $('acctOverlay').classList.remove('show'); openRoleReq(); }
+  else if(k === 'portal'){ $('acctOverlay').classList.remove('show'); openPortal(); }
+});
+$('authTabs').addEventListener('click', e => { const b = e.target.closest('button'); if(b) openAuth(b.dataset.t); });
+$('auSubmit').addEventListener('click', authSubmit); $('auCancel').addEventListener('click', () => $('authOverlay').classList.remove('show')); $('auForgot').addEventListener('click', () => authReset($('auEmail').value.trim()));
+// ----- الصلاحيات: طلب الشريك -----
+function startMyRole(){
+  if(!isRegistered() || !db) return;
+  try{
+    db.collection('roles').doc(uid).onSnapshot(doc => { myRole = doc && doc.exists ? doc.data() : null; if(myRole && myRole.status !== 'active') myRole = null; if($('acctOverlay').classList.contains('show')) openAcct(); if(view === 'hub') showHubRefresh(); }, e => { console.warn('myRole', e); myRole = null; });
+    db.collection('roleRequests').doc(uid).onSnapshot(doc => { myRoleReq = doc && doc.exists ? doc.data() : null; }, e => { console.warn('myRoleReq', e); myRoleReq = null; });
+  }catch(e){ console.warn('myRole-start', e); }
+}
+function showHubRefresh(){ if(hubCur) showHub(hubCur); }
+function openRoleReq(){ if(!isRegistered()){ toast('أنشئ حساباً أولاً'); return; } $('rrRole').value = 'developer'; $('rrOrg').value = ''; $('rrPhone').value = ''; $('rrNote').value = ''; $('rrName').value = $('rrName').value || ''; $('roleReqOverlay').classList.add('show'); }
+async function rrSend(){
+  const u = authUser(), name = $('rrName').value.trim(), org = $('rrOrg').value.trim(), phone = cleanPhone($('rrPhone').value.trim());
+  if(!u || !isRegistered()){ toast('أنشئ حساباً أولاً'); return; }
+  if(name.length < 2){ toast('اكتب اسمك'); return; } if(org.length < 2){ toast('اكتب اسم الشركة أو البنك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
+  const now = Date.now(); $('rrSend').disabled = true;
+  try{ await db.collection('roleRequests').doc(u.uid).set({ role: $('rrRole').value, org, phone, note: $('rrNote').value.trim(), name, email: u.email || '', status: 'pending', createdAt: now, updatedAt: now }); $('roleReqOverlay').classList.remove('show'); toast('أُرسل طلبك. ستراجعه الإدارة ✅', 4500); }
+  catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الإرسال: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الإرسال', 5000); }
+  finally{ $('rrSend').disabled = false; }
+}
+$('rrSend').addEventListener('click', rrSend); $('rrCancel').addEventListener('click', () => $('roleReqOverlay').classList.remove('show'));
+// ----- لوحة الشريك (محصورة بجهته) -----
+function pgPortal(){
+  if(!myRole) return { title: 'لوحة الشراكة', html: '<div class="nt-card">ليس لديك صلاحية شريك. أرسل طلباً من «حسابي».</div>' };
+  const dev = myRole.role === 'developer';
+  const rows = dev ? [['i-dev', 'ملف شركتي', 'تعديل النبذة والمدن والجوال والشعار', 'dev'], ['i-crane', 'مشاريعي', 'إضافة مشاريعك وتعديلها وإخفاؤها', 'proj']] : [['i-bank', 'نسب بنكي', 'تحديث نسب الأرباح (يظهر التغيّر للجميع)', 'rates'], ['i-user', 'مستشارو بنكي', 'إضافة مستشاري بنكك وتعديلهم', 'adv']];
+  return { title: 'لوحة الشراكة', html: '<div class="hub-intro">' + (dev ? 'مطور: ' : 'بنك: ') + esc(myRole.orgName || '') + '. تُنشر تعديلاتك مباشرة، وللإدارة مراجعتها وتعديلها أو إيقافها.</div>'
+    + rows.map(r => '<button type="button" class="hub-item" data-act="portal" data-k="' + r[3] + '"><span class="stat-ic"><svg class="ic"><use href="#' + r[0] + '"/></svg></span><span class="hub-txt"><span class="hi-t">' + r[1] + '</span><span class="hi-d">' + r[2] + '</span></span></button>').join('') };
+}
+function openPortal(){ if(!myRole){ toast('ليس لديك صلاحية شريك'); return; } pgStack = []; $('pgOverlay').style.zIndex = '44'; pgOpen('portal'); }
+function openScoped(k){
+  if(!myRole) return;
+  if(myRole.role === 'developer') openDpAdmin(k === 'dev' ? 'dev' : 'proj', k === 'dev' ? myRole.org : null, { role: 'developer', devId: myRole.org });
+  else if(k === 'rates') openFinAdmin(myRole.org); else openDpAdmin('adv', null, { role: 'bank', bank: myRole.org });
+}
+// ----- الحسابات والصلاحيات (للإدارة) -----
+let rlReqs = [], rlRoles = [], rlSub = false;
+function ensureRoleAdminSub(){
+  if(rlSub || !isOwner) return; rlSub = true;
+  try{
+    db.collection('roleRequests').onSnapshot(sn => { rlReqs = sn.docs.map(d => ({ ...d.data(), id: d.id })); rlChanged(); }, e => { console.warn('rlReqs', e); rlReqs = []; rlSub = false; });
+    db.collection('roles').onSnapshot(sn => { rlRoles = sn.docs.map(d => ({ ...d.data(), id: d.id })); rlChanged(); }, e => { console.warn('rlRoles', e); rlRoles = []; });
+  }catch(e){ console.warn('rl-start', e); rlSub = false; }
+}
+function rlChanged(){ try{ if($('roleAdminOverlay').classList.contains('show')) rlRender(); }catch(e){ console.warn('rlChanged', e); } }
+function rlRender(){
+  const pend = rlReqs.filter(r => r.status === 'pending' || r.status === 'rejected').sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || (b.createdAt || 0) - (a.createdAt || 0));
+  const card = r => {
+    const dev = r.role === 'developer';
+    const ctl = r.status !== 'pending' ? '<div class="picker-hint">رُفض هذا الطلب.</div>' : (dev
+      ? '<select class="pg-sel rl-sel" data-rl-dev="' + esc(r.id) + '"><option value="__new__">إنشاء ملف مطور جديد باسم «' + esc(r.org) + '»</option>' + dvList.map(d => '<option value="' + esc(d.id) + '">ربط بالمطور: ' + esc(d.name) + '</option>').join('') + '</select>'
+      : '<input type="text" class="rl-sel" data-rl-bank="' + esc(r.id) + '" list="rlBankList" value="' + esc(canonBank(r.org)) + '" maxlength="40" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--field-line);background:var(--field)"><datalist id="rlBankList">' + knownBanks().map(b => '<option value="' + esc(b) + '">').join('') + '</datalist>')
+      + '<div class="rl-row"><button type="button" class="btn-save" data-rl-ok="' + esc(r.id) + '">اعتماد</button><button type="button" class="btn-cancel" data-rl-no="' + esc(r.id) + '">رفض</button></div>';
+    return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(r.name) + '</b><span class="fl-prod">' + esc(r.email || '') + ' · ' + esc(r.phone) + '</span></div><span class="rq-st ' + (r.status === 'pending' ? 's-new' : 's-closed') + '">' + (dev ? 'مطور' : 'بنك') + '</span></div><div class="fl-note">' + esc(r.org) + (r.note ? '<br>' + esc(r.note) : '') + '<br><small>' + finRel(r.createdAt) + '</small></div>' + ctl + '</div>';
+  };
+  const act = rlRoles.filter(r => r.status === 'active');
+  $('rlBody').innerHTML = '<div class="hub-h">طلبات الصلاحية (' + rlReqs.filter(r => r.status === 'pending').length + ' جديد)</div>' + (pend.length ? pend.map(card).join('') : '<div class="hub-intro">لا توجد طلبات.</div>')
+    + '<div class="hub-h">الصلاحيات الفعّالة (' + act.length + ')</div>' + (act.length ? act.map(r => '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(r.orgName || r.org) + '</b><span class="fl-prod">' + (r.role === 'developer' ? 'مطور' : 'موظف بنك') + ' · ' + esc(String(r.id).slice(0, 8)) + '</span></div></div><div class="pg-actions" style="margin-top:6px"><button type="button" data-rl-revoke="' + esc(r.id) + '">⛔ سحب الصلاحية</button></div></div>').join('') : '<div class="hub-intro">لا توجد صلاحيات ممنوحة.</div>');
+}
+function openRoleAdmin(){ if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; } ensureRoleAdminSub(); rlRender(); $('roleAdminOverlay').classList.add('show'); }
+async function rlApprove(id){
+  const r = rlReqs.find(x => x.id === id); if(!r) return;
+  try{
+    let org, orgName;
+    if(r.role === 'developer'){
+      const sel = document.querySelector('[data-rl-dev="' + id + '"]'), v = sel ? sel.value : '__new__';
+      if(v === '__new__'){ const now = Date.now(), ref = await db.collection('developers').add({ name: r.org, about: '', cities: '', phone: r.phone || '', license: '', logo: '', verified: false, active: true, createdAt: now, updatedAt: now }); org = ref.id; orgName = r.org; }
+      else{ org = v; orgName = (devOf(v) || {}).name || r.org; }
+    }else{
+      const inp = document.querySelector('[data-rl-bank="' + id + '"]'), b = canonBank(((inp && inp.value) || r.org).trim()); if(b.length < 2){ toast('اكتب اسم البنك'); return; } org = b; orgName = b;
+    }
+    await db.collection('roles').doc(id).set({ role: r.role, org, orgName, status: 'active', grantedAt: Date.now(), grantedBy: uid });
+    await db.collection('roleRequests').doc(id).update({ status: 'approved', updatedAt: Date.now() }); toast('تم اعتماد الصلاحية ✅');
+  }catch(e){ console.error(e); toast('تعذر الاعتماد', 4000); }
+}
+$('rlClose').addEventListener('click', () => $('roleAdminOverlay').classList.remove('show'));
+$('rlBody').addEventListener('click', async e => {
+  const ok = e.target.closest('[data-rl-ok]'), no = e.target.closest('[data-rl-no]'), rv = e.target.closest('[data-rl-revoke]');
+  if(ok) await rlApprove(ok.dataset.rlOk);
+  else if(no){ try{ await db.collection('roleRequests').doc(no.dataset.rlNo).update({ status: 'rejected', updatedAt: Date.now() }); toast('تم رفض الطلب'); }catch(err){ console.error(err); toast('تعذر التنفيذ', 4000); } }
+  else if(rv){ if(!confirm('سحب هذه الصلاحية؟')) return; try{ await db.collection('roles').doc(rv.dataset.rlRevoke).delete(); toast('تم سحب الصلاحية'); }catch(err){ console.error(err); toast('تعذر التنفيذ', 4000); } }
 });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
@@ -4199,7 +4467,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792757728';
+const APP_VERSION = '1792791419';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
