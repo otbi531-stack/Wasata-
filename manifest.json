@@ -1,17 +1,40 @@
 {
   "name": "وسطاء المملكة",
   "short_name": "وسطاء المملكة",
-  "description": "منصة الوسطاء العقاريين - عروض وطلبات",
+  "description": "منصة عقارية تجمع الوسطاء والمطورين والبنوك والعملاء: عروض وطلبات ومشاريع ونسب تمويل.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#12160e",
-  "theme_color": "#12160e",
+  "background_color": "#1a371f",
+  "theme_color": "#1a371f",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "./",
+  "orientation": "portrait-primary",
+  "categories": [
+    "business",
+    "lifestyle",
+    "finance"
+  ],
+  "prefer_related_applications": false
 }
