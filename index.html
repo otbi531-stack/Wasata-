@@ -673,6 +673,28 @@ body.seeker #seekerRegisterBtn:active,
 .ad-rate b{color:#245a2c}
 .dv-info .fin-admin-btn{align-self:flex-start}
 .dv-info .ad-rate b{display:inline;font-size:inherit;color:#245a2c}
+/* ===== رحلة العميل: طلب تمويل ===== */
+.rq-steps{display:flex;gap:6px;margin:0 0 10px;flex:none}
+.rq-steps span{flex:1;text-align:center;padding:6px 4px;border-radius:999px;background:var(--field);border:1px solid var(--field-line);font-size:12px;font-weight:700;color:#55655a}
+.rq-steps span.on{background:var(--open);border-color:var(--open-line);color:var(--forest)}
+.rq-steps span.done{color:#245a2c}
+#reqBody,#raBody{overflow-y:auto;flex:1;min-height:0;padding-bottom:12px}
+.rq-bank{display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:var(--field);border:1px solid var(--field-line);border-radius:16px;padding:10px 12px;margin-bottom:8px;font-family:inherit;cursor:pointer;color:var(--text)}
+.rq-bank.on{background:var(--open);border-color:var(--open-line)}
+.rq-chk{width:22px;height:22px;border-radius:7px;border:2px solid #9aa597;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;color:#fff}
+.rq-bank.on .rq-chk{background:var(--primary);border-color:var(--primary)}
+.rq-bank.on .rq-chk::after{content:"✓"}
+.rq-bi{flex:1;min-width:0}.rq-bi b{display:block;font-size:15px;color:var(--forest)}.rq-bi small{display:block;font-size:12px;color:#55655a;line-height:1.6}
+.rq-tag{flex:none;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;background:#e3efe1;color:#245a2c}
+.rq-sum{background:var(--field);border:1px solid var(--field-line);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.8}
+.rq-done{text-align:center;padding:10px 6px}.rq-done .ok{font-size:44px;line-height:1}.rq-done h3{margin:6px 0 2px;color:var(--forest)}.rq-ref{display:inline-block;margin:6px 0 10px;padding:4px 16px;border-radius:999px;background:var(--open);border:1px solid var(--open-line);font-weight:800;letter-spacing:1px;direction:ltr;color:var(--forest)}
+.rq-st{flex:none;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px;background:#ece9e0;color:#55503f}
+.rq-st.s-new{background:#fdf0e0;color:#8a5200}.rq-st.s-progress{background:#f3ead0;color:#6a5316}.rq-st.s-contacted{background:#e3efe1;color:#245a2c}.rq-st.s-closed{background:#e6e6e0;color:#55655a}
+.ra-st{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ra-st button{padding:6px 12px;border-radius:999px;border:1px solid var(--field-line);background:var(--field);font-family:inherit;font-weight:700;font-size:12.5px;color:var(--forest);cursor:pointer}
+.ra-st button.on{background:var(--open);border-color:var(--open-line)}
+.ra-st button:active{background:var(--open)}
+.ra-refer{flex-wrap:wrap}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1006,11 +1028,30 @@ body.seeker #seekerRegisterBtn:active,
     <div class="picker-hint">اكتب اسم كل بنك أو عرض ونسبته، ويُبرز التطبيق الأقل تكلفة ويريك الفرق.</div>
     <div id="finOffers"></div>
     <button type="button" class="fin-add" id="finAddOffer">+ إضافة عرض</button>
+    <button type="button" class="fin-add" id="finReqBtn">📨 اطلب تمويلاً الآن</button>
     <button type="button" class="fin-add" id="finAdvBtn">👥 تواصل مع مستشار تمويل</button>
     <div class="modal-actions">
       <button class="btn-cancel" id="finShareBtn">📤 مشاركة النتيجة</button>
       <button class="btn-save" id="finCloseBtn">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- رحلة العميل: طلب تمويل بموافقة صريحة -->
+<div class="overlay" id="reqOverlay" style="z-index:52">
+  <div class="modal pg">
+    <div class="pg-bar"><button class="lib-back" id="reqBack" type="button">→ رجوع</button><h2 id="reqTitle">طلب تمويل</h2></div>
+    <div class="rq-steps" id="rqSteps"></div>
+    <div id="reqBody"></div>
+  </div>
+</div>
+
+<!-- طلبات التمويل (للإدارة) -->
+<div class="overlay" id="reqAdminOverlay" style="z-index:53">
+  <div class="modal pg">
+    <div class="pg-bar"><button class="lib-back" id="raClose" type="button">× إغلاق</button><h2>📨 طلبات التمويل</h2></div>
+    <div class="ra-st" id="raFilter" style="margin:0 0 10px"></div>
+    <div id="raBody"></div>
   </div>
 </div>
 
@@ -1436,6 +1477,7 @@ async function init(){
     startNotes();
     startFinance();
     startDevData();
+    startMyRequests();
   }catch(e){ fail('init', e); }
 }
 
@@ -1637,7 +1679,7 @@ $('listArea').addEventListener('click', async e => {
     saveFavs(); render(); return;
   }
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
-  if(act === 'fin'){ const it = listings.find(x => x.id === id), n = it ? priceNum(it.price) : null; openFin(n && n > 0 ? n : 0); return; }
+  if(act === 'fin'){ const it = listings.find(x => x.id === id), n = it ? priceNum(it.price) : null; openFin(n && n > 0 ? n : 0, it ? { kind: 'listing', id, title: (it.propertyType || 'عقار') + ' - ' + (it.city || '') + (it.neighborhood ? ' / ' + it.neighborhood : '') + (it.code ? ' (' + it.code + ')' : '') } : null); return; }
   if(act === 'img'){ const it = listings.find(x => x.id === id); if(it) shareListingImage(it); return; }
   if(act === 'video'){ const it = listings.find(x => x.id === id); if(it) openMontage(it); return; }
   if(act === 'report'){ openReport(id); return; }
@@ -2421,7 +2463,8 @@ function finRenderOffers(rebuild){
       + (valid.length > 1 ? (isBest ? '<span class="tag best">الأقل تكلفة</span>' : '<span class="tag diff">+' + finFmt(dm) + ' شهرياً · +' + finFmt(dt) + ' إجمالاً</span>') : '');
   });
 }
-function openFin(price){
+let finFrom = null;
+function openFin(price, from){ finFrom = from || null;
   finLoad(); if(price && price > 0){ fin.price = price; fin.down = Math.round(price * 0.2); }
   if(finActive().length && fin.offers.every(o => /^عرض تجريبي/.test(o.n))) fin.offers = [];   // الأمثلة التجريبية تختفي حين توجد نسب حقيقية
   finWriteInputs(); $('finOffers').innerHTML = ''; finRender(); finRenderOffers(true); finRender();
@@ -2579,7 +2622,8 @@ const HUBS = {
     ['الإجراءات', [
       { ic: 'i-calc', t: 'احسب تمويلك', d: 'القسط المتوقع والقدرة على التحمل ومقارنة العروض', run: () => openFin() },
       { ic: 'i-plus', t: 'أضف طلبك', d: 'اكتب ما تبحث عنه ليصلك المطورون والوسطاء', lock: true, run: () => postAs('طلب') },
-      { ic: 'i-dev', t: 'اختر مطوراً ثم بنكاً', d: 'رحلة الشراء خطوة بخطوة من العرض حتى التمويل' },
+      { ic: 'i-dev', t: 'ابدأ رحلة التمويل', d: 'اختر مشروعاً ثم بنكاً وأرسل طلبك بموافقتك الصريحة', run: () => rqOpen({ kind: 'project' }) },
+      { ic: 'i-doc', t: 'طلباتي', d: 'متابعة طلبات التمويل التي أرسلتها، وحذفها متى شئت', run: () => openMyRequests() },
       { ic: 'i-user', t: 'الدعم والمساعدة', d: 'نساعدك في أي استفسار عن المنصة', run: () => window.open('https://wa.me/' + SUPPORT_PHONE, '_blank', 'noopener') }
     ]]
   ] },
@@ -2590,10 +2634,11 @@ const HUBS = {
       { ic: 'i-user', t: 'مستشارو البنوك', d: 'موظفو التمويل لدى البنوك: تواصل مباشر عبر واتساب أو الاتصال', run: () => openAdvisors() }
     ]],
     ['الإجراءات', [
-      { ic: 'i-doc', t: 'طلب تمويل', d: 'أرسل طلبك لبنك أو أكثر بموافقتك' },
+      { ic: 'i-doc', t: 'طلب تمويل', d: 'أرسل طلبك لبنك أو أكثر بموافقتك الصريحة', run: () => rqOpen({ kind: 'custom' }) },
       { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها' },
       { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() },
-      { ic: 'i-sliders', t: 'إدارة مستشاري البنوك', d: 'إضافة المستشارين وتعديلهم وحذفهم (للإدارة)', own: true, run: () => openDpAdmin('adv') }
+      { ic: 'i-sliders', t: 'إدارة مستشاري البنوك', d: 'إضافة المستشارين وتعديلهم وحذفهم (للإدارة)', own: true, run: () => openDpAdmin('adv') },
+      { ic: 'i-doc', t: 'طلبات التمويل', d: 'متابعة طلبات العملاء وتحديث حالتها وإحالتها للمستشارين', own: true, run: () => openReqAdmin() }
     ]]
   ] }
 };
@@ -2700,6 +2745,7 @@ $('ratesCalcBtn').addEventListener('click', () => { $('ratesOverlay').classList.
 // ----- شريط العدّاد في قسم البنوك -----
 function renderHubExtra(){
   const box = $('hubExtra'); if(!box) return;
+  if(hubCur === 'cust'){ box.innerHTML = myReqs.length ? '<button type="button" class="fin-ticker" data-open="reqs"><span class="stat-ic"><svg class="ic"><use href="#i-doc"/></svg></span><span class="ft-body"><b>طلباتي</b><br>' + myReqs.length + ' طلب تمويل<small>' + myReqs.filter(r => r.status === 'new' || r.status === 'progress').length + ' قيد المتابعة</small></span></button>' : ''; return; }
   if(hubCur === 'dev'){
     const nd = dvActive().length, np = pjActive().length;
     box.innerHTML = (nd || np) ? '<button type="button" class="fin-ticker" data-open="projs"><span class="stat-ic"><svg class="ic"><use href="#i-crane"/></svg></span><span class="ft-body"><b>المشاريع والمطورون</b><br>' + np + ' مشروع · ' + nd + ' مطور<small>اضغط لاستعراض المشاريع</small></span></button>' : (isOwner ? '<div class="hub-intro" style="margin-top:8px">لم تُضف مطورين أو مشاريع بعد. ابدأ من «إدارة المطورين والمشاريع».</div>' : '');
@@ -2708,11 +2754,14 @@ function renderHubExtra(){
   if(hubCur !== 'bank'){ box.innerHTML = ''; return; }
   box.innerHTML = finStats() ? finTickerHTML() : '<div class="hub-intro" style="margin-top:8px">📊 عدّاد النسب: لم تُدخل الإدارة نسب البنوك بعد.</div>';
   box.innerHTML += advSummary();
+  if(isOwner){ ensureReqAdminSub(); const nn = raReqs.filter(r => r.status === 'new').length; box.innerHTML += '<button type="button" class="fin-ticker" data-open="reqadmin"><span class="stat-ic"><svg class="ic"><use href="#i-doc"/></svg></span><span class="ft-body"><b>طلبات التمويل</b><br>' + nn + ' جديد · ' + raReqs.length + ' الإجمالي<small>اضغط للمتابعة والإحالة</small></span></button>'; }
 }
 document.addEventListener('click', e => {
   if(e.target.closest('[data-open="rates"]') && !e.target.closest('#ratesOverlay')) openRates();
   else if(e.target.closest('[data-open="projs"]')) openProjects();
   else if(e.target.closest('[data-open="advs"]')) openAdvisors();
+  else if(e.target.closest('[data-open="reqs"]')) openMyRequests();
+  else if(e.target.closest('[data-open="reqadmin"]')) openReqAdmin();
   else if(e.target.closest('[data-adv-bank]')){ const bk = e.target.closest('[data-adv-bank]').dataset.advBank; openAdvisors(bk, $('finOverlay').classList.contains('show') ? calcCtx() : '', true); }
   else if(e.target.closest('[data-fa="open"]')) openFinAdmin();
 });
@@ -2801,7 +2850,7 @@ function pgBack(){ pgStack.pop(); if(!pgStack.length){ $('pgOverlay').classList.
 function pgClose(){ pgStack = []; $('pgOverlay').classList.remove('show'); $('pgOverlay').style.zIndex = '44'; }
 function pgRender(keep){
   const t = pgStack[pgStack.length - 1]; if(!t) return;
-  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj, advs: pgAdvs })[t.v](t.id);
+  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj, advs: pgAdvs, reqs: pgReqs })[t.v](t.id);
   $('pgTitle').textContent = pg.title; $('pgBody').innerHTML = pg.html; $('pgBody').scrollTop = keep ? st : 0;
 }
 function openDevs(){ pgStack = []; pgOpen('devs'); }
@@ -2850,7 +2899,7 @@ function pgProj(id){
     + (inst ? '<div class="pj-instbox">قسط تقديري يبدأ من <b>' + finFmt(inst.inst) + '</b> ريال/شهر<small>بنسبة ' + finPct(inst.rate) + ' (' + esc(inst.bank) + ') · دفعة مقدمة 20% · 25 سنة. تقديري ويختلف حسب البنك والملاءة.</small></div>' : '')
     + (p.desc ? '<div class="pg-about">' + esc(p.desc) + '</div>' : '')
     + ((p.features || []).length ? '<div class="pg-chips">' + p.features.map(f => '<span>' + esc(f) + '</span>').join('') + '</div>' : '')
-    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button>' + (adActive().length ? '<button type="button" data-act="adv" data-ctx="' + esc('أرغب بتمويل مشروع «' + p.name + '»' + (p.priceFrom ? ' (يبدأ من ' + pjNf(p.priceFrom) + ' ريال)' : '') + '.') + '"><svg class="ic"><use href="#i-user"/></svg>تواصل مع مستشار تمويل</button>' : '')
+    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-pid="' + esc(p.id) + '" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button><button type="button" class="main" data-act="req" data-pid="' + esc(p.id) + '"><svg class="ic"><use href="#i-doc"/></svg>اطلب تمويلاً لهذا المشروع</button>' + (adActive().length ? '<button type="button" data-act="adv" data-ctx="' + esc('أرغب بتمويل مشروع «' + p.name + '»' + (p.priceFrom ? ' (يبدأ من ' + pjNf(p.priceFrom) + ' ريال)' : '') + '.') + '"><svg class="ic"><use href="#i-user"/></svg>تواصل مع مستشار تمويل</button>' : '')
     + (ph ? '<div class="pg-row2 pg-actions" style="margin:0"><a href="' + esc(pgWaTo(ph, waText)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>تواصل واتساب</a><a href="tel:' + esc(cleanPhone(ph)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>' : '')
     + '<div class="pg-row2 pg-actions" style="margin:0">' + (ml ? '<a href="' + esc(ml) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-pin"/></svg>الموقع</a>' : '') + '<a href="https://wa.me/?text=' + encodeURIComponent(shareTxt) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-share"/></svg>مشاركة</a></div>'
     + (isOwner ? '<button type="button" data-act="edit-proj" data-id="' + esc(id) + '">⚙️ تعديل المشروع</button>' : '') + '</div>' };
@@ -2860,11 +2909,15 @@ $('pgBody').addEventListener('click', e => {
   if(t.dataset.dev){ pgOpen('dev', t.dataset.dev); return; }
   if(t.dataset.proj){ pgOpen('proj', t.dataset.proj); return; }
   const a = t.dataset.act;
-  if(a === 'fin') openFin(+t.dataset.price || 0);
+  if(a === 'fin') openFin(+t.dataset.price || 0, t.dataset.pid ? { kind: 'project', id: t.dataset.pid } : null);
   else if(a === 'admin') openDpAdmin();
   else if(a === 'edit-dev') openDpAdmin('dev', t.dataset.id);
   else if(a === 'edit-proj') openDpAdmin('proj', t.dataset.id);
   else if(a === 'edit-adv') openDpAdmin('adv', t.dataset.id);
+  else if(a === 'req') rqOpen({ projId: t.dataset.pid });
+  else if(a === 'rq-new') rqOpen({ kind: 'custom' });
+  else if(a === 'rq-del') rqDelete(t.dataset.id);
+  else if(a === 'rq-adv'){ const r = myReqs.find(x => x.id === t.dataset.id); if(r){ advCtx = 'بخصوص طلبي رقم ' + String(r.id).slice(0, 6).toUpperCase() + ': ' + r.subject + '، السعر ' + finFmt(r.price) + ' ريال.'; pgAdvBank = ''; pgOpen('advs'); } }
   else if(a === 'adv'){ advCtx = t.dataset.ctx || ''; pgAdvBank = ''; pgOpen('advs'); }
   else if(a === 'invest'){ pgClose(); goSearch({ kind: 'استثمار' }); }
 });
@@ -3023,6 +3076,178 @@ $('adPhotoPrev').addEventListener('click', e => { if(e.target.closest('[data-rm]
 $('adDelete').addEventListener('click', async () => {
   const a = adList.find(x => x.id === adEditId); if(!a) return; if(!confirm('حذف المستشار «' + a.name + '» نهائياً؟')) return;
   try{ await db.collection('advisors').doc(adEditId).delete(); toast('تم الحذف'); dpShowList(); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
+});
+
+// ===== رحلة العميل (الخطوة 5): طلب تمويل بموافقة صريحة، بأقل بيانات ممكنة =====
+const RQ_CONSENT = 'أوافق على مشاركة اسمي ورقم جوالي وبيانات هذا الطلب مع إدارة منصة وسطاء المملكة والبنوك التي اخترتها، للتواصل معي بخصوص التمويل العقاري فقط.';
+const RQ_STATUS = { new: 'جديد', progress: 'قيد المتابعة', contacted: 'تم التواصل', closed: 'مغلق' };
+let rq = null, myReqs = [], raReqs = [], raUnsub = null, raFilter = 'all';
+const rqRef = id => String(id || '').slice(0, 6).toUpperCase();
+const rqDate = ts => ts ? new Date(ts).toLocaleString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+function startMyRequests(){
+  if(!uid) return;
+  try{
+    db.collection('financeRequests').where('ownerId', '==', uid).onSnapshot(sn => {
+      myReqs = sn.docs.map(d => ({ ...d.data(), id: d.id }));
+      const top = pgStack[pgStack.length - 1]; if($('pgOverlay').classList.contains('show') && top && top.v === 'reqs') pgRender(true);
+      if(view === 'hub') renderHubExtra();
+    }, e => { console.warn('myReqs', e); myReqs = []; });
+  }catch(e){ console.warn('myReqs-start', e); }
+}
+function rqSummaryText(d, ref, referral){
+  const L = [referral ? 'إحالة طلب تمويل عبر تطبيق وسطاء المملكة' : 'مرحباً، أرسلت طلب تمويل عبر تطبيق وسطاء المملكة', 'رقم الطلب: ' + ref, 'الاسم: ' + d.name, 'الجوال: ' + d.phone, 'العقار: ' + d.subject, 'السعر: ' + finFmt(d.price) + ' ريال', 'الدفعة المقدمة: ' + finFmt(d.down) + ' ريال', 'المدة: ' + d.years + ' سنة'];
+  if(d.time) L.push('أنسب وقت للتواصل: ' + d.time); if(d.note) L.push('ملاحظة: ' + d.note);
+  L.push(referral ? '(العميل وافق على مشاركة هذه البيانات مع البنك)' : 'أرجو التواصل معي.'); return L.join('\n');
+}
+function rqOpen(o){
+  o = o || {};
+  const pr = o.projId ? pjList.find(x => x.id === o.projId) : null;
+  let kind = o.kind || (pr ? 'project' : 'custom'); if(kind === 'project' && !pjActive().length) kind = 'custom';
+  const projId = kind === 'project' ? (pr ? pr.id : ((pjActive()[0] || {}).id || '')) : '';
+  const base = kind === 'project' ? (pjList.find(x => x.id === projId) || {}) : {};
+  const price = o.price > 0 ? o.price : (base.priceFrom || 0);
+  rq = { step: 1, kind, projId, subject: o.subject || '', subjectId: o.subjectId || '', price, down: o.down >= 0 && o.price > 0 ? o.down : Math.round(price * 0.2), years: o.years || 25, banks: [], anyBank: false, name: '', phone: '', time: '', note: '', consent: false, done: null };
+  $('reqOverlay').classList.add('show'); rqRender();
+}
+function rqSubject(){ return rq.kind === 'project' ? ((pjList.find(x => x.id === rq.projId) || {}).name || 'مشروع') : (rq.kind === 'listing' ? (rq.subject || 'عقار معروض') : 'عقار بسعر مخصص'); }
+function rqBanks(){
+  const P = Math.max(0, rq.price - rq.down), m = new Map();
+  finActive().forEach(o => { const k = bankKey(o.bank); if(!m.has(k)) m.set(k, { name: o.bank, offer: o }); });
+  adActive().forEach(a => { const k = bankKey(a.bank); if(!m.has(k)) m.set(k, { name: canonBank(a.bank), offer: null }); });
+  return [...m.values()].map(b => ({ ...b, inst: b.offer && P > 0 ? finCalc(P, rq.years, b.offer.rate, b.offer.type || 'flat').inst : null, n: advBankCount(b.name) }))
+    .sort((a, b) => ((a.inst == null) - (b.inst == null)) || ((a.inst || 0) - (b.inst || 0)) || a.name.localeCompare(b.name, 'ar'));
+}
+function rqRender(){
+  const st = rq.step, body = $('reqBody'); $('reqTitle').textContent = st === 4 ? 'تم إرسال الطلب' : 'طلب تمويل';
+  $('rqSteps').innerHTML = st === 4 ? '' : ['العقار', 'البنك', 'بياناتك'].map((t, i) => '<span class="' + (i + 1 === st ? 'on' : (i + 1 < st ? 'done' : '')) + '">' + (i + 1) + ' · ' + t + '</span>').join('');
+  if(st === 1){
+    const projects = pjActive();
+    body.innerHTML = '<div class="hub-intro">اختر ما تريد تمويله وحدّد المبلغ. لن يُرسل أي شيء قبل موافقتك الصريحة في الخطوة الأخيرة.</div>'
+      + (rq.kind === 'listing' ? '<div class="rq-sum">العقار: <b>' + esc(rq.subject) + '</b></div>' : '<div class="fin-seg" id="rqKind" style="margin-bottom:8px"><button type="button" data-k="project" class="' + (rq.kind === 'project' ? 'on' : '') + '"' + (projects.length ? '' : ' disabled') + '>مشروع</button><button type="button" data-k="custom" class="' + (rq.kind === 'custom' ? 'on' : '') + '">سعر مخصص</button></div>')
+      + (rq.kind === 'project' ? '<div class="field"><label>المشروع</label><select id="rqProj">' + projects.map(x => '<option value="' + esc(x.id) + '"' + (x.id === rq.projId ? ' selected' : '') + '>' + esc(x.name) + ' — ' + esc(x.city || '') + '</option>').join('') + '</select></div>' : '')
+      + '<div class="field"><label>سعر العقار (ريال)</label><input type="text" id="rqPrice" inputmode="numeric" value="' + (rq.price || '') + '"></div>'
+      + '<div class="field"><label>الدفعة المقدمة (ريال)</label><input type="text" id="rqDown" inputmode="numeric" value="' + (rq.down || '') + '"></div>'
+      + '<div class="field"><label>مدة التمويل</label><select id="rqYears">' + [5, 10, 15, 20, 25, 30].map(y => '<option value="' + y + '"' + (y === rq.years ? ' selected' : '') + '>' + y + ' سنة</option>').join('') + '</select></div>'
+      + '<div class="pj-instbox" id="rqAmt"></div><div class="modal-actions"><button class="btn-save" id="rqNext" style="flex:1">التالي: اختيار البنك</button></div>';
+    rqAmt();
+  }else if(st === 2){
+    const banks = rqBanks(), best = banks.filter(b => b.inst != null).length > 1 ? banks.find(b => b.inst != null).name : null;
+    body.innerHTML = '<div class="hub-intro">اختر حتى 3 بنوك للتواصل معك، أو اترك الاختيار للإدارة. القسط تقديري بحسب النسب المدخلة وقد يختلف عند التقديم.</div>'
+      + banks.map(b => '<button type="button" class="rq-bank' + (rq.banks.includes(b.name) ? ' on' : '') + '" data-bank="' + esc(b.name) + '"><span class="rq-chk"></span><span class="rq-bi"><b>' + esc(b.name) + '</b><small>' + (b.offer ? 'نسبة ' + finPct(b.offer.rate) + (b.inst != null ? ' · قسط ≈ ' + finFmt(b.inst) + ' ريال/شهر' : '') : 'النسبة غير مدخلة') + (b.n ? ' · ' + b.n + ' مستشار' : '') + '</small></span>' + (b.name === best ? '<span class="rq-tag">الأقل تكلفة</span>' : '') + '</button>').join('')
+      + '<button type="button" class="rq-bank' + (rq.anyBank ? ' on' : '') + '" data-any="1"><span class="rq-chk"></span><span class="rq-bi"><b>لا أفضّل بنكاً محدداً</b><small>تختار الإدارة الأنسب لك</small></span></button>'
+      + '<div class="modal-actions"><button class="btn-cancel" id="rqPrev">رجوع</button><button class="btn-save" id="rqNext">التالي: بياناتك</button></div>';
+  }else if(st === 3){
+    body.innerHTML = '<div class="rq-sum"><b>' + esc(rqSubject()) + '</b><br>السعر ' + finFmt(rq.price) + ' · الدفعة ' + finFmt(rq.down) + ' · المدة ' + rq.years + ' سنة<br>' + (rq.anyBank ? 'البنك: تختار الإدارة الأنسب' : 'البنوك: ' + esc(rq.banks.join('، '))) + '</div>'
+      + '<div class="field"><label>الاسم</label><input type="text" id="rqName" maxlength="60" autocomplete="name" value="' + esc(rq.name) + '"></div>'
+      + '<div class="field"><label>رقم الجوال (واتساب)</label><input type="text" id="rqPhone" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="05xxxxxxxx" value="' + esc(rq.phone) + '"></div>'
+      + '<div class="field"><label>أنسب وقت للتواصل (اختياري)</label><select id="rqTime"><option value="">أي وقت</option><option' + (rq.time === 'صباحاً' ? ' selected' : '') + '>صباحاً</option><option' + (rq.time === 'مساءً' ? ' selected' : '') + '>مساءً</option></select></div>'
+      + '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rqNote" maxlength="160" value="' + esc(rq.note) + '"></div>'
+      + '<div class="field"><label class="oath-check"><input type="checkbox" id="rqConsent"' + (rq.consent ? ' checked' : '') + '> ' + RQ_CONSENT + '</label></div>'
+      + '<div class="picker-hint">لا نطلب الراتب ولا رقم الهوية. تستطيع حذف طلبك وسحب موافقتك في أي وقت من «طلباتي».</div>'
+      + '<div class="modal-actions"><button class="btn-cancel" id="rqPrev">رجوع</button><button class="btn-save" id="rqSend">إرسال الطلب</button></div>';
+  }else{
+    const d = rq.done, advs = rqAdvisorsFor(d.data), txt = rqSummaryText(d.data, d.ref, false);
+    body.innerHTML = '<div class="rq-done"><div class="ok">✅</div><h3>تم استلام طلبك</h3><div>رقم الطلب</div><div class="rq-ref">' + esc(d.ref) + '</div><div class="picker-hint">سنتواصل معك على ' + esc(d.data.phone) + '. تستطيع أيضاً مراسلة مستشار مباشرة الآن.</div></div>'
+      + (advs.length ? '<div class="pg-actions">' + advs.map(a => '<a href="' + esc(pgWaTo(a.phone, txt)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>' + esc(a.name) + ' · ' + esc(canonBank(a.bank)) + '</a>').join('') + '</div>' : '')
+      + '<div class="pg-actions pg-row2"><button type="button" data-go="reqs">طلباتي</button><button type="button" class="main" data-go="close">إغلاق</button></div>';
+  }
+}
+function rqAmt(){ const P = Math.max(0, rq.price - rq.down); const el = $('rqAmt'); if(el) el.innerHTML = rq.price > 0 ? 'مبلغ التمويل ≈ <b>' + finFmt(P) + '</b> ريال' + (rq.down > 0 ? ' <small>(دفعة مقدمة ' + Math.round(rq.down / rq.price * 100) + '%)</small>' : '') : 'أدخل سعر العقار'; }
+function rqAdvisorsFor(d){
+  const keys = d.anyBank || !(d.banks || []).length ? [...new Map(finActive().map(o => [bankKey(o.bank), o])).keys()].slice(0, 3) : d.banks.map(bankKey);
+  return adActive().filter(a => keys.includes(bankKey(a.bank))).sort((a, b) => keys.indexOf(bankKey(a.bank)) - keys.indexOf(bankKey(b.bank))).slice(0, 4);
+}
+function rqValidate(){
+  if(rq.step === 1){
+    if(!(rq.price > 0 && rq.price <= 1e9)){ toast('أدخل سعر العقار'); return false; }
+    if(rq.down < 0 || rq.down >= rq.price){ toast('الدفعة المقدمة يجب أن تكون أقل من السعر'); return false; }
+  }
+  if(rq.step === 2 && !rq.anyBank && !rq.banks.length){ toast('اختر بنكاً أو «لا أفضّل بنكاً محدداً»'); return false; }
+  return true;
+}
+async function rqSend(){
+  const name = rq.name.trim(), phone = cleanPhone(rq.phone.trim());
+  if(name.length < 2){ toast('اكتب اسمك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
+  if(!rq.consent){ toast('يلزم الموافقة على مشاركة البيانات لإرسال الطلب', 4000); return; }
+  if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
+  if(myReqs.filter(r => r.status === 'new' || r.status === 'progress').length >= 5){ toast('لديك 5 طلبات قيد المتابعة. انتظر ردّها أو احذف بعضها من «طلباتي»', 5000); return; }
+  const now = Date.now(), data = { ownerId: uid, status: 'new', consent: true, consentAt: now, consentText: RQ_CONSENT, name, phone, kind: rq.kind, subject: rqSubject(), subjectId: rq.kind === 'project' ? rq.projId : rq.subjectId, price: rq.price, down: rq.down, years: rq.years, banks: rq.anyBank ? [] : rq.banks.slice(0, 3), anyBank: !!rq.anyBank, time: rq.time, note: rq.note.trim(), createdAt: now, updatedAt: now };
+  $('rqSend').disabled = true;
+  try{ const ref = await db.collection('financeRequests').add(data); rq.done = { data, ref: rqRef((ref && ref.id) || String(now)) }; rq.step = 4; rqRender(); }
+  catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الإرسال: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الإرسال، حاول مجدداً', 5000); const b = $('rqSend'); if(b) b.disabled = false; }
+}
+function rqClose(){ $('reqOverlay').classList.remove('show'); rq = null; }
+$('reqBack').addEventListener('click', () => { if(!rq || rq.step === 1 || rq.step === 4){ rqClose(); return; } rq.step--; rqRender(); });
+$('reqBody').addEventListener('click', e => {
+  if(!rq) return;
+  const k = e.target.closest('[data-k]'), bk = e.target.closest('[data-bank]'), any = e.target.closest('[data-any]'), go = e.target.closest('[data-go]');
+  if(k && !k.disabled){ rq.kind = k.dataset.k; if(rq.kind === 'project'){ rq.projId = rq.projId || (pjActive()[0] || {}).id || ''; const pp = pjList.find(x => x.id === rq.projId); if(pp && pp.priceFrom){ rq.price = pp.priceFrom; rq.down = Math.round(rq.price * 0.2); } } rqRender(); return; }
+  if(bk){ const n = bk.dataset.bank, i = rq.banks.indexOf(n); rq.anyBank = false; if(i >= 0) rq.banks.splice(i, 1); else if(rq.banks.length >= 3){ toast('يمكنك اختيار 3 بنوك كحد أقصى'); return; } else rq.banks.push(n); rqRender(); return; }
+  if(any){ rq.anyBank = !rq.anyBank; if(rq.anyBank) rq.banks = []; rqRender(); return; }
+  if(go){ if(go.dataset.go === 'reqs'){ rqClose(); openMyRequests(); } else rqClose(); return; }
+  if(e.target.closest('#rqPrev')){ rq.step--; rqRender(); return; }
+  if(e.target.closest('#rqNext')){ if(rqValidate()){ rq.step++; rqRender(); } return; }
+  if(e.target.closest('#rqSend')) rqSend();
+});
+$('reqBody').addEventListener('input', e => {
+  if(!rq) return; const id = e.target.id;
+  if(id === 'rqPrice'){ rq.price = finNum(e.target.value); rqAmt(); } else if(id === 'rqDown'){ rq.down = finNum(e.target.value); rqAmt(); }
+  else if(id === 'rqName') rq.name = e.target.value; else if(id === 'rqPhone') rq.phone = e.target.value; else if(id === 'rqNote') rq.note = e.target.value;
+});
+$('reqBody').addEventListener('change', e => {
+  if(!rq) return; const id = e.target.id;
+  if(id === 'rqYears'){ rq.years = +e.target.value || 25; rqAmt(); } else if(id === 'rqTime') rq.time = e.target.value; else if(id === 'rqConsent') rq.consent = e.target.checked;
+  else if(id === 'rqProj'){ rq.projId = e.target.value; const pp = pjList.find(x => x.id === rq.projId); if(pp && pp.priceFrom){ rq.price = pp.priceFrom; rq.down = Math.round(rq.price * 0.2); } rqRender(); }
+});
+$('finReqBtn').addEventListener('click', () => {
+  const f = finFrom, base = { price: fin.price, down: fin.down, years: fin.years };
+  rqOpen(f && f.kind === 'listing' ? { ...base, kind: 'listing', subject: f.title, subjectId: f.id } : (f && f.kind === 'project' ? { ...base, kind: 'project', projId: f.id } : { ...base, kind: 'custom' }));
+});
+// ----- طلباتي (للعميل) -----
+function rqCard(r){
+  return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(r.subject) + '</b><span class="fl-prod">رقم الطلب ' + rqRef(r.id) + ' · ' + finRel(r.createdAt) + '</span></div><span class="rq-st s-' + esc(r.status) + '">' + (RQ_STATUS[r.status] || '') + '</span></div>'
+    + '<div class="fl-note">السعر ' + finFmt(r.price) + ' · دفعة ' + finFmt(r.down) + ' · ' + r.years + ' سنة<br>' + (r.anyBank ? 'البنك: تختار الإدارة الأنسب' : 'البنوك: ' + esc((r.banks || []).join('، '))) + '</div>'
+    + '<div class="pg-actions pg-row2" style="margin-top:8px"><button type="button" data-act="rq-adv" data-id="' + esc(r.id) + '">👥 مستشارون</button><button type="button" data-act="rq-del" data-id="' + esc(r.id) + '">🗑 حذف الطلب</button></div></div>';
+}
+function pgReqs(){
+  const a = myReqs.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
+  return { title: 'طلباتي', html: '<div class="hub-intro" style="margin-bottom:10px">طلباتك تظهر لك وللإدارة فقط. تستطيع حذف أي طلب في أي وقت، وهذا يسحب موافقتك على مشاركة بياناتك.</div>'
+    + (a.length ? a.map(rqCard).join('') + '<div class="pg-actions"><button type="button" data-act="rq-new">+ طلب جديد</button></div>' : '<div class="nt-card">لم ترسل طلبات تمويل بعد.<br><button type="button" data-act="rq-new">ابدأ طلب تمويل</button></div>') };
+}
+function openMyRequests(){ pgStack = []; $('pgOverlay').style.zIndex = '44'; pgOpen('reqs'); }
+async function rqDelete(id){
+  const r = myReqs.find(x => x.id === id); if(!r) return; if(!confirm('حذف الطلب رقم ' + rqRef(id) + '؟ سيُسحب كل ما أرسلته.')) return;
+  try{ await db.collection('financeRequests').doc(id).delete(); toast('تم حذف الطلب'); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
+}
+// ----- طلبات التمويل (للإدارة) -----
+function ensureReqAdminSub(){
+  if(raUnsub || !isOwner) return;
+  try{ raUnsub = db.collection('financeRequests').onSnapshot(sn => { raReqs = sn.docs.map(d => ({ ...d.data(), id: d.id })); raChanged(); }, e => { console.warn('raReqs', e); raReqs = []; raUnsub = null; raChanged(); }); }catch(e){ console.warn('raReqs-start', e); raUnsub = null; }
+}
+function raChanged(){ try{ if($('reqAdminOverlay').classList.contains('show')) raRender(); if(view === 'hub') renderHubExtra(); }catch(e){ console.warn('raChanged', e); } }
+function raAdvisorsFor(r){ return rqAdvisorsFor(r); }
+function raCard(r){
+  const ref = rqRef(r.id), advs = raAdvisorsFor(r), sum = rqSummaryText(r, ref, true);
+  return '<div class="fl-card" data-rid="' + esc(r.id) + '"><div class="fl-top"><div><b class="fl-bank">' + esc(r.name) + '</b><span class="fl-prod">' + esc(r.phone) + ' · ' + ref + ' · ' + finRel(r.createdAt) + '</span></div><span class="rq-st s-' + esc(r.status) + '">' + (RQ_STATUS[r.status] || '') + '</span></div>'
+    + '<div class="fl-note"><b>' + esc(r.subject) + '</b><br>السعر ' + finFmt(r.price) + ' · دفعة ' + finFmt(r.down) + ' · ' + r.years + ' سنة<br>' + (r.anyBank ? 'البنك: غير محدد (اختيار الإدارة)' : 'البنوك: ' + esc((r.banks || []).join('، '))) + (r.time ? '<br>الوقت: ' + esc(r.time) : '') + (r.note ? '<br>ملاحظة: ' + esc(r.note) : '') + '<br><small>وافق على مشاركة بياناته: ' + rqDate(r.consentAt) + '</small></div>'
+    + '<div class="ad-actions" style="margin-top:8px"><a href="' + esc(pgWaTo(r.phone, 'مرحباً ' + r.name + '، بخصوص طلب التمويل رقم ' + ref + ' عبر تطبيق وسطاء المملكة.')) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>واتساب العميل</a><a href="tel:' + esc(cleanPhone(r.phone)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>'
+    + '<div class="ra-st">' + Object.keys(RQ_STATUS).map(k => '<button type="button" data-st="' + k + '" data-id="' + esc(r.id) + '" class="' + (r.status === k ? 'on' : '') + '">' + RQ_STATUS[k] + '</button>').join('') + '</div>'
+    + (advs.length ? '<div class="hub-h" style="margin:10px 0 4px">إحالة إلى مستشار' + (r.anyBank || !(r.banks || []).length ? ' (أقل نسب)' : '') + '</div><div class="ad-actions ra-refer">' + advs.map(a => '<a href="' + esc(pgWaTo(a.phone, sum)) + '" target="_blank" rel="noopener noreferrer">💬 ' + esc(a.name) + ' · ' + esc(canonBank(a.bank)) + '</a>').join('') + '</div>' : '')
+    + '<div class="pg-actions" style="margin-top:8px"><button type="button" data-del="' + esc(r.id) + '">🗑 حذف الطلب</button></div></div>';
+}
+function raRender(){
+  const all = raReqs.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), cnt = k => k === 'all' ? all.length : all.filter(r => r.status === k).length;
+  $('raFilter').innerHTML = [['all', 'الكل']].concat(Object.entries(RQ_STATUS)).map(([k, t]) => '<button type="button" data-f="' + k + '" class="' + (raFilter === k ? 'on' : '') + '">' + t + ' (' + cnt(k) + ')</button>').join('');
+  const list = all.filter(r => raFilter === 'all' || r.status === raFilter);
+  $('raBody').innerHTML = list.length ? list.map(raCard).join('') : '<div class="hub-intro">' + (all.length ? 'لا طلبات بهذه الحالة.' : 'لا توجد طلبات تمويل بعد.') + '</div>';
+}
+function openReqAdmin(){ if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; } ensureReqAdminSub(); raFilter = 'all'; raRender(); $('reqAdminOverlay').classList.add('show'); }
+$('raClose').addEventListener('click', () => $('reqAdminOverlay').classList.remove('show'));
+$('raFilter').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(b){ raFilter = b.dataset.f; raRender(); } });
+$('raBody').addEventListener('click', async e => {
+  const st = e.target.closest('[data-st]'), del = e.target.closest('[data-del]');
+  if(st){ try{ await db.collection('financeRequests').doc(st.dataset.id).update({ status: st.dataset.st, updatedAt: Date.now() }); }catch(err){ console.error(err); toast('تعذر تحديث الحالة', 4000); } return; }
+  if(del){ const r = raReqs.find(x => x.id === del.dataset.del); if(!r || !confirm('حذف طلب «' + r.name + '» نهائياً؟')) return; try{ await db.collection('financeRequests').doc(r.id).delete(); toast('تم الحذف'); }catch(err){ console.error(err); toast('تعذر الحذف', 4000); } }
 });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
@@ -3974,7 +4199,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792757088';
+const APP_VERSION = '1792757728';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
