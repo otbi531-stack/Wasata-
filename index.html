@@ -577,6 +577,30 @@ body.seeker #seekerRegisterBtn:active,
 .bottom-nav button.on::before{content:"";position:absolute;inset:7px 3px;border-radius:22px;background:var(--open);border:1px solid var(--open-line);z-index:-1}
 .nt-card button{background:var(--field);border:1px solid var(--field-line);color:var(--forest)}
 .nt-card button:active{background:var(--open);border-color:var(--open-line)}
+/* ===== عدّاد نسب التمويل ===== */
+.fl-card{background:var(--field);border:1px solid var(--field-line);border-radius:16px;padding:10px 12px;margin-bottom:8px}
+.fl-card.best{border-color:var(--primary);box-shadow:0 0 0 2px rgba(47,106,63,.16)}
+.fl-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.fl-bank{display:block;font-size:15px;font-weight:800;color:var(--forest)}
+.fl-prod{display:block;font-size:12.5px;color:#55655a;margin-top:1px}
+.fl-rate{text-align:left;white-space:nowrap}
+.fl-rate b{font-size:20px;font-weight:800;color:var(--forest)}
+.chg{display:inline-block;margin-inline-start:6px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:800}
+.chg.down{background:#e3efe1;color:#245a2c}.chg.up{background:#fdf0e0;color:#8a5200}.chg.new{background:var(--open);color:var(--forest)}
+.fl-meta{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:12px;color:#55655a;flex-wrap:wrap}
+.fl-meta .spark{flex:none;direction:ltr}
+.fl-note{margin-top:6px;font-size:12.5px;color:#55655a;line-height:1.6}
+.fin-ticker{display:flex;align-items:center;gap:10px;width:100%;text-align:right;background:var(--field);border:1px solid var(--field-line);border-radius:18px;padding:10px 12px;margin:0 0 10px;font-family:inherit;cursor:pointer;color:var(--text)}
+.fin-ticker:active{background:var(--open);border-color:var(--open-line)}
+.ft-body{flex:1;min-width:0;font-size:13px;line-height:1.7;color:var(--text)}
+.ft-body b{color:var(--forest)}
+.ft-body small{display:block;color:#55655a;font-size:11.5px}
+.ft-ch{font-weight:800}.ft-ch .d{color:#245a2c}.ft-ch .u{color:#8a5200}
+.fa-row{display:flex;align-items:center;gap:8px;background:var(--field);border:1px solid var(--field-line);border-radius:14px;padding:9px 12px;margin-bottom:8px;width:100%;text-align:right;font-family:inherit;cursor:pointer}
+.fa-row .fa-t{flex:1;min-width:0}.fa-row .fa-t b{display:block;font-size:14.5px;color:var(--forest)}.fa-row .fa-t span{font-size:12px;color:#55655a}
+.fa-row .fa-r{font-weight:800;color:var(--forest);font-size:16px}.fa-row.off{opacity:.55}
+.fin-admin-btn{margin-top:6px;padding:7px 14px;border-radius:999px;border:1px solid var(--field-line);background:var(--field);color:var(--forest);font-weight:800;font-family:inherit;cursor:pointer}
+.fin-admin-btn:active{background:var(--open)}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -658,6 +682,7 @@ body.seeker #seekerRegisterBtn:active,
       <h2 class="lib-title" id="hubTitle">القسم</h2>
     </div>
     <div class="hub-intro" id="hubIntro"></div>
+    <div id="hubExtra"></div>
     <div id="hubBody"></div>
   </div>
   <div id="libraryView" style="display:none">
@@ -899,7 +924,8 @@ body.seeker #seekerRegisterBtn:active,
     <div class="field"><label>الالتزامات الشهرية القائمة (اختياري)</label><input type="text" id="finDebts" inputmode="numeric" placeholder="أقساط قروض وبطاقات"></div>
     <div class="field"><label>الحد الأقصى للالتزامات من الراتب (%)</label><input type="text" id="finDbr" inputmode="decimal" placeholder="55"><div class="picker-hint">قيمة افتراضية قابلة للتعديل: تختلف بحسب البنك وشريحة الدخل وضوابط البنك المركزي وقد تتغير.</div></div>
     <div class="fin-result" id="finResult"></div>
-    <h3 class="fin-h">مقارنة العروض</h3>
+    <div id="finLive"></div>
+    <h3 class="fin-h" id="finManualH">مقارنة العروض</h3>
     <div class="picker-hint">اكتب اسم كل بنك أو عرض ونسبته، ويُبرز التطبيق الأقل تكلفة ويريك الفرق.</div>
     <div id="finOffers"></div>
     <button type="button" class="fin-add" id="finAddOffer">+ إضافة عرض</button>
@@ -907,6 +933,37 @@ body.seeker #seekerRegisterBtn:active,
       <button class="btn-cancel" id="finShareBtn">📤 مشاركة النتيجة</button>
       <button class="btn-save" id="finCloseBtn">إغلاق</button>
     </div>
+  </div>
+</div>
+
+<!-- عداد نسب التمويل -->
+<div class="overlay" id="ratesOverlay" style="z-index:46">
+  <div class="modal">
+    <h2>📊 عدّاد نسب التمويل</h2>
+    <div id="ratesBody"></div>
+    <div class="modal-actions"><button class="btn-cancel" id="ratesCalcBtn">احسب القسط</button><button class="btn-save" id="ratesClose">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- إدارة نسب التمويل (للمدير) -->
+<div class="overlay" id="finAdminOverlay" style="z-index:47">
+  <div class="modal">
+    <h2>⚙️ إدارة نسب التمويل</h2>
+    <div class="picker-hint">أدخل النسب كما تعلنها البنوك. عند تغيير النسبة يحفظ التطبيق السابقة والتاريخ، ويظهر ▲▼ للجميع.</div>
+    <div id="faList"></div>
+    <button type="button" class="fin-add" id="faAdd">+ إضافة عرض بنك</button>
+    <div id="faForm" style="display:none">
+      <h3 class="fin-h" id="faFormTitle">عرض جديد</h3>
+      <div class="field"><label>اسم البنك</label><input type="text" id="faBank" maxlength="40" placeholder="مثال: بنك كذا"></div>
+      <div class="field"><label>المنتج (اختياري)</label><input type="text" id="faProduct" maxlength="50" placeholder="مثال: تمويل سكني للمواطنين"></div>
+      <div class="field"><label>نسبة الأرباح السنوية (%)</label><input type="text" id="faRate" inputmode="decimal" placeholder="مثال: 4.99">
+        <div class="fin-seg" id="faType"><button type="button" data-t="flat">ثابتة (على كامل المبلغ)</button><button type="button" data-t="reduce">متناقصة (على الرصيد)</button></div></div>
+      <div class="field"><label>شروط أو ملاحظة (اختياري)</label><input type="text" id="faNote" maxlength="140" placeholder="مثال: لمن راتبه فوق 10,000"></div>
+      <div class="field"><label class="oath-check"><input type="checkbox" id="faActive" checked> العرض فعّال ويظهر للجميع</label></div>
+      <div class="modal-actions"><button class="btn-cancel" id="faCancel">إلغاء</button><button class="btn-save" id="faSave">حفظ</button></div>
+      <button type="button" class="fin-add" id="faDelete" style="display:none;border-color:#c98a8a;color:#8c2f2f">🗑 حذف هذا العرض</button>
+    </div>
+    <div class="modal-actions" id="faFooter"><button class="btn-save" id="faClose" style="flex:1">إغلاق</button></div>
   </div>
 </div>
 
@@ -1230,6 +1287,7 @@ async function init(){
     checkGate();
     startMemberWatch();
     startNotes();
+    startFinance();
   }catch(e){ fail('init', e); }
 }
 
@@ -2181,8 +2239,8 @@ function finRender(){
   const P = Math.max(0, price - down), pct = price > 0 ? down / price * 100 : 0;
   $('finDownPct').textContent = price > 0 ? 'الدفعة المقدمة ' + pct.toFixed(1) + '% · مبلغ التمويل ' + finFmt(P) + ' ريال' : '';
   const box = $('finResult');
-  if(price <= 0){ box.innerHTML = '<div class="picker-hint" style="margin:0">أدخل سعر العقار لتظهر النتيجة.</div>'; $('finOffers').dataset.ready = ''; finRenderOffers(false); return; }
-  if(P <= 0){ box.innerHTML = '<div class="fin-afford ok">الدفعة المقدمة تغطي السعر كاملاً، فلا حاجة إلى تمويل.</div>'; finRenderOffers(false); return; }
+  if(price <= 0){ box.innerHTML = '<div class="picker-hint" style="margin:0">أدخل سعر العقار لتظهر النتيجة.</div>'; $('finOffers').dataset.ready = ''; finRenderOffers(false); finRenderLive(); return; }
+  if(P <= 0){ box.innerHTML = '<div class="fin-afford ok">الدفعة المقدمة تغطي السعر كاملاً، فلا حاجة إلى تمويل.</div>'; finRenderOffers(false); finRenderLive(); return; }
   const r = finCalc(P, years, rate, type);
   let aff = '';
   if(salary > 0){
@@ -2194,7 +2252,7 @@ function finRender(){
   box.innerHTML = '<div class="fin-big">' + finFmt(r.inst) + ' <small>ريال / شهر</small></div>'
     + '<div class="fin-grid"><div><span>مبلغ التمويل</span><b>' + finFmt(P) + '</b></div><div><span>إجمالي الأرباح</span><b>' + finFmt(r.profit) + '</b></div>'
     + '<div><span>إجمالي المسدَّد</span><b>' + finFmt(r.total) + '</b></div><div><span>عدد الأقساط</span><b>' + r.n + '</b></div></div>' + aff;
-  finRenderOffers(false);
+  finRenderOffers(false); finRenderLive();
   finSave();
 }
 function finOffersHTML(){
@@ -2215,6 +2273,7 @@ function finRenderOffers(rebuild){
 }
 function openFin(price){
   finLoad(); if(price && price > 0){ fin.price = price; fin.down = Math.round(price * 0.2); }
+  if(finActive().length && fin.offers.every(o => /^عرض تجريبي/.test(o.n))) fin.offers = [];   // الأمثلة التجريبية تختفي حين توجد نسب حقيقية
   finWriteInputs(); $('finOffers').innerHTML = ''; finRender(); finRenderOffers(true); finRender();
   $('finOverlay').classList.add('show');
 }
@@ -2375,17 +2434,17 @@ const HUBS = {
   bank: { title: 'البنوك', intro: 'نسب التمويل وعروض البنوك والحاسبة، ثم التواصل مع مستشاري التمويل لاختيار الأنسب والأفضل نسبة.', secs: [
     ['البيانات', [
       { ic: 'i-calc', t: 'حاسبة التمويل ومقارنة العروض', d: 'القسط والأرباح والقدرة على التحمل، وأقل العروض تكلفة', run: () => openFin() },
-      { ic: 'i-bank', t: 'نسب وعروض البنوك', d: 'نسب الأرباح الحالية مع عدّاد يُظهر ارتفاعها وانخفاضها' },
+      { ic: 'i-bank', t: 'نسب وعروض البنوك', d: 'نسب الأرباح الحالية مع عدّاد يُظهر ارتفاعها وانخفاضها', run: () => openRates() },
       { ic: 'i-user', t: 'مستشارو البنوك', d: 'دليل موظفي التمويل وقنوات التواصل معهم' }
     ]],
     ['الإجراءات', [
       { ic: 'i-doc', t: 'طلب تمويل', d: 'أرسل طلبك لبنك أو أكثر بموافقتك' },
       { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها' },
-      { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال النسب وتحديثها (للمدير)', own: true }
+      { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() }
     ]]
   ] }
 };
-let hubItems = [];
+let hubItems = [], hubCur = '';
 function showHub(k){
   const h = HUBS[k]; if(!h) return;
   showHome(); view = 'hub'; setNav('home'); document.body.classList.add('hub-open');
@@ -2401,11 +2460,146 @@ function showHub(k){
       html += '<button type="button" class="hub-item ' + (st === 'soon' ? 'soon' : '') + '" data-i="' + idx + '"><span class="stat-ic"><svg class="ic"><use href="#' + it.ic + '"/></svg></span><span class="hub-txt"><span class="hi-t">' + esc(it.t) + '</span><span class="hi-d">' + esc(it.d) + '</span></span><span class="hub-chip ' + st + '">' + label + '</span></button>';
     });
   });
-  $('hubBody').innerHTML = html; window.scrollTo(0, 0);
+  $('hubBody').innerHTML = html; hubCur = k; renderHubExtra(); window.scrollTo(0, 0);
 }
 $('hubRow').addEventListener('click', e => { const b = e.target.closest('.hub-btn'); if(b) showHub(b.dataset.hub); });
 $('hubBackBtn').addEventListener('click', showHome);
 $('hubBody').addEventListener('click', e => { const b = e.target.closest('.hub-item'); if(!b) return; const it = hubItems[+b.dataset.i]; if(!it) return; if(it.run) it.run(); else toast('«' + it.t + '» قريباً بإذن الله', 3200); });
+
+// ===== عدّاد نسب التمويل (الخطوة 2): النسب يدخلها المدير والتطبيق يحفظ السابقة والتاريخ =====
+let finLive = [];   // كل العروض المخزّنة (الفعّالة وغيرها)
+const finActive = () => finLive.filter(o => o.active !== false).sort((a, b) => a.rate - b.rate || String(a.bank).localeCompare(String(b.bank), 'ar'));
+function startFinance(){
+  try{
+    db.collection('financeOffers').onSnapshot(snap => {
+      finLive = snap.docs.map(d => ({ ...d.data(), id: d.id })).filter(o => typeof o.rate === 'number' && o.bank);
+      finLiveChanged();
+    }, e => { console.warn('finance', e); finLive = []; finLiveChanged(); });
+  }catch(e){ console.warn('finance-start', e); }
+}
+function finLiveChanged(){
+  try{
+    if($('finOverlay').classList.contains('show')) finRender();
+    if($('ratesOverlay').classList.contains('show')) renderRates();
+    if($('finAdminOverlay').classList.contains('show')) faRenderList();
+    if(view === 'hub') renderHubExtra();
+  }catch(e){ console.warn('finLiveChanged', e); }
+}
+function finStats(){
+  const a = finActive(); if(!a.length) return null;
+  const since = Date.now() - 30 * 864e5, ch = a.filter(o => o.prevRate != null && (o.updatedAt || 0) >= since);
+  return { n: a.length, min: a[0], avg: a.reduce((t, o) => t + o.rate, 0) / a.length, changes: ch.length, ups: ch.filter(o => o.rate > o.prevRate).length, downs: ch.filter(o => o.rate < o.prevRate).length, last: Math.max(...a.map(o => o.updatedAt || 0)) };
+}
+function finRel(ts){
+  if(!ts) return ''; const d = Math.floor((Date.now() - ts) / 864e5);
+  if(d <= 0) return 'اليوم'; if(d === 1) return 'أمس'; if(d === 2) return 'قبل يومين'; if(d <= 10) return 'قبل ' + d + ' أيام';
+  if(d < 30){ const w = Math.floor(d / 7); return w === 1 ? 'قبل أسبوع' : (w === 2 ? 'قبل أسبوعين' : 'قبل ' + w + ' أسابيع'); }
+  return new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+const finPct = n => (+n).toFixed(2) + '%';
+function finChg(o){
+  if(o.prevRate == null) return (Date.now() - (o.createdAt || 0)) < 30 * 864e5 ? '<span class="chg new">جديد</span>' : '';
+  const d = o.rate - o.prevRate; if(Math.abs(d) < 1e-9) return '';
+  return d < 0 ? '<span class="chg down">▼ ' + Math.abs(d).toFixed(2) + '</span>' : '<span class="chg up">▲ ' + d.toFixed(2) + '</span>';
+}
+function finSpark(h){
+  h = (h || []).slice(-8); if(h.length < 2) return '';
+  const rs = h.map(x => x.r), mn = Math.min(...rs), mx = Math.max(...rs), rng = mx - mn || 1, W = 64, H = 22;
+  const pts = rs.map((r, i) => (i * (W - 4) / (rs.length - 1) + 2).toFixed(1) + ',' + (H - 3 - (r - mn) / rng * (H - 6)).toFixed(1)).join(' ');
+  const last = rs[rs.length - 1], first = rs[0], col = last === first ? '#8a8f83' : (last < first ? '#2f6a3f' : '#c2761e');
+  return '<svg class="spark" viewBox="0 0 64 22" width="64" height="22" aria-label="اتجاه النسبة"><polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function finTickerHTML(){
+  const st = finStats(); if(!st) return '';
+  const chg = st.changes ? '<span class="ft-ch">' + (st.downs ? '<span class="d">▼' + st.downs + '</span> ' : '') + (st.ups ? '<span class="u">▲' + st.ups + '</span> ' : '') + '</span>تغيّرت خلال 30 يوماً' : 'لا تغيّر خلال 30 يوماً';
+  return '<button type="button" class="fin-ticker" data-open="rates"><span class="stat-ic"><svg class="ic"><use href="#i-bank"/></svg></span><span class="ft-body"><b>عدّاد النسب</b><br>أقل نسبة <b>' + finPct(st.min.rate) + '</b> (' + esc(st.min.bank) + ') · المتوسط <b>' + finPct(st.avg) + '</b> · ' + chg + '<small>' + st.n + ' عرض · آخر تحديث ' + finRel(st.last) + '</small></span></button>';
+}
+function finOfferHead(o){
+  return '<div class="fl-top"><div><b class="fl-bank">' + esc(o.bank) + '</b>' + (o.product ? '<span class="fl-prod">' + esc(o.product) + '</span>' : '') + '</div><div class="fl-rate"><b>' + finPct(o.rate) + '</b>' + finChg(o) + '</div></div>'
+    + '<div class="fl-meta">' + finSpark(o.history) + '<span>' + (o.type === 'reduce' ? 'متناقصة' : 'ثابتة') + '</span><span>آخر تحديث: ' + finRel(o.updatedAt) + '</span></div>';
+}
+function finRenderLive(){
+  const box = $('finLive'), a = finActive();
+  if(!a.length){
+    box.innerHTML = isOwner ? '<div class="nt-card">لم تُدخل نسب بنوك بعد.<br><button type="button" data-fa="open">⚙️ إدارة النسب</button></div>' : '';
+    $('finManualH').textContent = 'مقارنة العروض'; return;
+  }
+  $('finManualH').textContent = 'عروض أخرى (أدخل نسبتك بنفسك)';
+  const P = Math.max(0, fin.price - fin.down), res = a.map(o => P > 0 ? finCalc(P, fin.years, o.rate, o.type || 'flat') : null), ok = res.filter(Boolean);
+  const best = ok.length ? Math.min(...ok.map(r => r.inst)) : null, bestT = ok.length ? Math.min(...ok.map(r => r.total)) : null;
+  box.innerHTML = '<h3 class="fin-h">عروض البنوك' + (isOwner ? ' <button type="button" class="fin-admin-btn" data-fa="open">⚙️ إدارة</button>' : '') + '</h3>' + finTickerHTML()
+    + a.map((o, i) => { const r = res[i]; let line = P > 0 ? '' : '<div class="fin-offer-res">أدخل سعر العقار لتظهر القسط.</div>';
+      if(r){ const isBest = Math.abs(r.inst - best) < 0.5; line = '<div class="fin-offer-res">القسط <b>' + finFmt(r.inst) + '</b> ريال · الأرباح <b>' + finFmt(r.profit) + '</b>' + (ok.length > 1 ? (isBest ? '<span class="tag best">الأقل تكلفة</span>' : '<span class="tag diff">+' + finFmt(r.inst - best) + ' شهرياً · +' + finFmt(r.total - bestT) + ' إجمالاً</span>') : '') + '</div>'; }
+      const isB = r && ok.length > 1 && Math.abs(r.inst - best) < 0.5;
+      return '<div class="fl-card' + (isB ? ' best' : '') + '">' + finOfferHead(o) + line + (o.note ? '<div class="fl-note">' + esc(o.note) + '</div>' : '') + '</div>'; }).join('')
+    + '<div class="picker-hint">النسب تُدخلها إدارة المنصة بحسب إعلانات البنوك، وقد تختلف عند التقديم. تواصل مع البنك للتأكيد.</div>';
+}
+// ----- لوحة العدّاد -----
+function renderRates(){
+  const a = finActive();
+  $('ratesBody').innerHTML = a.length ? finTickerHTML().replace('<button type="button" class="fin-ticker" data-open="rates">', '<div class="fin-ticker" style="cursor:default">').replace('</button>', '</div>') + a.map(o => '<div class="fl-card">' + finOfferHead(o) + (o.note ? '<div class="fl-note">' + esc(o.note) + '</div>' : '') + '</div>').join('') + '<div class="picker-hint">النسب تُدخلها إدارة المنصة بحسب إعلانات البنوك، وقد تختلف عند التقديم. تواصل مع البنك للتأكيد.</div>'
+    : '<div class="nt-card">لم تُدخل الإدارة نسب البنوك بعد.' + (isOwner ? '<br><button type="button" data-fa="open">⚙️ إضافة النسب الآن</button>' : ' ستظهر هنا فور إدخالها بإذن الله.') + '</div>';
+  if(isOwner && a.length) $('ratesBody').insertAdjacentHTML('beforeend', '<button type="button" class="fin-add" data-fa="open">⚙️ إدارة النسب</button>');
+}
+function openRates(){ renderRates(); $('ratesOverlay').classList.add('show'); }
+$('ratesClose').addEventListener('click', () => $('ratesOverlay').classList.remove('show'));
+$('ratesCalcBtn').addEventListener('click', () => { $('ratesOverlay').classList.remove('show'); openFin(); });
+// ----- شريط العدّاد في قسم البنوك -----
+function renderHubExtra(){
+  const box = $('hubExtra'); if(!box) return;
+  if(hubCur !== 'bank'){ box.innerHTML = ''; return; }
+  box.innerHTML = finStats() ? finTickerHTML() : '<div class="hub-intro" style="margin-top:8px">📊 عدّاد النسب: لم تُدخل الإدارة نسب البنوك بعد.</div>';
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-open="rates"]') && !e.target.closest('#ratesOverlay')) openRates();
+  else if(e.target.closest('[data-fa="open"]')) openFinAdmin();
+});
+// ----- إدارة النسب (للمدير) -----
+let faEditId = null, faType = 'flat';
+function faShowList(){ faEditId = null; $('faForm').style.display = 'none'; $('faAdd').style.display = ''; $('faList').style.display = ''; $('faFooter').style.display = ''; faRenderList(); }
+function faRenderList(){
+  const all = finLive.slice().sort((a, b) => (b.active !== false) - (a.active !== false) || a.rate - b.rate);
+  $('faList').innerHTML = all.length ? all.map(o => '<button type="button" class="fa-row' + (o.active === false ? ' off' : '') + '" data-id="' + esc(o.id) + '"><span class="fa-t"><b>' + esc(o.bank) + '</b><span>' + esc(o.product || '') + (o.active === false ? ' · مخفي' : '') + '</span></span><span class="fa-r">' + finPct(o.rate) + '</span></button>').join('') : '<div class="picker-hint">لا توجد عروض بعد. اضغط «إضافة عرض بنك».</div>';
+}
+function faOpenForm(o){
+  faEditId = o ? o.id : null; faType = o && o.type === 'reduce' ? 'reduce' : 'flat';
+  $('faFormTitle').textContent = o ? 'تعديل: ' + o.bank : 'عرض جديد';
+  $('faBank').value = o ? o.bank : ''; $('faProduct').value = o ? (o.product || '') : ''; $('faRate').value = o ? o.rate : ''; $('faNote').value = o ? (o.note || '') : ''; $('faActive').checked = o ? o.active !== false : true;
+  document.querySelectorAll('#faType button').forEach(b => b.classList.toggle('on', b.dataset.t === faType));
+  $('faDelete').style.display = o ? '' : 'none'; $('faForm').style.display = ''; $('faAdd').style.display = 'none'; $('faList').style.display = 'none'; $('faFooter').style.display = 'none';
+  setTimeout(() => $(o ? 'faRate' : 'faBank').focus(), 60);
+}
+function openFinAdmin(){
+  if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; }
+  $('ratesOverlay').classList.remove('show'); faShowList(); $('finAdminOverlay').classList.add('show');
+}
+async function faSave(){
+  const bank = $('faBank').value.trim(), product = $('faProduct').value.trim(), note = $('faNote').value.trim(), rate = finNum($('faRate').value), active = $('faActive').checked;
+  if(bank.length < 2){ toast('اكتب اسم البنك'); return; }
+  if(!(rate > 0 && rate <= 30)){ toast('النسبة بين 0.01 و30'); return; }
+  const now = Date.now(); $('faSave').disabled = true;
+  try{
+    if(faEditId){
+      const old = finLive.find(o => o.id === faEditId) || {}, data = { bank, product, note, type: faType, active, rate };
+      if(old.rate !== rate){ data.prevRate = old.rate == null ? null : old.rate; data.updatedAt = now; data.history = [...(old.history || []), { r: rate, t: now }].slice(-20); }
+      await db.collection('financeOffers').doc(faEditId).update(data);
+    }else{
+      await db.collection('financeOffers').add({ bank, product, note, type: faType, active, rate, prevRate: null, createdAt: now, updatedAt: now, history: [{ r: rate, t: now }] });
+    }
+    toast('تم الحفظ ✅'); faShowList();
+  }catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الحفظ', 5000); }
+  finally{ $('faSave').disabled = false; }
+}
+$('faList').addEventListener('click', e => { const r = e.target.closest('.fa-row'); if(r) faOpenForm(finLive.find(o => o.id === r.dataset.id)); });
+$('faAdd').addEventListener('click', () => faOpenForm(null));
+$('faCancel').addEventListener('click', faShowList);
+$('faSave').addEventListener('click', faSave);
+$('faType').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; faType = b.dataset.t; document.querySelectorAll('#faType button').forEach(x => x.classList.toggle('on', x === b)); });
+$('faDelete').addEventListener('click', async () => {
+  const o = finLive.find(x => x.id === faEditId); if(!o) return; if(!confirm('حذف عرض «' + o.bank + '» نهائياً؟')) return;
+  try{ await db.collection('financeOffers').doc(faEditId).delete(); toast('تم الحذف'); faShowList(); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
+});
+$('faClose').addEventListener('click', () => $('finAdminOverlay').classList.remove('show'));
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -3356,7 +3550,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792724405';
+const APP_VERSION = '1792727102';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
