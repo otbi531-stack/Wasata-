@@ -665,6 +665,14 @@ body.seeker #seekerRegisterBtn:active,
 .more-row{padding-left:16px;padding-right:16px}
 @media (min-width:375px) and (max-width:401px){ .hub-btn{padding-left:8px!important;padding-right:8px!important} }
 @media (max-width:374px){ .hub-btn{padding-left:4px!important;padding-right:4px!important} }
+/* ===== مستشارو البنوك ===== */
+.ad-actions{display:flex!important;gap:8px;margin-top:8px}
+.ad-actions a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:999px;border:1px solid var(--field-line);background:var(--field);color:var(--forest);font-weight:800;font-size:13.5px;text-decoration:none}
+.ad-actions a:active{background:var(--open);border-color:var(--open-line)}
+.ad-actions .ic{width:17px;height:17px}
+.ad-rate b{color:#245a2c}
+.dv-info .fin-admin-btn{align-self:flex-start}
+.dv-info .ad-rate b{display:inline;font-size:inherit;color:#245a2c}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -998,6 +1006,7 @@ body.seeker #seekerRegisterBtn:active,
     <div class="picker-hint">اكتب اسم كل بنك أو عرض ونسبته، ويُبرز التطبيق الأقل تكلفة ويريك الفرق.</div>
     <div id="finOffers"></div>
     <button type="button" class="fin-add" id="finAddOffer">+ إضافة عرض</button>
+    <button type="button" class="fin-add" id="finAdvBtn">👥 تواصل مع مستشار تمويل</button>
     <div class="modal-actions">
       <button class="btn-cancel" id="finShareBtn">📤 مشاركة النتيجة</button>
       <button class="btn-save" id="finCloseBtn">إغلاق</button>
@@ -1014,10 +1023,10 @@ body.seeker #seekerRegisterBtn:active,
 </div>
 
 <!-- المطورون والمشاريع: إدارة (للمدير) -->
-<div class="overlay" id="dpAdminOverlay" style="z-index:48">
+<div class="overlay" id="dpAdminOverlay" style="z-index:50">
   <div class="modal">
-    <h2>⚙️ المطورون والمشاريع</h2>
-    <div class="fin-seg" id="dpTabs"><button type="button" data-t="dev" class="on">المطورون</button><button type="button" data-t="proj">المشاريع</button></div>
+    <h2>⚙️ المطورون والمشاريع والمستشارون</h2>
+    <div class="fin-seg" id="dpTabs"><button type="button" data-t="dev" class="on">المطورون</button><button type="button" data-t="proj">المشاريع</button><button type="button" data-t="adv">المستشارون</button></div>
     <div id="dpListBox"><div id="dpList"></div><button type="button" class="fin-add" id="dpAdd">+ إضافة</button></div>
 
     <div id="dpDevForm" style="display:none">
@@ -1055,6 +1064,20 @@ body.seeker #seekerRegisterBtn:active,
       <div class="field"><label class="oath-check"><input type="checkbox" id="pjActive" checked> فعّال ويظهر للجميع</label></div>
       <div class="modal-actions"><button class="btn-cancel" id="pjCancel">إلغاء</button><button class="btn-save" id="pjSave">حفظ</button></div>
       <button type="button" class="fin-add" id="pjDelete" style="display:none;border-color:#c98a8a;color:#8c2f2f">🗑 حذف هذا المشروع</button>
+    </div>
+    <div id="dpAdvForm" style="display:none">
+      <h3 class="fin-h" id="adFormTitle">مستشار جديد</h3>
+      <div class="field"><label>اسم المستشار</label><input type="text" id="adName" maxlength="60"></div>
+      <div class="field"><label>البنك</label><input type="text" id="adBank" maxlength="40" list="adBankList" placeholder="اكتب أو اختر البنك"><datalist id="adBankList"></datalist></div>
+      <div class="field"><label>المسمى الوظيفي (اختياري)</label><input type="text" id="adTitle" maxlength="60"></div>
+      <div class="field"><label>جوال التواصل (واتساب)</label><input type="text" id="adPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx"></div>
+      <div class="field"><label>المدن أو الفروع (اختياري)</label><input type="text" id="adCities" maxlength="100" placeholder="مثال: الرياض، جدة"></div>
+      <div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="adNote" maxlength="160" placeholder="مثال: متخصص في تمويل الأراضي"></div>
+      <div class="field"><label>الصورة (اختياري)</label><input type="file" id="adPhotoFile" accept="image/*"><div class="pg-prev" id="adPhotoPrev"></div></div>
+      <div class="field"><label class="oath-check"><input type="checkbox" id="adVerified"> موثّق من الإدارة (تظهر عليه شارة ✓)</label></div>
+      <div class="field"><label class="oath-check"><input type="checkbox" id="adActive" checked> فعّال ويظهر للجميع</label></div>
+      <div class="modal-actions"><button class="btn-cancel" id="adCancel">إلغاء</button><button class="btn-save" id="adSave">حفظ</button></div>
+      <button type="button" class="fin-add" id="adDelete" style="display:none;border-color:#c98a8a;color:#8c2f2f">🗑 حذف هذا المستشار</button>
     </div>
     <div class="modal-actions" id="dpFooter"><button class="btn-save" id="dpClose" style="flex:1">إغلاق</button></div>
   </div>
@@ -1432,7 +1455,8 @@ function cardHTML(it, ctx){
   if(active){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
-    actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
+    { const pn = priceNum(it.price); if(it.type !== 'طلب' && pn && pn >= 150000 && !/إيجار|ايجار|سنوي|شهري|\/سنة|\/شهر/.test(it.price || '')) actions += `<button class="btn-small btn-img" data-act="fin" data-id="${id}" aria-label="احسب التمويل">🏦</button>`; }
+  actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
     actions += `<button class="btn-small btn-img" data-act="video" data-id="${id}" aria-label="فيديو ترويجي">🎬</button>`;
     if(!mine && !isOwner && !ctx.seeker) actions += `<button class="btn-small btn-report" data-act="report" data-id="${id}" aria-label="إبلاغ">🚩</button>`;
     if(mine || isOwner) actions += `<button class="btn-small btn-edit" data-act="edit" data-id="${id}">✏️ تعديل</button>`;
@@ -1613,6 +1637,7 @@ $('listArea').addEventListener('click', async e => {
     saveFavs(); render(); return;
   }
   if(act === 'edit'){ openModal(listings.find(x => x.id === id)); return; }
+  if(act === 'fin'){ const it = listings.find(x => x.id === id), n = it ? priceNum(it.price) : null; openFin(n && n > 0 ? n : 0); return; }
   if(act === 'img'){ const it = listings.find(x => x.id === id); if(it) shareListingImage(it); return; }
   if(act === 'video'){ const it = listings.find(x => x.id === id); if(it) openMontage(it); return; }
   if(act === 'report'){ openReport(id); return; }
@@ -2562,12 +2587,13 @@ const HUBS = {
     ['البيانات', [
       { ic: 'i-calc', t: 'حاسبة التمويل ومقارنة العروض', d: 'القسط والأرباح والقدرة على التحمل، وأقل العروض تكلفة', run: () => openFin() },
       { ic: 'i-bank', t: 'نسب وعروض البنوك', d: 'نسب الأرباح الحالية مع عدّاد يُظهر ارتفاعها وانخفاضها', run: () => openRates() },
-      { ic: 'i-user', t: 'مستشارو البنوك', d: 'دليل موظفي التمويل وقنوات التواصل معهم' }
+      { ic: 'i-user', t: 'مستشارو البنوك', d: 'موظفو التمويل لدى البنوك: تواصل مباشر عبر واتساب أو الاتصال', run: () => openAdvisors() }
     ]],
     ['الإجراءات', [
       { ic: 'i-doc', t: 'طلب تمويل', d: 'أرسل طلبك لبنك أو أكثر بموافقتك' },
       { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها' },
-      { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() }
+      { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() },
+      { ic: 'i-sliders', t: 'إدارة مستشاري البنوك', d: 'إضافة المستشارين وتعديلهم وحذفهم (للإدارة)', own: true, run: () => openDpAdmin('adv') }
     ]]
   ] }
 };
@@ -2643,7 +2669,7 @@ function finTickerHTML(){
 }
 function finOfferHead(o){
   return '<div class="fl-top"><div><b class="fl-bank">' + esc(o.bank) + '</b>' + (o.product ? '<span class="fl-prod">' + esc(o.product) + '</span>' : '') + '</div><div class="fl-rate"><b>' + finPct(o.rate) + '</b>' + finChg(o) + '</div></div>'
-    + '<div class="fl-meta">' + finSpark(o.history) + '<span>' + (o.type === 'reduce' ? 'متناقصة' : 'ثابتة') + '</span><span>آخر تحديث: ' + finRel(o.updatedAt) + '</span></div>';
+    + '<div class="fl-meta">' + finSpark(o.history) + '<span>' + (o.type === 'reduce' ? 'متناقصة' : 'ثابتة') + '</span><span>آخر تحديث: ' + finRel(o.updatedAt) + '</span></div>' + finAdvBtn(o.bank);
 }
 function finRenderLive(){
   const box = $('finLive'), a = finActive();
@@ -2681,10 +2707,13 @@ function renderHubExtra(){
   }
   if(hubCur !== 'bank'){ box.innerHTML = ''; return; }
   box.innerHTML = finStats() ? finTickerHTML() : '<div class="hub-intro" style="margin-top:8px">📊 عدّاد النسب: لم تُدخل الإدارة نسب البنوك بعد.</div>';
+  box.innerHTML += advSummary();
 }
 document.addEventListener('click', e => {
   if(e.target.closest('[data-open="rates"]') && !e.target.closest('#ratesOverlay')) openRates();
   else if(e.target.closest('[data-open="projs"]')) openProjects();
+  else if(e.target.closest('[data-open="advs"]')) openAdvisors();
+  else if(e.target.closest('[data-adv-bank]')){ const bk = e.target.closest('[data-adv-bank]').dataset.advBank; openAdvisors(bk, $('finOverlay').classList.contains('show') ? calcCtx() : '', true); }
   else if(e.target.closest('[data-fa="open"]')) openFinAdmin();
 });
 // ----- إدارة النسب (للمدير) -----
@@ -2749,6 +2778,7 @@ function startDevData(){
   const sub = (name, setter) => { try{ db.collection(name).onSnapshot(sn => { setter(sn.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => x.name)); devDataChanged(); }, e => { console.warn(name, e); setter([]); devDataChanged(); }); }catch(e){ console.warn(name + '-start', e); } };
   sub('developers', a => { dvList = a; });
   sub('projects', a => { pjList = a; });
+  sub('advisors', a => { adList = a; });
 }
 function devDataChanged(){
   try{
@@ -2767,11 +2797,11 @@ function pjInst(p){   // قسط تقديري من أقل نسبة بنك متا�
 // ----- التنقل بين الصفحات -----
 let pgStack = [], pgF = { city: '', status: '', type: '' };
 function pgOpen(v, id){ pgStack.push({ v, id }); $('pgOverlay').classList.add('show'); pgRender(false); }
-function pgBack(){ pgStack.pop(); if(!pgStack.length){ $('pgOverlay').classList.remove('show'); return; } pgRender(false); }
-function pgClose(){ pgStack = []; $('pgOverlay').classList.remove('show'); }
+function pgBack(){ pgStack.pop(); if(!pgStack.length){ $('pgOverlay').classList.remove('show'); $('pgOverlay').style.zIndex = '44'; return; } pgRender(false); }
+function pgClose(){ pgStack = []; $('pgOverlay').classList.remove('show'); $('pgOverlay').style.zIndex = '44'; }
 function pgRender(keep){
   const t = pgStack[pgStack.length - 1]; if(!t) return;
-  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj })[t.v](t.id);
+  const st = $('pgBody').scrollTop, pg = ({ devs: pgDevs, dev: pgDev, projs: pgProjs, proj: pgProj, advs: pgAdvs })[t.v](t.id);
   $('pgTitle').textContent = pg.title; $('pgBody').innerHTML = pg.html; $('pgBody').scrollTop = keep ? st : 0;
 }
 function openDevs(){ pgStack = []; pgOpen('devs'); }
@@ -2820,7 +2850,7 @@ function pgProj(id){
     + (inst ? '<div class="pj-instbox">قسط تقديري يبدأ من <b>' + finFmt(inst.inst) + '</b> ريال/شهر<small>بنسبة ' + finPct(inst.rate) + ' (' + esc(inst.bank) + ') · دفعة مقدمة 20% · 25 سنة. تقديري ويختلف حسب البنك والملاءة.</small></div>' : '')
     + (p.desc ? '<div class="pg-about">' + esc(p.desc) + '</div>' : '')
     + ((p.features || []).length ? '<div class="pg-chips">' + p.features.map(f => '<span>' + esc(f) + '</span>').join('') + '</div>' : '')
-    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button>'
+    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button>' + (adActive().length ? '<button type="button" data-act="adv" data-ctx="' + esc('أرغب بتمويل مشروع «' + p.name + '»' + (p.priceFrom ? ' (يبدأ من ' + pjNf(p.priceFrom) + ' ريال)' : '') + '.') + '"><svg class="ic"><use href="#i-user"/></svg>تواصل مع مستشار تمويل</button>' : '')
     + (ph ? '<div class="pg-row2 pg-actions" style="margin:0"><a href="' + esc(pgWaTo(ph, waText)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>تواصل واتساب</a><a href="tel:' + esc(cleanPhone(ph)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>' : '')
     + '<div class="pg-row2 pg-actions" style="margin:0">' + (ml ? '<a href="' + esc(ml) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-pin"/></svg>الموقع</a>' : '') + '<a href="https://wa.me/?text=' + encodeURIComponent(shareTxt) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-share"/></svg>مشاركة</a></div>'
     + (isOwner ? '<button type="button" data-act="edit-proj" data-id="' + esc(id) + '">⚙️ تعديل المشروع</button>' : '') + '</div>' };
@@ -2834,31 +2864,36 @@ $('pgBody').addEventListener('click', e => {
   else if(a === 'admin') openDpAdmin();
   else if(a === 'edit-dev') openDpAdmin('dev', t.dataset.id);
   else if(a === 'edit-proj') openDpAdmin('proj', t.dataset.id);
+  else if(a === 'edit-adv') openDpAdmin('adv', t.dataset.id);
+  else if(a === 'adv'){ advCtx = t.dataset.ctx || ''; pgAdvBank = ''; pgOpen('advs'); }
   else if(a === 'invest'){ pgClose(); goSearch({ kind: 'استثمار' }); }
 });
 $('pgBody').addEventListener('change', e => { const m = ({ pgFCity: 'city', pgFStatus: 'status', pgFType: 'type' })[e.target.id]; if(m){ pgF[m] = e.target.value; pgRender(true); } });
 $('pgBack').addEventListener('click', pgBack);
 // ----- إدارة المطورين والمشاريع (للمدير) -----
 let dpTab = 'dev', dvEditId = null, pjEditId = null, dvLogo = '', pjImgs = [], pjTypesSel = [];
-function dpShowList(){ dvEditId = pjEditId = null; $('dpDevForm').style.display = 'none'; $('dpProjForm').style.display = 'none'; $('dpListBox').style.display = ''; $('dpTabs').style.display = ''; $('dpFooter').style.display = ''; dpRenderList(); }
+function dpShowList(){ dvEditId = pjEditId = null; $('dpDevForm').style.display = 'none'; $('dpProjForm').style.display = 'none'; $('dpAdvForm').style.display = 'none'; adEditId = null; $('dpListBox').style.display = ''; $('dpTabs').style.display = ''; $('dpFooter').style.display = ''; dpRenderList(); }
 function dpRenderList(){
   document.querySelectorAll('#dpTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === dpTab));
-  $('dpAdd').textContent = dpTab === 'dev' ? '+ إضافة مطور' : '+ إضافة مشروع';
+  $('dpAdd').textContent = ({ dev: '+ إضافة مطور', proj: '+ إضافة مشروع', adv: '+ إضافة مستشار' })[dpTab];
   if(dpTab === 'dev'){
     const cnt = {}; pjList.forEach(p => { cnt[p.devId] = (cnt[p.devId] || 0) + 1; });
     const a = dvList.slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar'));
     $('dpList').innerHTML = a.length ? a.map(d => '<button type="button" class="fa-row' + (d.active === false ? ' off' : '') + '" data-id="' + esc(d.id) + '"><span class="fa-t"><b>' + esc(d.name) + (d.verified ? ' ✓' : '') + '</b><span>' + (cnt[d.id] || 0) + ' مشروع' + (d.active === false ? ' · مخفي' : '') + '</span></span></button>').join('') : '<div class="picker-hint">لا يوجد مطورون بعد. اضغط «إضافة مطور».</div>';
-  }else{
+  }else if(dpTab === 'proj'){
     const a = pjList.slice().sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0));
     $('dpList').innerHTML = a.length ? a.map(p => '<button type="button" class="fa-row' + (p.active === false ? ' off' : '') + '" data-id="' + esc(p.id) + '"><span class="fa-t"><b>' + esc(p.name) + '</b><span>' + esc(pjDevName(p)) + ' · ' + esc(p.city || '') + (p.active === false ? ' · مخفي' : '') + '</span></span><span class="fa-r" style="font-size:13px">' + (p.priceFrom ? pjNf(p.priceFrom) : '') + '</span></button>').join('') : '<div class="picker-hint">لا توجد مشاريع بعد. أضف مطوراً أولاً ثم «إضافة مشروع».</div>';
+  }else{
+    const a = adList.slice().sort((x, y) => String(x.bank).localeCompare(String(y.bank), 'ar') || String(x.name).localeCompare(String(y.name), 'ar'));
+    $('dpList').innerHTML = a.length ? a.map(m => '<button type="button" class="fa-row' + (m.active === false ? ' off' : '') + '" data-id="' + esc(m.id) + '"><span class="fa-t"><b>' + esc(m.name) + (m.verified ? ' ✓' : '') + '</b><span>' + esc(m.bank) + (m.title ? ' · ' + esc(m.title) : '') + (m.active === false ? ' · مخفي' : '') + '</span></span></button>').join('') : '<div class="picker-hint">لا يوجد مستشارون بعد. اضغط «إضافة مستشار».</div>';
   }
 }
 function openDpAdmin(tab, id){
   if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; }
   if(tab) dpTab = tab; $('dpAdminOverlay').classList.add('show'); dpShowList();
-  if(id){ if(dpTab === 'dev') dvOpenForm(devOf(id)); else pjOpenForm(pjList.find(x => x.id === id)); }
+  if(id){ if(dpTab === 'dev') dvOpenForm(devOf(id)); else if(dpTab === 'adv') adOpenForm(adList.find(x => x.id === id)); else pjOpenForm(pjList.find(x => x.id === id)); }
 }
-const dpFormView = which => { $('dpListBox').style.display = 'none'; $('dpTabs').style.display = 'none'; $('dpFooter').style.display = 'none'; $('dpDevForm').style.display = which === 'dev' ? '' : 'none'; $('dpProjForm').style.display = which === 'proj' ? '' : 'none'; };
+const dpFormView = which => { $('dpListBox').style.display = 'none'; $('dpTabs').style.display = 'none'; $('dpFooter').style.display = 'none'; $('dpDevForm').style.display = which === 'dev' ? '' : 'none'; $('dpProjForm').style.display = which === 'proj' ? '' : 'none'; $('dpAdvForm').style.display = which === 'adv' ? '' : 'none'; };
 function renderDvLogo(){ $('dvLogoPrev').innerHTML = dvLogo ? '<div class="pg-ip"><img src="' + dvLogo + '" alt=""><button type="button" data-rm="1" aria-label="حذف">×</button></div>' : ''; }
 function dvOpenForm(d){
   dvEditId = d ? d.id : null; dvLogo = d ? safeImg(d.logo) : '';
@@ -2906,8 +2941,8 @@ async function pjSave(){
   finally{ $('pjSave').disabled = false; }
 }
 $('dpTabs').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; dpTab = b.dataset.t; dpRenderList(); });
-$('dpList').addEventListener('click', e => { const r = e.target.closest('.fa-row'); if(!r) return; if(dpTab === 'dev') dvOpenForm(devOf(r.dataset.id)); else pjOpenForm(pjList.find(x => x.id === r.dataset.id)); });
-$('dpAdd').addEventListener('click', () => { if(dpTab === 'dev') dvOpenForm(null); else pjOpenForm(null); });
+$('dpList').addEventListener('click', e => { const r = e.target.closest('.fa-row'); if(!r) return; if(dpTab === 'dev') dvOpenForm(devOf(r.dataset.id)); else if(dpTab === 'adv') adOpenForm(adList.find(x => x.id === r.dataset.id)); else pjOpenForm(pjList.find(x => x.id === r.dataset.id)); });
+$('dpAdd').addEventListener('click', () => { if(dpTab === 'dev') dvOpenForm(null); else if(dpTab === 'adv') adOpenForm(null); else pjOpenForm(null); });
 $('dvCancel').addEventListener('click', dpShowList); $('pjCancel').addEventListener('click', dpShowList);
 $('dvSave').addEventListener('click', dvSave); $('pjSave').addEventListener('click', pjSave);
 $('dpClose').addEventListener('click', () => $('dpAdminOverlay').classList.remove('show'));
@@ -2930,6 +2965,64 @@ $('dvDelete').addEventListener('click', async () => {
 $('pjDelete').addEventListener('click', async () => {
   const p = pjList.find(x => x.id === pjEditId); if(!p) return; if(!confirm('حذف المشروع «' + p.name + '» نهائياً؟')) return;
   try{ await db.collection('projects').doc(pjEditId).delete(); toast('تم الحذف'); dpShowList(); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
+});
+
+// ===== مستشارو البنوك (الخطوة 4): دليل موظفي التمويل مربوط بالنسب والحاسبة والمشاريع =====
+let adList = [], pgAdvBank = '', advCtx = '';
+const adActive = () => adList.filter(a => a.active !== false);
+const bankKey = s => String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/^(?:البنك|المصرف|بنك|مصرف)\s+/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+const bankRate = bank => { const k = bankKey(bank), o = finActive().find(x => bankKey(x.bank) === k); return o ? o.rate : null; };
+const advBankCount = bank => adActive().filter(a => bankKey(a.bank) === bankKey(bank)).length;
+const canonBank = b => { const k = bankKey(b), o = finLive.find(x => bankKey(x.bank) === k); return o ? o.bank : b; };   // اسم البنك المعتمد في نسب التمويل
+const knownBanks = () => { const m = new Map(); [...finActive().map(o => o.bank), ...adList.map(a => canonBank(a.bank))].filter(Boolean).forEach(b => { if(!m.has(bankKey(b))) m.set(bankKey(b), b); }); return [...m.values()]; };
+const finAdvBtn = bank => { const n = advBankCount(bank); return n ? '<button type="button" class="fin-admin-btn" data-adv-bank="' + esc(bank) + '">👥 مستشارو البنك (' + n + ')</button>' : ''; };
+function calcCtx(){ return fin.price > 0 ? 'أرغب بالاستفسار عن تمويل عقار بسعر ' + finFmt(fin.price) + ' ريال، دفعة مقدمة ' + finFmt(fin.down) + ' ريال، لمدة ' + fin.years + ' سنة.' : ''; }
+function openAdvisors(bank, ctx, top){ pgAdvBank = bank || ''; advCtx = ctx || ''; pgStack = []; $('pgOverlay').style.zIndex = top ? '49' : '44'; pgOpen('advs'); }
+function advSummary(){
+  const a = adActive(); if(!a.length) return '';
+  return '<button type="button" class="fin-ticker" data-open="advs"><span class="stat-ic"><svg class="ic"><use href="#i-user"/></svg></span><span class="ft-body"><b>مستشارو البنوك</b><br>' + a.length + ' مستشار · ' + new Set(a.map(x => bankKey(x.bank))).size + ' بنك<small>تواصل مباشر عبر واتساب أو الاتصال</small></span></button>';
+}
+function adCard(a){
+  const r = bankRate(a.bank), txt = 'مرحباً ' + a.name + '، أتواصل معك عبر تطبيق وسطاء المملكة بخصوص تمويل عقاري.' + (advCtx ? '\n' + advCtx : '');
+  return '<div class="dv-card" style="cursor:default;align-items:flex-start">' + pgAvatar({ name: a.name, logo: a.photo }) + '<span class="dv-info"><b>' + esc(a.name) + pgVf(a) + '</b><span>' + esc(canonBank(a.bank)) + (a.title ? ' · ' + esc(a.title) : '') + '</span>'
+    + (a.cities ? '<small>📍 ' + esc(a.cities) + '</small>' : '') + (r != null ? '<small class="ad-rate">أقل نسبة لدى البنك: <b>' + finPct(r) + '</b></small>' : '') + (a.note ? '<small>' + esc(a.note) + '</small>' : '')
+    + '<span class="ad-actions"><a href="' + esc(pgWaTo(a.phone, txt)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>واتساب</a><a href="tel:' + esc(cleanPhone(a.phone)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></span>'
+    + (isOwner ? '<button type="button" class="fin-admin-btn" data-act="edit-adv" data-id="' + esc(a.id) + '">⚙️ تعديل</button>' : '') + '</span></div>';
+}
+function pgAdvs(){
+  const all = adActive(), sel = pgAdvBank, banks = [...new Map(all.map(a => [bankKey(a.bank), canonBank(a.bank)])).values()].sort((x, y) => String(x).localeCompare(String(y), 'ar'));
+  const list = all.filter(a => !sel || bankKey(a.bank) === bankKey(sel)).sort((a, b) => { const ra = bankRate(a.bank), rb = bankRate(b.bank); return ((ra == null) - (rb == null)) || ((ra || 0) - (rb || 0)) || String(a.name).localeCompare(String(b.name), 'ar'); });
+  const filter = banks.length > 1 ? '<div class="pg-filter"><select class="pg-sel" id="pgFBank"><option value="">كل البنوك</option>' + banks.map(x => '<option value="' + esc(x) + '"' + (bankKey(x) === bankKey(sel) ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></div>' : '';
+  const note = '<div class="hub-intro" style="margin-bottom:10px">التواصل مباشر مع المستشار عبر واتساب أو الاتصال. المنصة لا تشارك بياناتك مع أحد، ولا تتدخل في الاتفاق بينك وبين البنك.</div>';
+  return { title: 'مستشارو البنوك', html: note + filter + (list.length ? list.map(adCard).join('') : (all.length ? '<div class="hub-intro">لا يوجد مستشارون لهذا البنك حالياً.</div>' : pgEmpty('لم تُضف الإدارة مستشارين بعد.'))) };
+}
+$('pgBody').addEventListener('change', e => { if(e.target.id === 'pgFBank'){ pgAdvBank = e.target.value; pgRender(true); } });
+$('finAdvBtn').addEventListener('click', () => openAdvisors('', calcCtx(), true));
+// ----- إدارة المستشارين (للمدير) -----
+let adEditId = null, adPhoto = '';
+function renderAdPhoto(){ $('adPhotoPrev').innerHTML = adPhoto ? '<div class="pg-ip"><img src="' + adPhoto + '" alt=""><button type="button" data-rm="1" aria-label="حذف">×</button></div>' : ''; }
+function adOpenForm(a){
+  adEditId = a ? a.id : null; adPhoto = a ? safeImg(a.photo) : '';
+  $('adFormTitle').textContent = a ? 'تعديل: ' + a.name : 'مستشار جديد';
+  $('adBankList').innerHTML = knownBanks().map(b => '<option value="' + esc(b) + '">').join('');
+  $('adName').value = a ? a.name : ''; $('adBank').value = a ? a.bank : ''; $('adTitle').value = a ? (a.title || '') : 'مستشار تمويل عقاري'; $('adPhone').value = a ? (a.phone || '') : ''; $('adCities').value = a ? (a.cities || '') : ''; $('adNote').value = a ? (a.note || '') : '';
+  $('adVerified').checked = !!(a && a.verified); $('adActive').checked = a ? a.active !== false : true; $('adDelete').style.display = a ? '' : 'none'; renderAdPhoto(); dpFormView('adv');
+}
+async function adSave(){
+  const name = $('adName').value.trim(), bank = $('adBank').value.trim(), phone = cleanPhone($('adPhone').value.trim());
+  if(name.length < 2){ toast('اكتب اسم المستشار'); return; } if(bank.length < 2){ toast('اكتب اسم البنك'); return; } if(!phone){ toast('رقم الجوال مطلوب وصحيح'); return; }
+  const data = { name, bank, title: $('adTitle').value.trim(), phone, cities: $('adCities').value.trim(), note: $('adNote').value.trim(), photo: adPhoto, verified: $('adVerified').checked, active: $('adActive').checked, updatedAt: Date.now() };
+  $('adSave').disabled = true;
+  try{ if(adEditId) await db.collection('advisors').doc(adEditId).update(data); else await db.collection('advisors').add({ ...data, createdAt: Date.now() }); toast('تم الحفظ ✅'); dpShowList(); }
+  catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الحفظ', 5000); }
+  finally{ $('adSave').disabled = false; }
+}
+$('adSave').addEventListener('click', adSave); $('adCancel').addEventListener('click', dpShowList);
+$('adPhotoFile').addEventListener('change', async e => { const f = (e.target.files || [])[0]; if(!f) return; try{ adPhoto = await compressFile(f, 240, 30000); renderAdPhoto(); }catch{ toast('تعذر قراءة الصورة'); } e.target.value = ''; });
+$('adPhotoPrev').addEventListener('click', e => { if(e.target.closest('[data-rm]')){ adPhoto = ''; renderAdPhoto(); } });
+$('adDelete').addEventListener('click', async () => {
+  const a = adList.find(x => x.id === adEditId); if(!a) return; if(!confirm('حذف المستشار «' + a.name + '» نهائياً؟')) return;
+  try{ await db.collection('advisors').doc(adEditId).delete(); toast('تم الحذف'); dpShowList(); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
 });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
@@ -3881,7 +3974,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792756238';
+const APP_VERSION = '1792757088';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
