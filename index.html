@@ -652,6 +652,19 @@ body.seeker #seekerRegisterBtn:active,
 .pg-ip button{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-size:14px;line-height:1;cursor:pointer;padding:0}
 .dv-info b .pg-vf{display:inline-flex;font-size:11px;color:#245a2c;margin-inline-start:6px}
 .dv-info b .pg-vf .ic{width:13px;height:13px}
+/* ===== توسيط محتوى الحقول بشكل موحّد ===== */
+.more-row{position:relative;justify-content:center;text-align:center}
+.more-row .lib-count{position:absolute;left:14px;top:50%;transform:translateY(-50%);margin:0}
+.hub-btn{justify-content:center}
+.hub-lbl{text-align:center}
+.lib-btn{justify-content:center!important;gap:12px}
+.stat-info{align-items:center;text-align:center;padding-inline-start:0}
+.stat-num,.stat-lbl{text-align:center}
+.hub-btn{padding-left:8px!important;padding-right:8px!important}
+.lib-btn{padding-left:12px!important;padding-right:12px!important}
+.more-row{padding-left:16px;padding-right:16px}
+@media (min-width:375px) and (max-width:401px){ .hub-btn{padding-left:8px!important;padding-right:8px!important} }
+@media (max-width:374px){ .hub-btn{padding-left:4px!important;padding-right:4px!important} }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -3868,7 +3881,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792745136';
+const APP_VERSION = '1792756238';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
