@@ -701,6 +701,14 @@ body.seeker #seekerRegisterBtn:active,
 .rl-sel{width:100%;margin-top:8px}
 .rl-row{display:flex;gap:8px;margin-top:8px}.rl-row>*{flex:1}
 #acctBody .rq-sum{margin-bottom:8px}
+/* ===== شريط تنبيه إعداد النطاق ===== */
+#domainBanner{position:fixed;top:0;left:0;right:0;z-index:3000;padding:calc(8px + env(safe-area-inset-top)) 12px 10px;background:#fdf0e0;border-bottom:2px solid #e0b36b;color:#5c3f0c;font-size:12.5px;line-height:1.65;box-shadow:0 4px 14px rgba(0,0,0,.28);max-height:70vh;overflow-y:auto}
+#domainBanner .db-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#domainBanner .db-head b{font-size:14px;color:#7a4a00}
+#domainBanner .db-head button{width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.08);color:#5c3f0c;font-size:18px;line-height:1;cursor:pointer;padding:0;flex:none}
+#domainBanner .db-steps{margin-top:6px;padding:8px 10px;border-radius:10px;background:#fbfaf7;border:1px solid #ecd2a0;font-size:12px}
+#domainBanner .db-act{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+#domainBanner .db-act a,#domainBanner .db-act button{padding:5px 12px;border-radius:999px;background:#fbfaf7;border:1px solid #e0b36b;color:#7a4a00;font-weight:800;font-size:12px;text-decoration:none;font-family:inherit;cursor:pointer}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1045,6 +1053,14 @@ body.seeker #seekerRegisterBtn:active,
   </div>
 </div>
 
+<!-- تنبيه إعداد النطاق (يظهر عند رفض Firebase للنطاق أو لمفتاح API) -->
+<div id="domainBanner" role="alert" style="display:none">
+  <div class="db-head"><b>⚠️ إعداد النطاق غير مكتمل</b><button type="button" id="domainClose" aria-label="إغلاق">×</button></div>
+  <div id="domainBannerTxt"></div>
+  <div class="db-steps" id="domainSteps" style="display:none"></div>
+  <div class="db-act"><button type="button" id="domainHow">كيف أصلحه؟</button><a id="domainSupport" target="_blank" rel="noopener noreferrer">تواصل مع الدعم</a></div>
+</div>
+
 <!-- الحسابات: دخول وإنشاء حساب -->
 <div class="overlay" id="authOverlay" style="z-index:54">
   <div class="modal">
@@ -1381,7 +1397,7 @@ const sigKey = o => { const { views, id, ...rest } = o; return JSON.stringify(re
 let allMap = null, allGroup = null, allMapOpen = false, allMapFilter = 'all', allMapSig = null;
 
 function toast(m, ms){ const t = $('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), ms || 2600); }
-function fail(ctx, e){ console.error(ctx, e); toast(e && e.code === 'permission-denied' ? 'لا تملك صلاحية هذا الإجراء. إن كنت عضواً مسجلاً فتواصل مع الإدارة لتفعيل عضويتك' : 'خطأ: ' + ((e && (e.code || e.message)) || ctx), 5000); }
+function fail(ctx, e){ console.error(ctx, e); if(domainIssue(e)){ showDomainBanner(e); return; } toast(e && e.code === 'permission-denied' ? 'لا تملك صلاحية هذا الإجراء. إن كنت عضواً مسجلاً فتواصل مع الإدارة لتفعيل عضويتك' : 'خطأ: ' + ((e && (e.code || e.message)) || ctx), 5000); }
 // سجل العضوية على الخادم: members/{uid}. قواعد Firebase تشترطه لنشر الإعلانات، ويكتبه المدير وحده
 async function setMemberDoc(ownerId, status, memberNo){
   if(!ownerId) return true;
@@ -3354,7 +3370,7 @@ function reloadApp(){ location.reload(); }
 const authUser = () => { try{ return firebase.auth().currentUser; }catch{ return null; } };
 const isRegistered = () => { const u = authUser(); return !!(u && !u.isAnonymous && u.uid !== OWNER_UID); };
 const AUTH_ERR = { 'auth/email-already-in-use': 'هذا البريد مسجل مسبقاً. استخدم «دخول»', 'auth/credential-already-in-use': 'هذا البريد مرتبط بحساب آخر. استخدم «دخول»', 'auth/weak-password': 'كلمة المرور ضعيفة (6 أحرف على الأقل)', 'auth/invalid-email': 'البريد الإلكتروني غير صحيح', 'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة', 'auth/wrong-password': 'البريد أو كلمة المرور غير صحيحة', 'auth/user-not-found': 'البريد أو كلمة المرور غير صحيحة', 'auth/invalid-login-credentials': 'البريد أو كلمة المرور غير صحيحة', 'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة', 'auth/network-request-failed': 'تحقق من اتصالك بالإنترنت', 'auth/operation-not-allowed': 'تسجيل الحسابات بالبريد غير مفعّل في Firebase', 'auth/requires-recent-login': 'لأمانك، سجّل الخروج ثم الدخول من جديد وأعد المحاولة' };
-const authMsg = e => AUTH_ERR[(e && e.code) || ''] || 'تعذر تنفيذ العملية. حاول مجدداً';
+const authMsg = e => domainIssue(e) ? (showDomainBanner(e), 'إعداد النطاق غير مكتمل. التفاصيل في الشريط أعلى الصفحة') : (AUTH_ERR[(e && e.code) || ''] || 'تعذر تنفيذ العملية. حاول مجدداً');
 let authMode = 'in', myRole = null, myRoleReq = null;
 function authCardHTML(){
   if(isOwner) return '';
@@ -3517,6 +3533,22 @@ $('rlBody').addEventListener('click', async e => {
   else if(no){ try{ await db.collection('roleRequests').doc(no.dataset.rlNo).update({ status: 'rejected', updatedAt: Date.now() }); toast('تم رفض الطلب'); }catch(err){ console.error(err); toast('تعذر التنفيذ', 4000); } }
   else if(rv){ if(!confirm('سحب هذه الصلاحية؟')) return; try{ await db.collection('roles').doc(rv.dataset.rlRevoke).delete(); toast('تم سحب الصلاحية'); }catch(err){ console.error(err); toast('تعذر التنفيذ', 4000); } }
 });
+
+// ===== تشخيص إعداد النطاق: رسالة عربية واضحة بدل رمز الخطأ الإنجليزي =====
+function domainIssue(e){
+  const c = String((e && e.code) || ''), m = String((e && e.message) || '');
+  return c === 'auth/unauthorized-domain' || /requests-from-referer|are-blocked|api[- ]key[- ]not[- ]valid|invalid[- ]api[- ]key|app-not-authorized/i.test(c + ' ' + m);
+}
+let domainShown = false;
+function showDomainBanner(e){
+  const host = location.hostname || 'هذا الموقع', code = String((e && e.code) || 'auth/unauthorized-domain').slice(0, 60);
+  $('domainBannerTxt').textContent = 'النطاق «' + host + '» غير مصرَّح به في Firebase، فلا يعمل الدخول منه.';
+  $('domainSteps').textContent = 'للإدارة: افتح Firebase ← Authentication ← Settings ← Authorized domains ← Add domain وأضف «' + host + '». ثم راجع قيود مفتاح API في Google Cloud (Credentials) وأضف النطاق إن كان المفتاح مقيّداً. وإن كنت زائراً فتواصل مع الدعم.';
+  $('domainSupport').href = 'https://wa.me/' + SUPPORT_PHONE + '?text=' + encodeURIComponent('مرحباً، تظهر لي رسالة «إعداد النطاق غير مكتمل» على ' + host + ' (' + code + ').');
+  if(!domainShown){ domainShown = true; $('domainBanner').style.display = 'block'; }
+}
+$('domainClose').addEventListener('click', () => { $('domainBanner').style.display = 'none'; });
+$('domainHow').addEventListener('click', () => { const st = $('domainSteps'); st.style.display = st.style.display === 'none' ? 'block' : 'none'; });
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -4173,7 +4205,7 @@ $('ownerSubmitBtn').addEventListener('click', async () => {
     render();
   }catch(e){
     console.error('owner-login', e); const c = (e && e.code) || '';
-    toast(c === 'auth/too-many-requests' ? 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة' : (/invalid-credential|wrong-password|invalid-login|user-not-found|invalid-email/.test(c) ? 'الرقم السري غير صحيح' : 'خطأ: ' + (c || (e && e.message))), 4500);
+    toast(domainIssue(e) ? (showDomainBanner(e), 'إعداد النطاق غير مكتمل. التفاصيل في الشريط أعلى الصفحة') : c === 'auth/too-many-requests' ? 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة' : (/invalid-credential|wrong-password|invalid-login|user-not-found|invalid-email/.test(c) ? 'الرقم السري غير صحيح' : 'خطأ: ' + (c || (e && e.message))), 4500);
     $('ownerPass').value = '';
     if(ownerEmailLocal()){ ownerFailed = true; $('ownerSavedField').style.display = 'block'; }   // احتمال أن البريد المحفوظ خطأ: نتيح تغييره
   }
@@ -4467,7 +4499,7 @@ function downloadBackup(){
 $('backupBtn').addEventListener('click', downloadBackup);
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792791419';
+const APP_VERSION = '1792795288';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
