@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1792835274">
+<meta name="app-version" content="1792836505">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -3037,7 +3037,7 @@ $('pgBody').addEventListener('click', e => {
   else if(a === 'portal') openScoped(t.dataset.k);
   else if(a === 'owner-login'){ pgClose(); openOwnerLogin(); }
   else if(a === 'diag'){ pgClose(); runDiag(); }
-  else if(a === 'rq-adv'){ const r = myReqs.find(x => x.id === t.dataset.id); if(r){ advCtx = 'بخصوص طلبي رقم ' + String(r.id).slice(0, 6).toUpperCase() + ': ' + r.subject + '، السعر ' + finFmt(r.price) + ' ريال.'; pgAdvBank = ''; pgOpen('advs'); } }
+  else if(a === 'rq-adv'){ const r = myReqs.find(x => x.id === t.dataset.id); if(r){ advCtx = 'بخصوص طلبي رقم ' + rqRef(r.id) + ': ' + r.subject + '، السعر ' + finFmt(r.price) + ' ريال.'; pgAdvBank = ''; pgOpen('advs'); } }
   else if(a === 'adv'){ advCtx = t.dataset.ctx || ''; pgAdvBank = ''; pgOpen('advs'); }
   else if(a === 'invest'){ pgClose(); goSearch({ kind: 'استثمار' }); }
 });
@@ -3207,7 +3207,7 @@ $('adDelete').addEventListener('click', async () => {
 const RQ_CONSENT = 'أوافق على مشاركة اسمي ورقم جوالي وبيانات هذا الطلب مع إدارة منصة وسطاء المملكة والبنوك التي اخترتها، للتواصل معي بخصوص التمويل العقاري فقط.';
 const RQ_STATUS = { new: 'جديد', progress: 'قيد المتابعة', contacted: 'تم التواصل', closed: 'مغلق' };
 let rq = null, myReqs = [], raReqs = [], raUnsub = null, raFilter = 'all';
-const rqRef = id => String(id || '').slice(0, 6).toUpperCase();
+const rqRef = id => { const r = (myReqs || []).find(x => x.id === id) || (raReqs || []).find(x => x.id === id); return r && r.no ? String(r.no) : String(id || '').slice(0, 6).toUpperCase(); };   // الرقم المتسلسل إن وُجد وإلا المرجع القديم
 const rqDate = ts => ts ? new Date(ts).toLocaleString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 function startMyRequests(){
   if(!uid) return;
@@ -3290,6 +3290,21 @@ function rqValidate(){
   if(rq.step === 2 && !rq.anyBank && !rq.banks.length){ toast('اختر بنكاً أو «لا أفضّل بنكاً محدداً»'); return false; }
   return true;
 }
+// يحجز رقماً من العدّاد المشترك مع أرقام الأعضاء (معاملة واحدة تكتب العدّاد والطلب معاً). وإن تعذّر الحجز يُرسَل الطلب بلا رقم ويُرقَّم لاحقاً من الإدارة، فلا يتعطل الإرسال أبداً.
+async function rqCreate(data){
+  try{
+    const ref = db.collection('financeRequests').doc(); let no = 0;
+    await db.runTransaction(async tx => {
+      const cref = db.collection('counters').doc('M'), cs = await tx.get(cref);
+      no = Math.max((cs.exists && Number(cs.data().n)) || 0, MEMBER_NO_START - 1) + 1;
+      tx.set(cref, { n: no }); tx.set(ref, { ...data, no });
+    });
+    return { id: ref.id, no };
+  }catch(e){
+    console.warn('rq-number', e);
+    const ref = await db.collection('financeRequests').add(data); return { id: ref && ref.id, no: 0 };
+  }
+}
 async function rqSend(){
   const name = rq.name.trim(), phone = cleanPhone(rq.phone.trim());
   if(name.length < 2){ toast('اكتب اسمك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
@@ -3298,7 +3313,7 @@ async function rqSend(){
   if(myReqs.filter(r => r.status === 'new' || r.status === 'progress').length >= 5){ toast('لديك 5 طلبات قيد المتابعة. انتظر ردّها أو احذف بعضها من «طلباتي»', 5000); return; }
   const now = Date.now(), data = { ownerId: uid, status: 'new', consent: true, consentAt: now, consentText: RQ_CONSENT, name, phone, kind: rq.kind, subject: rqSubject(), subjectId: rq.kind === 'project' ? rq.projId : rq.subjectId, price: rq.price, down: rq.down, years: rq.years, banks: rq.anyBank ? [] : rq.banks.slice(0, 3), anyBank: !!rq.anyBank, time: rq.time, note: rq.note.trim(), createdAt: now, updatedAt: now };
   $('rqSend').disabled = true;
-  try{ const ref = await db.collection('financeRequests').add(data); rq.done = { data, ref: rqRef((ref && ref.id) || String(now)) }; rq.step = 4; rqRender(); }
+  try{ const res = await rqCreate(data); rq.done = { data, ref: res.no ? String(res.no) : rqRef(res.id || String(now)) }; rq.step = 4; rqRender(); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الإرسال: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الإرسال، حاول مجدداً', 5000); const b = $('rqSend'); if(b) b.disabled = false; }
 }
 function rqClose(){ $('reqOverlay').classList.remove('show'); rq = null; }
@@ -3364,12 +3379,26 @@ function raRender(){
   const all = raReqs.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), cnt = k => k === 'all' ? all.length : all.filter(r => r.status === k).length;
   $('raFilter').innerHTML = [['all', 'الكل']].concat(Object.entries(RQ_STATUS)).map(([k, t]) => '<button type="button" data-f="' + k + '" class="' + (raFilter === k ? 'on' : '') + '">' + t + ' (' + cnt(k) + ')</button>').join('');
   const list = all.filter(r => raFilter === 'all' || r.status === raFilter);
-  $('raBody').innerHTML = list.length ? list.map(raCard).join('') : '<div class="hub-intro">' + (all.length ? 'لا طلبات بهذه الحالة.' : 'لا توجد طلبات تمويل بعد.') + '</div>';
+  const unn = all.filter(r => !r.no).length;
+  $('raBody').innerHTML = (unn ? '<div class="hub-intro">' + unn + ' طلب بلا رقم <button type="button" class="btn-small btn-accept" data-ranum="1" style="max-width:150px;margin-right:8px">🔢 ترقيمها</button></div>' : '') + (list.length ? list.map(raCard).join('') : '<div class="hub-intro">' + (all.length ? 'لا طلبات بهذه الحالة.' : 'لا توجد طلبات تمويل بعد.') + '</div>');
+}
+// ترقيم الطلبات القديمة بلا رقم من العدّاد المشترك (الأقدم أولاً)
+async function numberRequests(){
+  if(!isOwner) return;
+  const todo = raReqs.filter(r => !r.no).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  if(!todo.length){ toast('كل الطلبات مرقّمة ✅'); return; }
+  if(!confirm('ترقيم ' + todo.length + ' طلب بأرقام من العدّاد المشترك مع الأعضاء؟ الأرقام ثابتة ولا يمكن التراجع عنها.')) return;
+  try{
+    const n0 = await bumpMemberCounter(todo.length);
+    for(let i = 0; i < todo.length; i += 400){ const batch = db.batch(); todo.slice(i, i + 400).forEach((r, k) => batch.update(db.collection('financeRequests').doc(r.id), { no: n0 + i + k + 1 })); await batch.commit(); }
+    toast('تم ترقيم ' + todo.length + ' طلب ✅', 4000);
+  }catch(e){ fail('number-requests', e); }
 }
 function openReqAdmin(){ if(!isOwner){ toast('هذه الصفحة للإدارة فقط'); return; } ensureReqAdminSub(); raFilter = 'all'; raRender(); $('reqAdminOverlay').classList.add('show'); }
 $('raClose').addEventListener('click', () => $('reqAdminOverlay').classList.remove('show'));
 $('raFilter').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(b){ raFilter = b.dataset.f; raRender(); } });
 $('raBody').addEventListener('click', async e => {
+  if(e.target.closest('[data-ranum]')){ numberRequests(); return; }
   const st = e.target.closest('[data-st]'), del = e.target.closest('[data-del]');
   if(st){ try{ await db.collection('financeRequests').doc(st.dataset.id).update({ status: st.dataset.st, updatedAt: Date.now() }); }catch(err){ console.error(err); toast('تعذر تحديث الحالة', 4000); } return; }
   if(del){ const r = raReqs.find(x => x.id === del.dataset.del); if(!r || !confirm('حذف طلب «' + r.name + '» نهائياً؟')) return; try{ await db.collection('financeRequests').doc(r.id).delete(); toast('تم الحذف'); }catch(err){ console.error(err); toast('تعذر الحذف', 4000); } }
@@ -4634,7 +4663,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792835274';
+const APP_VERSION = '1792836505';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
