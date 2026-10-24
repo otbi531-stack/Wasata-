@@ -35,6 +35,8 @@
   var grain = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 " + t.g.split(' ')[0] + "  0 0 0 0 " + t.g.split(' ')[1] + "  0 0 0 0 " + t.g.split(' ')[2] + "  .9 .9 .9 0 -1.15'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>\")";
   var css = 'html[data-hdr] header{background:' + waves + ' 0 100%/100% 150px no-repeat,' + rings.replace('url(', 'url(') + ' 50% calc(56px - var(--medal))/calc(var(--medal)*3) calc(var(--medal)*3) no-repeat,' + grain + ',radial-gradient(circle at 50% calc(56px + var(--medal)/2),' + t.glow + ' 0%,rgba(0,0,0,0) calc(var(--medal)*.98)),linear-gradient(180deg,' + t.c1 + ',' + t.c2 + ')}' + (t.emb ? 'html[data-hdr] header::before{background:url(' + t.emb + ') center/cover no-repeat,' + t.embBg + '}' : '');
   var st = document.createElement('style'); st.id = 'hdrTheme'; st.textContent = css; document.head.appendChild(st);
+  /* حماية: إن تعذّر تحميل صورة الشعار الخاصة بهذا اللون (ملف غير مرفوع أو اسمه مختلف) يعود الشعار الأصلي بدل أن يختفي */
+  if(t.emb){ var im = new Image(); im.onerror = function(){ var f = document.createElement('style'); f.id = 'hdrEmbFallback'; f.textContent = 'html[data-hdr] header::before{background:url(emblem.jpg) center/cover no-repeat,#1a321c}'; document.head.appendChild(f); }; im.src = t.emb; }
   var m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', t.meta);
 })();
 </script>
@@ -4564,7 +4566,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792816293';
+const APP_VERSION = '1792819128';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
