@@ -9,16 +9,16 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1a371f">
 <script>
-/* ألوان الترويسة حول الشعار (الشعار نفسه لا يتغير). للمعاينة أضف إلى الرابط ?hdr=gold أو navy أو burgundy أو graphite أو teal،
-   وللعودة للأخضر الأصلي ?hdr=green، ولإلغاء الاختيار المحفوظ ?hdr=reset */
+/* ألوان الترويسة حول الشعار (الشعار نفسه لا يتغير). للمعاينة أضف إلى الرابط ?hdr=teal أو gold أو navy أو burgundy أو graphite،
+   وللأخضر الأصلي ?hdr=green، ولإلغاء الاختيار المحفوظ ?hdr=reset */
 (function(){
   var DEFAULT = 'teal';
   var T = {
+    teal:     { n: 'بترولي (يتسق مع الشعار)', c1: '#00292a', c2: '#06605e', glow: 'rgba(22,170,164,.55)', ring: 'rgba(200,240,236,.19)', w: ['rgba(110,214,208,.13)', 'rgba(60,176,170,.18)', 'rgba(14,128,124,.30)'], g: '.00 .07 .07', meta: '#00292a' },
     gold:     { n: 'ذهبي برونزي', c1: '#2e1f07', c2: '#7a5a1c', glow: 'rgba(240,196,98,.55)', ring: 'rgba(255,232,180,.20)', w: ['rgba(255,222,140,.13)', 'rgba(236,190,100,.17)', 'rgba(190,145,60,.28)'], g: '.12 .08 .02', meta: '#2e1f07' },
     navy:     { n: 'كحلي ملكي',  c1: '#081a2e', c2: '#16416b', glow: 'rgba(70,140,210,.55)', ring: 'rgba(190,215,245,.18)', w: ['rgba(130,180,230,.13)', 'rgba(95,150,210,.17)', 'rgba(60,110,175,.27)'], g: '.01 .05 .11', meta: '#081a2e' },
     burgundy: { n: 'عنابي',      c1: '#26080f', c2: '#5e1b30', glow: 'rgba(195,80,108,.52)', ring: 'rgba(255,214,224,.17)', w: ['rgba(225,125,145,.12)', 'rgba(195,92,118,.16)', 'rgba(150,60,86,.27)'], g: '.10 .01 .03', meta: '#26080f' },
-    graphite: { n: 'فحمي',       c1: '#111417', c2: '#2f363e', glow: 'rgba(155,170,185,.42)', ring: 'rgba(232,237,242,.15)', w: ['rgba(195,205,215,.10)', 'rgba(165,177,190,.13)', 'rgba(125,137,150,.22)'], g: '.05 .06 .07', meta: '#111417' },
-    teal:     { n: 'بترولي',     c1: '#05262a', c2: '#0f5c62', glow: 'rgba(60,172,178,.52)', ring: 'rgba(190,240,240,.17)', w: ['rgba(110,200,205,.12)', 'rgba(70,165,172,.16)', 'rgba(40,120,128,.26)'], g: '.01 .08 .09', meta: '#05262a', emb: 'emblem-teal.jpg', embBg: '#0b2f33' }
+    graphite: { n: 'فحمي',       c1: '#111417', c2: '#2f363e', glow: 'rgba(155,170,185,.42)', ring: 'rgba(232,237,242,.15)', w: ['rgba(195,205,215,.10)', 'rgba(165,177,190,.13)', 'rgba(125,137,150,.22)'], g: '.05 .06 .07', meta: '#111417' }
   };
   window.HDR_THEMES = T;
   var q = (location.search.match(/[?&]hdr=([a-z]+)/) || [])[1], saved = null;
@@ -28,15 +28,21 @@
   }catch(e){}
   var key = (saved === 'green' || (saved && T[saved])) ? saved : DEFAULT;
   document.documentElement.setAttribute('data-hdr', key);
+  /* الشعار: الجديد أولاً، فإن تعذّر تحميله (ملف لم يُرفع أو اسمه مختلف) يُجرَّب البترولي المعدّل ثم الأصلي، فلا تبقى الدائرة فارغة */
+  var EMBS = ['emblem-new.jpg', 'emblem-teal.jpg', 'emblem.jpg'], EMB_BG = '#023e3f';
+  function setEmb(i){
+    var st = document.getElementById('hdrEmb'); if(!st){ st = document.createElement('style'); st.id = 'hdrEmb'; document.head.appendChild(st); }
+    st.textContent = 'html[data-hdr] header::before{background:url(' + EMBS[i] + ') center/cover no-repeat,' + EMB_BG + '}';
+    if(i < EMBS.length - 1){ var im = new Image(); im.onerror = function(){ setEmb(i + 1); }; im.src = EMBS[i]; }
+  }
+  setEmb(0);
   if(key === 'green' || !T[key]) return;
   var t = T[key], enc = function(x){ return x.replace(/#/g, '%23'); };
   var waves = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'><path fill='" + t.w[0] + "' d='M0 78 C180 18 360 22 540 70 S900 150 1080 100 S1320 30 1440 58 L1440 200 L0 200Z'/><path fill='" + t.w[1] + "' d='M0 122 C200 70 400 72 600 116 S1000 176 1200 130 S1380 90 1440 106 L1440 200 L0 200Z'/><path fill='" + t.w[2] + "' d='M0 162 C240 120 480 126 720 158 S1200 196 1440 150 L1440 200 L0 200Z'/></svg>\")";
   var rings = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'><g fill='none' stroke='" + enc(t.ring) + "' stroke-width='1.6'><circle cx='500' cy='500' r='212'/><circle cx='500' cy='500' r='262' stroke-dasharray='2 9' stroke-linecap='round'/><circle cx='500' cy='500' r='318'/><circle cx='500' cy='500' r='392' stroke-dasharray='14 10'/><circle cx='500' cy='500' r='480'/><rect x='300' y='300' width='400' height='400' transform='rotate(45 500 500)' stroke-width='1.2'/><rect x='300' y='300' width='400' height='400' stroke-width='1.2'/></g></svg>\")";
   var grain = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 " + t.g.split(' ')[0] + "  0 0 0 0 " + t.g.split(' ')[1] + "  0 0 0 0 " + t.g.split(' ')[2] + "  .9 .9 .9 0 -1.15'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>\")";
-  var css = 'html[data-hdr] header{background:' + waves + ' 0 100%/100% 150px no-repeat,' + rings.replace('url(', 'url(') + ' 50% calc(56px - var(--medal))/calc(var(--medal)*3) calc(var(--medal)*3) no-repeat,' + grain + ',radial-gradient(circle at 50% calc(56px + var(--medal)/2),' + t.glow + ' 0%,rgba(0,0,0,0) calc(var(--medal)*.98)),linear-gradient(180deg,' + t.c1 + ',' + t.c2 + ')}' + (t.emb ? 'html[data-hdr] header::before{background:url(' + t.emb + ') center/cover no-repeat,' + t.embBg + '}' : '');
-  var st = document.createElement('style'); st.id = 'hdrTheme'; st.textContent = css; document.head.appendChild(st);
-  /* حماية: إن تعذّر تحميل صورة الشعار الخاصة بهذا اللون (ملف غير مرفوع أو اسمه مختلف) يعود الشعار الأصلي بدل أن يختفي */
-  if(t.emb){ var im = new Image(); im.onerror = function(){ var f = document.createElement('style'); f.id = 'hdrEmbFallback'; f.textContent = 'html[data-hdr] header::before{background:url(emblem.jpg) center/cover no-repeat,#1a321c}'; document.head.appendChild(f); }; im.src = t.emb; }
+  var css = 'html[data-hdr] header{background:' + waves + ' 0 100%/100% 150px no-repeat,' + rings + ' 50% calc(56px - var(--medal))/calc(var(--medal)*3) calc(var(--medal)*3) no-repeat,' + grain + ',radial-gradient(circle at 50% calc(56px + var(--medal)/2),' + t.glow + ' 0%,rgba(0,0,0,0) calc(var(--medal)*.98)),linear-gradient(180deg,' + t.c1 + ',' + t.c2 + ')}';
+  var st2 = document.createElement('style'); st2.id = 'hdrTheme'; st2.textContent = css; document.head.appendChild(st2);
   var m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', t.meta);
 })();
 </script>
@@ -1906,7 +1912,7 @@ async function buildShareImage(it){
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
   x.direction = 'rtl'; x.textAlign = 'right'; x.textBaseline = 'alphabetic';
-  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#16231b'); g.addColorStop(1, '#0d110b');
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0a4342'); g.addColorStop(1, '#00191b');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   try{ const logo = await loadImg('icon.png'); x.save(); rrect(x, 940, 36, 100, 100, 50); x.clip(); x.drawImage(logo, 940, 36, 100, 100); x.restore(); }catch{}
   x.fillStyle = '#e6c07b'; x.font = '700 56px ' + F; x.fillText('وسطاء المملكة', 920, 106);
@@ -1914,25 +1920,25 @@ async function buildShareImage(it){
   x.save(); rrect(x, 40, 170, 1000, 560, 28); x.clip();
   let drew = false;
   if(imgs[0]){ try{ drawCover(x, await loadImg(imgs[0]), 40, 170, 1000, 560); drew = true; }catch{} }
-  if(!drew){ x.fillStyle = '#1d2d23'; x.fillRect(40, 170, 1000, 560); x.fillStyle = '#3a5646'; x.font = '700 120px ' + F; x.textAlign = 'center'; x.fillText(it.propertyType || 'عقار', 540, 470); x.textAlign = 'right'; }
+  if(!drew){ x.fillStyle = '#0d3a3a'; x.fillRect(40, 170, 1000, 560); x.fillStyle = '#2f7370'; x.font = '700 120px ' + F; x.textAlign = 'center'; x.fillText(it.propertyType || 'عقار', 540, 470); x.textAlign = 'right'; }
   x.restore();
   const isReq = it.type === 'طلب';
-  x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 840, 195, 170, 64, 32); x.fill();
+  x.fillStyle = isReq ? '#d98a3d' : '#0e8a80'; rrect(x, 840, 195, 170, 64, 32); x.fill();
   x.fillStyle = '#ffffff'; x.font = '700 38px ' + F; x.textAlign = 'center'; x.fillText(isReq ? 'مطلوب' : 'للعرض', 925, 240);
   if(it.code){ x.fillStyle = '#eceae4'; rrect(x, 680, 195, 140, 64, 32); x.fill(); x.fillStyle = '#000000'; x.font = '700 36px ' + F; x.direction = 'ltr'; x.fillText(it.code, 750, 240); x.direction = 'rtl'; }
   x.textAlign = 'right';
   let y = 800;
   x.fillStyle = '#ffffff'; fitFont(x, `${it.propertyType || 'عقار'} - ${it.city || ''}`, 64, '700', F, 960);
   x.fillText(`${it.propertyType || 'عقار'} - ${it.city || ''}`, 1040, y); y += 62;
-  x.fillStyle = '#cfd6c4'; x.font = '400 40px ' + F;
+  x.fillStyle = '#cde3df'; x.font = '400 40px ' + F;
   if(it.neighborhood){ x.fillText('الحي: ' + it.neighborhood, 1040, y); y += 56; }
   if(it.area){ x.fillText('المساحة: ' + it.area, 1040, y); y += 56; }
   if(it.price){ x.fillStyle = '#e6c07b'; fitFont(x, it.price, 58, '700', F, 960); x.fillText(it.price, 1040, y + 14); y += 84; }
-  if(it.desc){ x.fillStyle = '#b9c4b2'; x.font = '400 34px ' + F; wrapText(x, it.desc, 960, 3).forEach(l => { x.fillText(l, 1040, y); y += 48; }); }
-  x.fillStyle = '#0a0d09'; x.fillRect(0, 1228, W, 122);
+  if(it.desc){ x.fillStyle = '#aecdc9'; x.font = '400 34px ' + F; wrapText(x, it.desc, 960, 3).forEach(l => { x.fillText(l, 1040, y); y += 48; }); }
+  x.fillStyle = '#00181a'; x.fillRect(0, 1228, W, 122);
   if(it.agent){ x.fillStyle = '#ffffff'; fitFont(x, 'الوسيط: ' + it.agent, 40, '700', F, 560); x.fillText('الوسيط: ' + it.agent, 1040, 1290); }
   if(it.phone){ x.direction = 'ltr'; x.textAlign = 'left'; x.fillStyle = '#e6c07b'; x.font = '700 46px ' + F; x.fillText(it.phone, 40, 1290); x.direction = 'rtl'; x.textAlign = 'right'; }
-  x.fillStyle = '#6f7d68'; x.font = '400 26px ' + F; x.textAlign = 'center'; x.direction = 'ltr'; x.fillText('otbi531-stack.github.io/Wasata-', 540, 1334); x.direction = 'rtl';
+  x.fillStyle = '#6f9a96'; x.font = '400 26px ' + F; x.textAlign = 'center'; x.direction = 'ltr'; x.fillText('otbi531-stack.github.io/Wasata-', 540, 1334); x.direction = 'rtl';
   return new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
 }
 async function shareListingImage(it){
@@ -3626,7 +3632,7 @@ const eIO = v => v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
 const eBack = v => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(v - 1, 3) + c1 * Math.pow(v - 1, 2); };
 const c01 = v => Math.max(0, Math.min(1, v));
 function withAlpha(x, f, fn){ const b = x.globalAlpha; x.globalAlpha = b * c01(f); fn(); x.globalAlpha = b; }
-function vBg(x){ const g = x.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#16231b'); g.addColorStop(1, '#0b0f09'); x.fillStyle = g; x.fillRect(0, 0, VW, VH); }
+function vBg(x){ const g = x.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#0a4342'); g.addColorStop(1, '#00191b'); x.fillStyle = g; x.fillRect(0, 0, VW, VH); }
 function vText(x, s, px, py, size, weight, color, align){ x.direction = 'rtl'; x.textAlign = align || 'right'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); }
 function vTextLtr(x, s, px, py, size, weight, color, align){ x.direction = 'ltr'; x.textAlign = align || 'center'; x.fillStyle = color; x.font = weight + ' ' + size + 'px ' + VF; x.fillText(s, px, py); x.direction = 'rtl'; }
 function vCenter(x, s, cx, cy, size, weight, color, maxW, ltr){
@@ -3668,9 +3674,9 @@ async function prepareMontage(it){
     x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
     withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 430, 120 * (0.55 + 0.45 * eBack(c01(t / 0.9)))));
     withAlpha(x, (t - 0.35) / 0.6, () => vText(x, 'وسطاء المملكة', 360, 640 + rise(t, 0.35, 30), 64, '700', '#e6c07b', 'center'));
-    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#1f8a4c'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vCenter(x, isReq ? 'مطلوب' : 'للعرض', 360, 721 + dy, 38, '700', '#ffffff', 160, false); });
+    withAlpha(x, (t - 0.7) / 0.5, () => { const dy = rise(t, 0.7, 20); x.fillStyle = isReq ? '#d98a3d' : '#0e8a80'; rrect(x, 270, 690 + dy, 180, 62, 31); x.fill(); vCenter(x, isReq ? 'مطلوب' : 'للعرض', 360, 721 + dy, 38, '700', '#ffffff', 160, false); });
     withAlpha(x, (t - 1.0) / 0.6, () => { const sz = vFit(x, title, 62, '700', 640); vText(x, title, 360, 850 + rise(t, 1.0, 30), sz, '700', '#ffffff', 'center'); });
-    withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cfd6c4', 'center'); });
+    withAlpha(x, (t - 1.25) / 0.6, () => { if(hood) vText(x, hood, 360, 920 + rise(t, 1.25, 30), vFit(x, hood, 40, '400', 640), '400', '#cde3df', 'center'); });
     const lw = 300 * eOut(c01((t - 1.4) / 0.7)); x.fillStyle = '#e6c07b'; x.fillRect(360 - lw / 2, 975, lw, 4);
     withAlpha(x, (t - 1.45) / 0.4, () => {
       if(!it.code) return;
@@ -3690,7 +3696,7 @@ async function prepareMontage(it){
   const photoScene = (x, t, img, i) => {
     vBg(x);
     x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-    x.drawImage(photoBgs[i], 0, 0, VW, VH); x.fillStyle = 'rgba(6,10,6,.58)'; x.fillRect(0, 0, VW, VH);
+    x.drawImage(photoBgs[i], 0, 0, VW, VH); x.fillStyle = 'rgba(0,16,18,.58)'; x.fillRect(0, 0, VW, VH);
     const bx = 24, by = 90, bw = VW - 48, bh = VH - 180, pr = c01(t / 2.4);
     const k0 = Math.min(bw / img.width, bh / img.height), fw = img.width * k0, fh = img.height * k0, fx = bx + (bw - fw) / 2, fy = by + (bh - fh) / 2;
     const z = 1 + 0.06 * eIO(pr), pan = (pr - 0.5) * 18 * (i % 2 ? -1 : 1);
@@ -3708,18 +3714,18 @@ async function prepareMontage(it){
       const a = c01((t - (0.3 + i * 0.25)) / 0.5), dx = (1 - eOut(a)) * 60, y = 320 + i * 92;
       withAlpha(x, a, () => {
         x.fillStyle = 'rgba(255,255,255,.07)'; rrect(x, 40 + dx, y - 56, 640, 76, 18); x.fill();
-        vText(x, r[0], 660 + dx, y - 6, 30, '400', '#9fb09a');
+        vText(x, r[0], 660 + dx, y - 6, 30, '400', '#9cc4bf');
         const sz = vFit(x, r[1], 36, '700', 440); vText(x, r[1], 520 + dx, y - 6, sz, '700', '#ffffff');
       });
     });
     const py = 320 + rows.length * 92 + 40;
     if(it.price) withAlpha(x, (t - (0.4 + rows.length * 0.25)) / 0.6, () => {
-      vText(x, priceLabel, 680, py + 20, 32, '400', '#9fb09a');
+      vText(x, priceLabel, 680, py + 20, 32, '400', '#9cc4bf');
       const sz = vFit(x, it.price, 76, '700', 640); vText(x, it.price, 680, py + 110, sz, '700', '#e6c07b');
     });
     if(it.desc) withAlpha(x, (t - 1.8) / 0.6, () => {
       x.font = '400 32px ' + VF;
-      wrapText(x, it.desc, 640, 3).forEach((l, i) => vText(x, l, 680, py + 190 + i * 46, 32, '400', '#b9c4b2'));
+      wrapText(x, it.desc, 640, 3).forEach((l, i) => vText(x, l, 680, py + 190 + i * 46, 32, '400', '#aecdc9'));
     });
   };
   const outro = (x, t) => {
@@ -3727,7 +3733,7 @@ async function prepareMontage(it){
     const gl = x.createRadialGradient(360, 330, 10, 360, 330, 400); gl.addColorStop(0, 'rgba(230,192,123,.25)'); gl.addColorStop(1, 'rgba(230,192,123,0)');
     x.fillStyle = gl; x.fillRect(0, 0, VW, VH);
     withAlpha(x, t / 0.5, () => vLogo(x, logo, 360, 330, 90 * (1 + 0.03 * Math.sin(t * 4))));
-    withAlpha(x, (t - 0.3) / 0.5, () => vText(x, 'للتواصل والاستفسار', 360, 520, 40, '400', '#9fb09a', 'center'));
+    withAlpha(x, (t - 0.3) / 0.5, () => vText(x, 'للتواصل والاستفسار', 360, 520, 40, '400', '#9cc4bf', 'center'));
     withAlpha(x, (t - 0.5) / 0.5, () => { const nm = it.agent || 'وسطاء المملكة', sz = vFit(x, nm, 62, '700', 620); vText(x, nm, 360, 610, sz, '700', '#ffffff', 'center'); });
     if(phone) withAlpha(x, (t - 0.8) / 0.5, () => {
       const pulse = 1 + 0.025 * Math.sin(t * 6);
@@ -3738,9 +3744,9 @@ async function prepareMontage(it){
       x.fillStyle = '#1f8a4c'; rrect(x, -pw / 2, -ph / 2, pw, ph, ph / 2); x.fill();
       vCenter(x, phone, 0, 0, sz, '700', '#ffffff', 9999, true);
       x.restore();
-      vText(x, 'واتساب · اتصال', 360, 740 + ph / 2 + 60, 34, '400', '#cfd6c4', 'center');
+      vText(x, 'واتساب · اتصال', 360, 740 + ph / 2 + 60, 34, '400', '#cde3df', 'center');
     });
-    withAlpha(x, (t - 1.2) / 0.6, () => { vText(x, 'تطبيق وسطاء المملكة', 360, 1040, 46, '700', '#e6c07b', 'center'); vTextLtr(x, 'otbi531-stack.github.io/Wasata-', 360, 1100, 28, '400', '#6f7d68', 'center'); });
+    withAlpha(x, (t - 1.2) / 0.6, () => { vText(x, 'تطبيق وسطاء المملكة', 360, 1040, 46, '700', '#e6c07b', 'center'); vTextLtr(x, 'otbi531-stack.github.io/Wasata-', 360, 1100, 28, '400', '#6f9a96', 'center'); });
   };
 
   const scenes = [{ dur: 2.4, draw: intro }];
@@ -4566,7 +4572,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792819128';
+const APP_VERSION = '1792821201';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' });
