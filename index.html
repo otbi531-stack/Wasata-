@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1792836505">
+<meta name="app-version" content="1792929165">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -755,6 +755,15 @@ body.seeker #seekerRegisterBtn:active,
 #diagBox .dg-h button{width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.08);font-size:18px;line-height:1;cursor:pointer;padding:0}
 #diagBox .dg-a{display:flex;gap:8px;margin-top:8px}
 #diagBox .dg-a button{flex:1;padding:8px;border-radius:12px;border:1px solid #cfcab9;background:#f1efe8;font-family:inherit;font-weight:700;cursor:pointer}
+/* ===== فيديو ترويجي برابط ===== */
+.gal-video,.vid-box{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;overflow:hidden;background:linear-gradient(135deg,#0a4342,#00191b) center/cover no-repeat}
+.gal-video{flex:0 0 100%;height:170px;scroll-snap-align:start}
+.vid-box{width:100%;aspect-ratio:16/9;border-radius:16px;margin:10px 0}
+.gal-video iframe,.gal-video video,.vid-box iframe,.vid-box video{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.vplay{width:56px;height:56px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;padding:0}
+.vlabel{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;pointer-events:none}
+.vlink{gap:10px;font-weight:700;font-size:14px}
+.vlink .vplay{pointer-events:none}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -914,6 +923,7 @@ body.seeker #seekerRegisterBtn:active,
     <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
     <div class="field"><label>التفاصيل</label><textarea id="fDesc" placeholder="عدد الغرف، ملاحظات إضافية..."></textarea></div>
     <div class="field"><label>الصور (حتى 4 صور)</label><input type="file" id="fImage" accept="image/*" multiple><div class="img-preview-row" id="fImagePreview"></div></div>
+    <div class="field"><label>🎬 فيديو ترويجي (اختياري، مع الصور أو بدونها)</label><input type="text" id="fVideo" dir="ltr" maxlength="400" placeholder="الصق رابط الفيديو: يوتيوب، تيك توك، إنستغرام، سناب، قوقل درايف..."><div class="picker-hint" id="fVideoHint">يظهر الفيديو أول شريحة في معرض إعلانك.</div></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="cancelBtn">إلغاء</button>
       <button class="btn-save" id="saveBtn">حفظ</button>
@@ -1126,13 +1136,14 @@ body.seeker #seekerRegisterBtn:active,
 <!-- طلب صلاحية شريك -->
 <div class="overlay" id="roleReqOverlay" style="z-index:54">
   <div class="modal">
-    <h2>طلب صلاحية شريك</h2>
-    <div class="picker-hint">للمطورين العقاريين وموظفي التمويل في البنوك. تراجع الإدارة طلبك قبل منح الصلاحية.</div>
+    <h2 id="rrTitle">طلب صلاحية شريك</h2>
+    <div class="picker-hint" id="rrHint">للمطورين العقاريين وموظفي التمويل في البنوك. تراجع الإدارة طلبك قبل منح الصلاحية.</div>
     <div class="field"><label>الاسم</label><input type="text" id="rrName" maxlength="60"></div>
-    <div class="field"><label>نوع الصلاحية</label><select id="rrRole"><option value="developer">مطور عقاري</option><option value="bank">موظف تمويل في بنك</option></select></div>
-    <div class="field"><label>اسم الشركة أو البنك</label><input type="text" id="rrOrg" maxlength="80"></div>
+    <div class="field" id="rrRoleWrap"><label>نوع الصلاحية</label><select id="rrRole"><option value="developer">مطور عقاري</option><option value="bank">موظف تمويل في بنك</option></select></div>
+    <div class="field"><label id="rrOrgLbl">اسم الشركة أو البنك</label><input type="text" id="rrOrg" maxlength="80"></div>
     <div class="field"><label>جوال التواصل</label><input type="text" id="rrPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx"></div>
-    <div class="field"><label>ملاحظة (اختياري: رقم الترخيص أو المسمى)</label><input type="text" id="rrNote" maxlength="200"></div>
+    <div class="field"><label id="rrLicLbl">رقم السجل التجاري أو الترخيص (اختياري)</label><input type="text" id="rrLicense" maxlength="60" dir="ltr"></div>
+    <div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rrNote" maxlength="120"></div>
     <div class="modal-actions"><button class="btn-cancel" id="rrCancel">إلغاء</button><button class="btn-save" id="rrSend">إرسال الطلب</button></div>
   </div>
 </div>
@@ -1151,6 +1162,23 @@ body.seeker #seekerRegisterBtn:active,
     <div class="pg-bar"><button class="lib-back" id="reqBack" type="button">→ رجوع</button><h2 id="reqTitle">طلب تمويل</h2></div>
     <div class="rq-steps" id="rqSteps"></div>
     <div id="reqBody"></div>
+  </div>
+</div>
+
+<!-- اهتمام العميل بمشروع (يصل إلى المطور بموافقته) -->
+<div class="overlay" id="leadOverlay" style="z-index:52">
+  <div class="modal pg">
+    <div class="pg-bar"><button class="lib-back" id="ldBack" type="button">× إغلاق</button><h2 id="ldTitle">اهتمامي بالمشروع</h2></div>
+    <div id="ldForm"></div>
+  </div>
+</div>
+
+<!-- العملاء المهتمون (للمطور المعتمد وللإدارة) -->
+<div class="overlay" id="leadsOverlay" style="z-index:53">
+  <div class="modal pg">
+    <div class="pg-bar"><button class="lib-back" id="lsClose" type="button">× إغلاق</button><h2>🙋 العملاء المهتمون</h2></div>
+    <div class="ra-st" id="lsFilter" style="margin:0 0 10px"></div>
+    <div id="lsBody"></div>
   </div>
 </div>
 
@@ -1210,6 +1238,7 @@ body.seeker #seekerRegisterBtn:active,
       <div class="field"><label>رابط الموقع على الخريطة (اختياري)</label><input type="text" id="pjMap" maxlength="400" placeholder="https://maps.google.com/..."></div>
       <div class="field"><label>جوال خاص بالمشروع (اختياري، وإلا يُستخدم جوال المطور)</label><input type="text" id="pjPhone" inputmode="tel" maxlength="20"></div>
       <div class="field"><label>الصور (حتى 4)</label><input type="file" id="pjImgFile" accept="image/*" multiple><div class="pg-prev" id="pjImgPrev"></div></div>
+      <div class="field"><label>🎬 فيديو ترويجي للمشروع (اختياري)</label><input type="text" id="pjVideo" dir="ltr" maxlength="400" placeholder="رابط يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف"><div class="picker-hint" id="pjVideoHint"></div></div>
       <div class="field"><label class="oath-check"><input type="checkbox" id="pjActive" checked> فعّال ويظهر للجميع</label></div>
       <div class="modal-actions"><button class="btn-cancel" id="pjCancel">إلغاء</button><button class="btn-save" id="pjSave">حفظ</button></div>
       <button type="button" class="fin-add" id="pjDelete" style="display:none;border-color:#c98a8a;color:#8c2f2f">🗑 حذف هذا المشروع</button>
@@ -1586,6 +1615,7 @@ async function init(){
     startFinance();
     startDevData();
     startMyRequests();
+    startMyLeads();
     startMyRole();
   }catch(e){ fail('init', e); }
 }
@@ -1601,7 +1631,7 @@ function cardHTML(it, ctx){
   const mine = !!(uid && it.ownerId === uid), id = esc(it.id);
   const sold = isSold(it), expired = isExpired(it), active = !sold && !expired;
   const canDelete = mine || isOwner;
-  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.code ? '🔖 رقم الإعلان: \u200E' + it.code + '\u200E\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
+  const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.video && videoInfo(it.video) ? '🎬 فيديو: ' + it.video + '\n' : ''}${it.code ? '🔖 رقم الإعلان: \u200E' + it.code + '\u200E\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
   let actions = '';
   if(active){
     actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
@@ -1618,8 +1648,9 @@ function cardHTML(it, ctx){
   }
   if(canDelete) actions += `<button class="btn-small btn-delete" data-act="del" data-id="${id}">🗑 حذف</button>`;
   if(actions) actions = `<div class="card-actions">${actions}</div>`;
-  const gallery = imgs.length > 1
-    ? `<div style="position:relative"><div class="gallery">${imgs.map(u => `<img src="${u}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">📷 ${imgs.length}</span></div>`
+  const vid = videoInfo(it.video);
+  const gallery = (vid || imgs.length > 1)
+    ? `<div style="position:relative"><div class="gallery">${vid ? vidUnit(vid, 'gal-video') : ''}${imgs.map(u => `<img src="${u}" alt="صورة العقار">`).join('')}</div><span class="gallery-count">${vid ? '🎬' + (imgs.length ? ' + ' : '') : ''}${imgs.length ? '📷 ' + imgs.length : ''}</span></div>`
     : (imgs[0] ? `<img src="${imgs[0]}" alt="صورة العقار">` : '');
   const dn = ctx.deals[it.ownerId] || 0, nRep = ctx.rmap[it.id] || 0;
   const badges = (it.pinned ? '<span class="pinned-badge">⭐ مميز</span>' : '')
@@ -1804,7 +1835,7 @@ $('listArea').addEventListener('click', async e => {
   }
   if(act === 'sold'){
     if(!confirm('تأكيد إتمام الصفقة؟ سيُنقل الإعلان إلى الأرشيف وتُحتسب الصفقة في إنجازاتك.')) return;
-    try{ await db.collection(COL).doc(id).update({ sold: true, soldAt: Date.now(), images: [], image: null }); toast('مبارك! تم احتساب الصفقة في إنجازاتك 🏅'); }
+    try{ await db.collection(COL).doc(id).update({ sold: true, soldAt: Date.now(), images: [], image: null, video: '' }); toast('مبارك! تم احتساب الصفقة في إنجازاتك 🏅'); }
     catch(err){ fail('sold', err); }
     return;
   }
@@ -2714,9 +2745,9 @@ const HUBS = {
     ]],
     ['الإجراءات', [
       { ic: 'i-plus', t: 'نشر مشروع استثماري', d: 'أضف مشروعك بتفاصيله وصوره', lock: true, run: () => postAs('استثمار') },
-      { ic: 'i-plus', t: 'تسجيل مطور جديد', d: 'طلب انضمام مطور عقاري واعتماده من الإدارة' },
+      { ic: 'i-plus', t: 'تسجيل مطور جديد', d: 'طلب انضمام مطور عقاري واعتماده من الإدارة', run: () => openRoleReq('developer') },
       { ic: 'i-calc', t: 'ربط المشروع بالتمويل', d: 'في كل مشروع حاسبة تمويل وقسط تقديري من نسب البنوك', run: () => openProjects() },
-      { ic: 'i-user', t: 'استقبال طلبات العملاء', d: 'العملاء المهتمون بمشروعك يتواصلون معك بموافقتهم' },
+      { ic: 'i-user', t: 'استقبال طلبات العملاء', d: 'العملاء المهتمون بمشاريعك يصلون إليك بموافقتهم (للمطورين المعتمدين)', run: () => openLeads() },
       { ic: 'i-sliders', t: 'إدارة المطورين والمشاريع', d: 'إضافة المطورين والمشاريع وتعديلها وحذفها (للإدارة)', own: true, run: () => openDpAdmin() },
       { ic: 'i-sliders', t: 'لوحة المطور', d: 'إدارة ملف شركتك ومشاريعك', role: 'developer', run: () => openPortal() },
       { ic: 'i-user', t: 'الحسابات والصلاحيات', d: 'اعتماد طلبات المطورين وموظفي البنوك وسحب الصلاحيات (للإدارة)', own: true, run: () => openRoleAdmin() }
@@ -2747,7 +2778,7 @@ const HUBS = {
     ]],
     ['الإجراءات', [
       { ic: 'i-doc', t: 'طلب تمويل', d: 'أرسل طلبك لبنك أو أكثر بموافقتك الصريحة', run: () => rqOpen({ kind: 'custom' }) },
-      { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها' },
+      { ic: 'i-plus', t: 'تسجيل بنك', d: 'انضمام البنوك وإدخال عروضها ونسبها', run: () => openRoleReq('bank') },
       { ic: 'i-sliders', t: 'إدارة نسب التمويل', d: 'إدخال نسب البنوك وتحديثها وحذفها (للإدارة)', own: true, run: () => openFinAdmin() },
       { ic: 'i-sliders', t: 'إدارة مستشاري البنوك', d: 'إضافة المستشارين وتعديلهم وحذفهم (للإدارة)', own: true, run: () => openDpAdmin('adv') },
       { ic: 'i-doc', t: 'طلبات التمويل', d: 'متابعة طلبات العملاء وتحديث حالتها وإحالتها للمستشارين', own: true, run: () => openReqAdmin() },
@@ -2863,12 +2894,14 @@ function renderHubExtra(){
   if(hubCur === 'dev'){
     const nd = dvActive().length, np = pjActive().length;
     box.innerHTML = (nd || np) ? '<button type="button" class="fin-ticker" data-open="projs"><span class="stat-ic"><svg class="ic"><use href="#i-crane"/></svg></span><span class="ft-body"><b>المشاريع والمطورون</b><br>' + np + ' مشروع · ' + nd + ' مطور<small>اضغط لاستعراض المشاريع</small></span></button>' : (isOwner ? '<div class="hub-intro" style="margin-top:8px">لم تُضف مطورين أو مشاريع بعد. ابدأ من «إدارة المطورين والمشاريع».</div>' : '');
+    box.innerHTML += partnerTickers('dev');
     return;
   }
   if(hubCur !== 'bank'){ box.innerHTML = ''; return; }
   box.innerHTML = finStats() ? finTickerHTML() : '<div class="hub-intro" style="margin-top:8px">📊 عدّاد النسب: لم تُدخل الإدارة نسب البنوك بعد.</div>';
   box.innerHTML += advSummary();
   if(isOwner){ ensureReqAdminSub(); const nn = raReqs.filter(r => r.status === 'new').length; box.innerHTML += '<button type="button" class="fin-ticker" data-open="reqadmin"><span class="stat-ic"><svg class="ic"><use href="#i-doc"/></svg></span><span class="ft-body"><b>طلبات التمويل</b><br>' + nn + ' جديد · ' + raReqs.length + ' الإجمالي<small>اضغط للمتابعة والإحالة</small></span></button>'; }
+  box.innerHTML += partnerTickers('bank');
 }
 document.addEventListener('click', e => {
   if(e.target.closest('[data-open="rates"]') && !e.target.closest('#ratesOverlay')) openRates();
@@ -2876,6 +2909,8 @@ document.addEventListener('click', e => {
   else if(e.target.closest('[data-open="advs"]')) openAdvisors();
   else if(e.target.closest('[data-open="reqs"]')) openMyRequests();
   else if(e.target.closest('[data-open="reqadmin"]')) openReqAdmin();
+  else if(e.target.closest('[data-open="leads"]')) openLeads();
+  else if(e.target.closest('[data-open="roles"]')) openRoleAdmin();
   else if(e.target.closest('[data-adv-bank]')){ const bk = e.target.closest('[data-adv-bank]').dataset.advBank; openAdvisors(bk, $('finOverlay').classList.contains('show') ? calcCtx() : '', true); }
   else if(e.target.closest('[data-fa="open"]')) openFinAdmin();
 });
@@ -3007,16 +3042,17 @@ function pgProj(id){
   const facts = [['السعر', pjPrice(p)], ['المساحة', pjArea(p)], ['أنواع الوحدات', (p.types || []).join('، ')], ['موعد التسليم', p.handover], ['الموقع', (p.city || '') + (p.neighborhood ? ' · ' + p.neighborhood : '')], ['الحالة', p.status]].filter(f => f[1]);
   const waText = 'مرحباً، مهتم بمشروع «' + p.name + '»' + (p.city ? ' في ' + p.city : '') + ' عبر تطبيق وسطاء المملكة. أرجو التفاصيل.';
   const shareTxt = '🏗️ ' + p.name + (dn ? '\nالمطور: ' + dn : '') + '\n📍 ' + (p.city || '') + (p.neighborhood ? ' / ' + p.neighborhood : '') + '\n💰 ' + pjPrice(p) + (p.status ? '\n' + p.status : '') + (p.handover ? '\n🗓 التسليم: ' + p.handover : '') + '\n\n📲 تطبيق وسطاء المملكة\n' + APP_URL;
-  const ml = safeUrl(p.mapLink);
+  const ml = safeUrl(p.mapLink), pv = videoInfo(p.video);
   return { title: p.name, html:
-    (imgs.length ? '<div class="pg-gal' + (imgs.length === 1 ? ' one' : '') + '">' + imgs.map(u => '<img src="' + u + '" alt="">').join('') + '</div>' : '<div class="pg-ph"><svg class="ic" style="width:48px;height:48px"><use href="#i-crane"/></svg></div>')
+    (imgs.length ? '<div class="pg-gal' + (imgs.length === 1 ? ' one' : '') + '">' + imgs.map(u => '<img src="' + u + '" alt="">').join('') + '</div>' : (pv ? '' : '<div class="pg-ph"><svg class="ic" style="width:48px;height:48px"><use href="#i-crane"/></svg></div>'))
+    + (pv ? vidUnit(pv, 'vid-box') : '')
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + pgStChip(p) + '</div>'
     + (d.id ? '<button type="button" class="dv-card" data-dev="' + esc(d.id) + '" style="margin-top:8px">' + pgAvatar(d) + '<span class="dv-info"><small>المطور</small><b>' + esc(d.name) + pgVf(d) + '</b></span><svg class="ic" style="color:#8a9486"><use href="#i-chev"/></svg></button>' : (dn ? '<div class="pj-dev" style="margin-top:6px">المطور: ' + esc(dn) + '</div>' : ''))
     + '<div class="pj-facts">' + facts.map(f => '<div><small>' + f[0] + '</small><b>' + esc(f[1]) + '</b></div>').join('') + '</div>'
     + (inst ? '<div class="pj-instbox">قسط تقديري يبدأ من <b>' + finFmt(inst.inst) + '</b> ريال/شهر<small>بنسبة ' + finPct(inst.rate) + ' (' + esc(inst.bank) + ') · دفعة مقدمة 20% · 25 سنة. تقديري ويختلف حسب البنك والملاءة.</small></div>' : '')
     + (p.desc ? '<div class="pg-about">' + esc(p.desc) + '</div>' : '')
     + ((p.features || []).length ? '<div class="pg-chips">' + p.features.map(f => '<span>' + esc(f) + '</span>').join('') + '</div>' : '')
-    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-pid="' + esc(p.id) + '" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button><button type="button" class="main" data-act="req" data-pid="' + esc(p.id) + '"><svg class="ic"><use href="#i-doc"/></svg>اطلب تمويلاً لهذا المشروع</button>' + (adActive().length ? '<button type="button" data-act="adv" data-ctx="' + esc('أرغب بتمويل مشروع «' + p.name + '»' + (p.priceFrom ? ' (يبدأ من ' + pjNf(p.priceFrom) + ' ريال)' : '') + '.') + '"><svg class="ic"><use href="#i-user"/></svg>تواصل مع مستشار تمويل</button>' : '')
+    + '<div class="pg-actions"><button type="button" class="main" data-act="fin" data-pid="' + esc(p.id) + '" data-price="' + (+p.priceFrom || 0) + '"><svg class="ic"><use href="#i-calc"/></svg>احسب تمويل هذا المشروع</button><button type="button" class="main" data-act="req" data-pid="' + esc(p.id) + '"><svg class="ic"><use href="#i-doc"/></svg>اطلب تمويلاً لهذا المشروع</button><button type="button" class="main" data-act="lead" data-pid="' + esc(p.id) + '"><svg class="ic"><use href="#i-user"/></svg>🙋 أنا مهتم بهذا المشروع</button>' + (adActive().length ? '<button type="button" data-act="adv" data-ctx="' + esc('أرغب بتمويل مشروع «' + p.name + '»' + (p.priceFrom ? ' (يبدأ من ' + pjNf(p.priceFrom) + ' ريال)' : '') + '.') + '"><svg class="ic"><use href="#i-user"/></svg>تواصل مع مستشار تمويل</button>' : '')
     + (ph ? '<div class="pg-row2 pg-actions" style="margin:0"><a href="' + esc(pgWaTo(ph, waText)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>تواصل واتساب</a><a href="tel:' + esc(cleanPhone(ph)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>' : '')
     + '<div class="pg-row2 pg-actions" style="margin:0">' + (ml ? '<a href="' + esc(ml) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-pin"/></svg>الموقع</a>' : '') + '<a href="https://wa.me/?text=' + encodeURIComponent(shareTxt) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-share"/></svg>مشاركة</a></div>'
     + (isOwner ? '<button type="button" data-act="edit-proj" data-id="' + esc(id) + '">⚙️ تعديل المشروع</button>' : '') + '</div>' };
@@ -3034,6 +3070,8 @@ $('pgBody').addEventListener('click', e => {
   else if(a === 'req') rqOpen({ projId: t.dataset.pid });
   else if(a === 'rq-new') rqOpen({ kind: 'custom' });
   else if(a === 'rq-del') rqDelete(t.dataset.id);
+  else if(a === 'lead') leadOpen(t.dataset.pid);
+  else if(a === 'lead-del') leadDelete(t.dataset.id);
   else if(a === 'portal') openScoped(t.dataset.k);
   else if(a === 'owner-login'){ pgClose(); openOwnerLogin(); }
   else if(a === 'diag'){ pgClose(); runDiag(); }
@@ -3098,7 +3136,7 @@ function pjOpenForm(p){
   $('pjStatus').innerHTML = PJ_STATUS.map(x => '<option>' + x + '</option>').join('');
   $('pjDev').value = p ? p.devId : ''; if(dpScope){ $('pjDev').value = dpScope.devId; $('pjDev').disabled = true; } else $('pjDev').disabled = false; $('pjName').value = p ? p.name : ''; $('pjCity').value = p ? (p.city || '') : ''; $('pjHood').value = p ? (p.neighborhood || '') : ''; $('pjStatus').value = p && p.status ? p.status : PJ_STATUS[0];
   $('pjPriceFrom').value = p && p.priceFrom ? p.priceFrom : ''; $('pjPriceTo').value = p && p.priceTo ? p.priceTo : ''; $('pjAreaFrom').value = p && p.areaFrom ? p.areaFrom : ''; $('pjAreaTo').value = p && p.areaTo ? p.areaTo : '';
-  $('pjHandover').value = p ? (p.handover || '') : ''; $('pjDesc').value = p ? (p.desc || '') : ''; $('pjFeatures').value = p ? (p.features || []).join('، ') : ''; $('pjMap').value = p ? (p.mapLink || '') : ''; $('pjPhone').value = p ? (p.phone || '') : '';
+  $('pjHandover').value = p ? (p.handover || '') : ''; $('pjDesc').value = p ? (p.desc || '') : ''; $('pjFeatures').value = p ? (p.features || []).join('، ') : ''; $('pjMap').value = p ? (p.mapLink || '') : ''; $('pjPhone').value = p ? (p.phone || '') : ''; $('pjVideo').value = p ? (p.video || '') : ''; videoHint('pjVideo', 'pjVideoHint');
   $('pjActive').checked = p ? p.active !== false : true; $('pjDelete').style.display = p ? '' : 'none'; renderPjImgs(); renderPjTypes(); dpFormView('proj');
 }
 async function pjSave(){
@@ -3109,8 +3147,9 @@ async function pjSave(){
   if(areaFrom && areaTo && areaTo < areaFrom){ toast('المساحة العليا أقل من الدنيا'); return; }
   if(mapLink && !safeUrl(mapLink)){ toast('رابط الخريطة يجب أن يبدأ بـ https://'); return; }
   const phone = phoneRaw ? cleanPhone(phoneRaw) : ''; if(phoneRaw && !phone){ toast('رقم الجوال غير صحيح'); return; }
+  const vRaw = $('pjVideo').value.trim(), vInfo = vRaw ? videoInfo(vRaw) : null; if(vRaw && !vInfo){ toast('رابط الفيديو غير مدعوم. استخدم رابط https من يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف', 5000); return; }
   const data = { devId, devName: (devOf(devId) || {}).name || '', name, city, neighborhood: $('pjHood').value.trim(), status: $('pjStatus').value, types: pjTypesSel.slice(), priceFrom, priceTo, areaFrom, areaTo, handover: $('pjHandover').value.trim(), desc: $('pjDesc').value.trim(),
-    features: $('pjFeatures').value.split(/[،,\n]/).map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12), mapLink, phone, images: pjImgs.slice(0, 4), active: $('pjActive').checked, updatedAt: Date.now() };
+    features: $('pjFeatures').value.split(/[،,\n]/).map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12), mapLink, phone, images: pjImgs.slice(0, 4), video: vInfo ? vInfo.url : '', active: $('pjActive').checked, updatedAt: Date.now() };
   $('pjSave').disabled = true;
   try{ if(pjEditId) await db.collection('projects').doc(pjEditId).update(data); else await db.collection('projects').add({ ...data, createdAt: Date.now() }); toast('تم الحفظ ✅'); dpShowList(); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : (/too large|size|exceed/i.test(String(e && e.message)) ? 'الصور كبيرة، قلّل عددها' : 'تعذر الحفظ'), 5000); }
@@ -3291,9 +3330,9 @@ function rqValidate(){
   return true;
 }
 // يحجز رقماً من العدّاد المشترك مع أرقام الأعضاء (معاملة واحدة تكتب العدّاد والطلب معاً). وإن تعذّر الحجز يُرسَل الطلب بلا رقم ويُرقَّم لاحقاً من الإدارة، فلا يتعطل الإرسال أبداً.
-async function rqCreate(data){
+async function numCreate(col, data){
   try{
-    const ref = db.collection('financeRequests').doc(); let no = 0;
+    const ref = db.collection(col).doc(); let no = 0;
     await db.runTransaction(async tx => {
       const cref = db.collection('counters').doc('M'), cs = await tx.get(cref);
       no = Math.max((cs.exists && Number(cs.data().n)) || 0, MEMBER_NO_START - 1) + 1;
@@ -3301,10 +3340,11 @@ async function rqCreate(data){
     });
     return { id: ref.id, no };
   }catch(e){
-    console.warn('rq-number', e);
-    const ref = await db.collection('financeRequests').add(data); return { id: ref && ref.id, no: 0 };
+    console.warn('num-create', e);
+    const ref = await db.collection(col).add(data); return { id: ref && ref.id, no: 0 };
   }
 }
+const rqCreate = data => numCreate('financeRequests', data);
 async function rqSend(){
   const name = rq.name.trim(), phone = cleanPhone(rq.phone.trim());
   if(name.length < 2){ toast('اكتب اسمك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
@@ -3352,7 +3392,8 @@ function rqCard(r){
 function pgReqs(){
   const a = myReqs.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
   return { title: 'طلباتي', html: '<div class="hub-intro" style="margin-bottom:10px">طلباتك تظهر لك وللإدارة فقط. تستطيع حذف أي طلب في أي وقت، وهذا يسحب موافقتك على مشاركة بياناتك.</div>'
-    + (a.length ? a.map(rqCard).join('') + '<div class="pg-actions"><button type="button" data-act="rq-new">+ طلب جديد</button></div>' : '<div class="nt-card">لم ترسل طلبات تمويل بعد.<br><button type="button" data-act="rq-new">ابدأ طلب تمويل</button></div>') };
+    + (a.length ? a.map(rqCard).join('') + '<div class="pg-actions"><button type="button" data-act="rq-new">+ طلب جديد</button></div>' : '<div class="nt-card">لم ترسل طلبات تمويل بعد.<br><button type="button" data-act="rq-new">ابدأ طلب تمويل</button></div>')
+    + (myLeads.length ? '<div class="hub-h">اهتماماتي بالمشاريع</div>' + myLeads.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)).map(ldMine).join('') : '') };
 }
 function openMyRequests(){ pgStack = []; $('pgOverlay').style.zIndex = '44'; pgOpen('reqs'); }
 async function rqDelete(id){
@@ -3421,11 +3462,11 @@ const LEGAL = {
   privacy: { title: 'سياسة الخصوصية', secs: [
     ['1. البيانات التي نجمعها', ['بيانات الحساب: البريد الإلكتروني والاسم عند إنشاء حساب.', 'بيانات الطلبات: الاسم ورقم الجوال وبيانات العقار والتمويل (السعر والدفعة والمدة) والوقت المفضل للتواصل والملاحظة ووقت موافقتك.', 'بيانات الوسطاء: الاسم والجوال ورقم الترخيص عند طلب العضوية.', 'بيانات تقنية: معرّف مجهول للجهاز، وتفضيلاتك (المفضلة وآخر بحث) تُحفظ في متصفحك.', 'لا نطلب راتبك ولا رقم هويتك.']],
     ['2. لماذا نستخدمها', ['لتشغيل الخدمة، وللتواصل معك بخصوص طلبك، ولتحسين المنصة، وللالتزام بالأنظمة.']],
-    ['3. مع من نشاركها', ['لا نبيع بياناتك. لا يطّلع على طلبك إلا أنت وإدارة المنصة، ولا نشاركه مع بنك أو مستشار إلا من اخترتَهم أو من تُحيل الإدارة طلبك إليهم بموافقتك.', 'نستخدم خدمات Google Firebase لاستضافة البيانات وتسجيل الدخول.']],
+    ['3. مع من نشاركها', ['لا نبيع بياناتك. لا يطّلع على طلبك إلا أنت وإدارة المنصة، ولا نشاركه مع بنك أو مستشار إلا من اخترتَهم أو من تُحيل الإدارة طلبك إليهم بموافقتك. وطلب الاهتمام بمشروع يصل إلى المطور صاحب المشروع بموافقتك.', 'نستخدم خدمات Google Firebase لاستضافة البيانات وتسجيل الدخول.']],
     ['4. مدة الاحتفاظ والحذف', ['نحتفظ بالبيانات بالقدر اللازم لتقديم الخدمة. تستطيع حذف طلباتك وحسابك وبياناتك في أي وقت من «حسابي» ← «حذف حسابي وبياناتي».']],
     ['5. حقوقك', ['لك حق الاطلاع على بياناتك وتصحيحها وحذفها وسحب موافقتك والاعتراض على معالجتها، عبر التواصل مع الدعم.']],
     ['6. حماية البيانات', ['نقيّد الوصول إلى البيانات بقواعد صلاحيات على الخادم، لكن لا توجد وسيلة نقل أو تخزين آمنة بالكامل.']],
-    ['7. التخزين المحلي', ['نستخدم التخزين المحلي في المتصفح لحفظ تفضيلاتك وحالة دخولك، ولا نستخدم ملفات تعريف ارتباط إعلانية.']],
+    ['7. التخزين المحلي', ['نستخدم التخزين المحلي في المتصفح لحفظ تفضيلاتك وحالة دخولك، ولا نستخدم ملفات تعريف ارتباط إعلانية.', 'قد تتضمن الإعلانات والمشاريع روابط فيديو من منصات خارجية (مثل يوتيوب). ولا يُحمَّل المشغّل إلا عند ضغطك على الفيديو، وتنطبق حينها سياسة تلك المنصة.']],
     ['8. الفئة العمرية', ['الخدمة موجهة لمن بلغ 18 عاماً فأكثر.']],
     ['9. التواصل والتحديث', ['لأي استفسار أو طلب بخصوص بياناتك تواصل مع الدعم. قد نحدّث هذه السياسة، وسنعرض تاريخ آخر تحديث.']]
   ] }
@@ -3490,7 +3531,8 @@ async function authSubmit(){
     try{
       const u = auth.currentUser;
       if(u && u.isAnonymous) await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email, pass)); else await auth.createUserWithEmailAndPassword(email, pass);
-      await saveProfile(name); $('authOverlay').classList.remove('show'); $('auPass').value = ''; toast('تم إنشاء حسابك ✅'); startMyRole();
+      await saveProfile(name); $('authOverlay').classList.remove('show'); $('auPass').value = ''; toast('تم إنشاء حسابك ✅'); window.__lastAuthName = name; startMyRole();
+      if(pendingPartner){ const pr = pendingPartner === 'any' ? null : pendingPartner; pendingPartner = null; setTimeout(() => openRoleReq(pr), 600); }
     }catch(e){ console.error(e); toast(authMsg(e), 5000); }
     finally{ $('auSubmit').disabled = false; }
     return;
@@ -3518,6 +3560,7 @@ async function authDeleteMe(){
   if(!confirm('سيُحذف حسابك وطلباتك وبياناتك نهائياً ولا يمكن التراجع. هل أنت متأكد؟')) return;
   try{
     for(const r of myReqs.slice()) await db.collection('financeRequests').doc(r.id).delete();
+    for(const l of myLeads.slice()) await db.collection('projectLeads').doc(l.id).delete();
     await db.collection('roleRequests').doc(u.uid).delete(); await db.collection('profiles').doc(u.uid).delete();
     await u.delete();
     [GATE_KEY, VERIFIED_KEY, MEMBER_UID_KEY].forEach(k => { try{ localStorage.removeItem(k); }catch{} });
@@ -3543,13 +3586,29 @@ function startMyRole(){
   }catch(e){ console.warn('myRole-start', e); }
 }
 function showHubRefresh(){ if(hubCur) showHub(hubCur); }
-function openRoleReq(){ if(!isRegistered()){ toast('أنشئ حساباً أولاً'); return; } $('rrRole').value = 'developer'; $('rrOrg').value = ''; $('rrPhone').value = ''; $('rrNote').value = ''; $('rrName').value = $('rrName').value || ''; $('roleReqOverlay').classList.add('show'); }
+let pendingPartner = null, rrFixed = null;
+const RR_TXT = { developer: { title: 'تسجيل مطور جديد', hint: 'سجّل شركتك المطورة ليعتمدها فريق المنصة، فتنشر مشاريعك وتستقبل العملاء المهتمين.', org: 'اسم الشركة المطورة', lic: 'رقم السجل التجاري أو الترخيص (اختياري)', pre: 'السجل/الترخيص: ' }, bank: { title: 'تسجيل بنك', hint: 'سجّل بنكك ليعتمدك فريق المنصة، فتدخل نسب التمويل وتضيف مستشاريك.', org: 'اسم البنك', lic: 'المسمى أو الرقم الوظيفي (اختياري)', pre: 'الوظيفة: ' } };
+function rrLabels(){ const T = RR_TXT[$('rrRole').value] || RR_TXT.developer; $('rrOrgLbl').textContent = T.org; $('rrLicLbl').textContent = T.lic; }
+function openRoleReq(role){
+  role = role === 'developer' || role === 'bank' ? role : null;
+  if(!isRegistered()){ pendingPartner = role || 'any'; toast('أنشئ حساباً أولاً ثم أكمل نموذج التسجيل', 4500); openAuth('up'); return; }
+  if(myRole){ toast('لديك صلاحية شريك معتمدة'); openPortal(); return; }
+  if(myRoleReq && myRoleReq.status === 'pending'){ toast('طلبك قيد المراجعة من الإدارة. سنتواصل معك', 4500); return; }
+  rrFixed = role; const T = RR_TXT[role || 'developer'];
+  $('rrRole').value = role || 'developer'; $('rrRoleWrap').style.display = role ? 'none' : '';
+  $('rrTitle').textContent = role ? T.title : 'طلب صلاحية شريك'; $('rrHint').textContent = role ? T.hint : 'للمطورين العقاريين وموظفي التمويل في البنوك. تراجع الإدارة طلبك قبل منح الصلاحية.'; rrLabels();
+  $('rrOrg').value = ''; $('rrPhone').value = ''; $('rrNote').value = ''; $('rrLicense').value = ''; if(!$('rrName').value) $('rrName').value = window.__lastAuthName || '';
+  $('roleReqOverlay').classList.add('show');
+}
+$('rrRole').addEventListener('change', rrLabels);
 async function rrSend(){
-  const u = authUser(), name = $('rrName').value.trim(), org = $('rrOrg').value.trim(), phone = cleanPhone($('rrPhone').value.trim());
+  const u = authUser(), name = $('rrName').value.trim(), org = $('rrOrg').value.trim(), phone = cleanPhone($('rrPhone').value.trim()), role = rrFixed || $('rrRole').value;
   if(!u || !isRegistered()){ toast('أنشئ حساباً أولاً'); return; }
-  if(name.length < 2){ toast('اكتب اسمك'); return; } if(org.length < 2){ toast('اكتب اسم الشركة أو البنك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
+  if(name.length < 2){ toast('اكتب اسمك'); return; } if(org.length < 2){ toast(role === 'bank' ? 'اكتب اسم البنك' : 'اكتب اسم الشركة المطورة'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
   const now = Date.now(); $('rrSend').disabled = true;
-  try{ await db.collection('roleRequests').doc(u.uid).set({ role: $('rrRole').value, org, phone, note: $('rrNote').value.trim(), name, email: u.email || '', status: 'pending', createdAt: now, updatedAt: now }); $('roleReqOverlay').classList.remove('show'); toast('أُرسل طلبك. ستراجعه الإدارة ✅', 4500); }
+  const lic = $('rrLicense').value.trim(), note = [lic ? (RR_TXT[role] || RR_TXT.developer).pre + lic : '', $('rrNote').value.trim()].filter(Boolean).join(' | ').slice(0, 200);
+  try{ if(myRoleReq && myRoleReq.status === 'approved'){ try{ await db.collection('roleRequests').doc(u.uid).delete(); }catch(e0){ console.warn('rr-old', e0); } }   // صلاحية سابقة أُلغيت: نبدأ طلباً جديداً
+    await db.collection('roleRequests').doc(u.uid).set({ role, org, phone, note, name, email: u.email || '', status: 'pending', createdAt: now, updatedAt: now }); $('roleReqOverlay').classList.remove('show'); toast('وصل طلب التسجيل ✅ ستراجعه الإدارة وتتواصل معك', 5000); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الإرسال: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الإرسال', 5000); }
   finally{ $('rrSend').disabled = false; }
 }
@@ -3558,13 +3617,14 @@ $('rrSend').addEventListener('click', rrSend); $('rrCancel').addEventListener('c
 function pgPortal(){
   if(!myRole) return { title: 'لوحة الشراكة', html: '<div class="nt-card">ليس لديك صلاحية شريك. أرسل طلباً من «حسابي».</div>' };
   const dev = myRole.role === 'developer';
-  const rows = dev ? [['i-dev', 'ملف شركتي', 'تعديل النبذة والمدن والجوال والشعار', 'dev'], ['i-crane', 'مشاريعي', 'إضافة مشاريعك وتعديلها وإخفاؤها', 'proj']] : [['i-bank', 'نسب بنكي', 'تحديث نسب الأرباح (يظهر التغيّر للجميع)', 'rates'], ['i-user', 'مستشارو بنكي', 'إضافة مستشاري بنكك وتعديلهم', 'adv']];
+  const rows = dev ? [['i-dev', 'ملف شركتي', 'تعديل النبذة والمدن والجوال والشعار', 'dev'], ['i-crane', 'مشاريعي', 'إضافة مشاريعك وتعديلها وإخفاؤها', 'proj'], ['i-user', 'العملاء المهتمون', 'من أبدوا اهتمامهم بمشاريعك: تواصل وحدّث الحالة', 'leads']] : [['i-bank', 'نسب بنكي', 'تحديث نسب الأرباح (يظهر التغيّر للجميع)', 'rates'], ['i-user', 'مستشارو بنكي', 'إضافة مستشاري بنكك وتعديلهم', 'adv']];
   return { title: 'لوحة الشراكة', html: '<div class="hub-intro">' + (dev ? 'مطور: ' : 'بنك: ') + esc(myRole.orgName || '') + '. تُنشر تعديلاتك مباشرة، وللإدارة مراجعتها وتعديلها أو إيقافها.</div>'
     + rows.map(r => '<button type="button" class="hub-item" data-act="portal" data-k="' + r[3] + '"><span class="stat-ic"><svg class="ic"><use href="#' + r[0] + '"/></svg></span><span class="hub-txt"><span class="hi-t">' + r[1] + '</span><span class="hi-d">' + r[2] + '</span></span></button>').join('') };
 }
 function openPortal(){ if(!myRole){ toast('ليس لديك صلاحية شريك'); return; } pgStack = []; $('pgOverlay').style.zIndex = '44'; pgOpen('portal'); }
 function openScoped(k){
   if(!myRole) return;
+  if(k === 'leads'){ openLeads(); return; }
   if(myRole.role === 'developer') openDpAdmin(k === 'dev' ? 'dev' : 'proj', k === 'dev' ? myRole.org : null, { role: 'developer', devId: myRole.org });
   else if(k === 'rates') openFinAdmin(myRole.org); else openDpAdmin('adv', null, { role: 'bank', bank: myRole.org });
 }
@@ -3577,7 +3637,7 @@ function ensureRoleAdminSub(){
     db.collection('roles').onSnapshot(sn => { rlRoles = sn.docs.map(d => ({ ...d.data(), id: d.id })); rlChanged(); }, e => { console.warn('rlRoles', e); rlRoles = []; });
   }catch(e){ console.warn('rl-start', e); rlSub = false; }
 }
-function rlChanged(){ try{ if($('roleAdminOverlay').classList.contains('show')) rlRender(); }catch(e){ console.warn('rlChanged', e); } }
+function rlChanged(){ try{ if($('roleAdminOverlay').classList.contains('show')) rlRender(); if(view === 'hub') renderHubExtra(); }catch(e){ console.warn('rlChanged', e); } }
 function rlRender(){
   const pend = rlReqs.filter(r => r.status === 'pending' || r.status === 'rejected').sort((a, b) => (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || (b.createdAt || 0) - (a.createdAt || 0));
   const card = r => {
@@ -3705,6 +3765,151 @@ async function renumberMembers(){
   }catch(e){ fail('renumber-members', e); }
 }
 $('menuRenumberBtn').addEventListener('click', () => { $('menuDropdown').classList.remove('show'); renumberMembers(); });
+
+// ===== فيديو ترويجي برابط (يوتيوب/فيميو/درايف مضمَّنة عند الضغط، وغيرها برابط خارجي) =====
+function videoInfo(u){
+  u = String(u || '').trim(); if(!u || u.length > 400 || !/^https:\/\//i.test(u)) return null;
+  let url; try{ url = new URL(u); }catch{ return null; }
+  const h = url.hostname.toLowerCase().replace(/^(www|m)\./, ''), path = url.pathname, on = d => h === d || h.endsWith('.' + d);
+  let id = '';
+  if(h === 'youtu.be') id = path.slice(1).split('/')[0];
+  else if(on('youtube.com') || on('youtube-nocookie.com')){ if(path === '/watch') id = url.searchParams.get('v') || ''; else { const m = path.match(/^\/(?:shorts|embed|live|v)\/([\w-]{11})/); if(m) id = m[1]; } }
+  if(/^[\w-]{11}$/.test(id)) return { kind: 'youtube', url: u, name: 'يوتيوب', thumb: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg', embed: 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0' };
+  if(on('vimeo.com')){ const m = path.match(/\/(\d{6,12})(?:\/|$)/); if(m) return { kind: 'vimeo', url: u, name: 'فيميو', embed: 'https://player.vimeo.com/video/' + m[1] + '?autoplay=1' }; return null; }
+  if(h === 'drive.google.com'){ const m = path.match(/^\/file\/d\/([\w-]{10,})/) || (path === '/open' || path === '/uc' ? [0, url.searchParams.get('id') || ''] : null); if(m && /^[\w-]{10,}$/.test(m[1])) return { kind: 'drive', url: u, name: 'قوقل درايف', embed: 'https://drive.google.com/file/d/' + m[1] + '/preview' }; return null; }
+  if(/\.(mp4|webm|mov|m4v)$/i.test(path)) return { kind: 'file', url: u, name: 'فيديو' };
+  const ext = [['tiktok.com', 'تيك توك'], ['instagram.com', 'إنستغرام'], ['snapchat.com', 'سناب شات'], ['x.com', 'X'], ['twitter.com', 'X'], ['facebook.com', 'فيسبوك'], ['fb.watch', 'فيسبوك']];
+  for(const [d, n] of ext) if(on(d)) return { kind: 'link', url: u, name: n };
+  return null;
+}
+function vidUnit(v, cls){
+  if(!v) return '';
+  const label = '<span class="vlabel">🎬 ' + esc(v.name) + '</span>';
+  if(v.kind === 'file') return '<div class="' + cls + '"><video src="' + esc(v.url) + '" controls playsinline preload="metadata"></video>' + label + '</div>';
+  if(v.kind === 'link') return '<a class="' + cls + ' vlink" href="' + esc(v.url) + '" target="_blank" rel="noopener noreferrer"><span class="vplay">▶</span><span>مشاهدة الفيديو على ' + esc(v.name) + ' ↗</span></a>';
+  return '<div class="' + cls + '" data-vembed="' + esc(v.embed) + '"' + (v.thumb ? ' style="background-image:url(' + esc(v.thumb) + '),linear-gradient(135deg,#0a4342,#00191b)"' : '') + '><button type="button" class="vplay" aria-label="تشغيل الفيديو">▶</button>' + label + '</div>';
+}
+document.addEventListener('click', e => {
+  const box = e.target.closest('[data-vembed]'); if(!box || box.querySelector('iframe')) return;
+  const src = box.dataset.vembed; if(!/^https:\/\/(www\.youtube-nocookie\.com|player\.vimeo\.com|drive\.google\.com)\//.test(src)) return;
+  box.style.backgroundImage = 'none'; box.innerHTML = '<iframe src="' + esc(src) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"></iframe>';
+});
+function videoHint(inputId, hintId){
+  const inp = $(inputId), hint = $(hintId); if(!inp || !hint) return;
+  const upd = () => { const v = inp.value.trim(); if(!v){ hint.textContent = hintId === 'fVideoHint' ? 'يظهر الفيديو أول شريحة في معرض إعلانك.' : ''; return; } const i = videoInfo(v); hint.textContent = i ? '✓ ' + i.name + (i.kind === 'link' ? ' (يُفتح برابط خارجي)' : '') : '✗ رابط غير مدعوم (يلزم https من يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف أو ملف mp4)'; };
+  inp.oninput = upd; upd();
+}
+
+// ===== اهتمام العميل بمشروع: يصل إلى المطور وإدارة المنصة بموافقته، ويشارك العدّاد المشترك =====
+const LEAD_CONSENT = 'أوافق على مشاركة اسمي ورقم جوالي وما أكتبه هنا مع المطور صاحب هذا المشروع وإدارة المنصة ليتواصلوا معي بخصوصه.';
+let myLeads = [], ld = null, ldItems = [], ldUnsub = null, ldScope = '', ldFilter = 'all';
+const leadRef = l => l.no ? String(l.no) : String(l.id || '').slice(0, 6).toUpperCase();
+function startMyLeads(){
+  if(!uid) return;
+  try{ db.collection('projectLeads').where('ownerId', '==', uid).onSnapshot(sn => { myLeads = sn.docs.map(d => ({ ...d.data(), id: d.id })); const top = pgStack[pgStack.length - 1]; if($('pgOverlay').classList.contains('show') && top && top.v === 'reqs') pgRender(true); }, e => { console.warn('myLeads', e); myLeads = []; }); }catch(e){ console.warn('myLeads-start', e); }
+}
+function ldMine(l){
+  return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(l.projectName) + '</b><span class="fl-prod">رقم الطلب ' + esc(leadRef(l)) + ' · ' + finRel(l.createdAt) + '</span></div><span class="rq-st s-' + esc(l.status) + '">' + (RQ_STATUS[l.status] || '') + '</span></div>'
+    + '<div class="fl-note">وصل إلى المطور وإدارة المنصة. تستطيع سحب اهتمامك بحذفه، وهذا يسحب موافقتك.</div><div class="pg-actions" style="margin-top:8px"><button type="button" data-act="lead-del" data-id="' + esc(l.id) + '">🗑 سحب اهتمامي</button></div></div>';
+}
+async function leadDelete(id){
+  const l = myLeads.find(x => x.id === id); if(!l || !confirm('سحب اهتمامك بمشروع «' + l.projectName + '»؟ سيُحذف طلبك وتُسحب موافقتك.')) return;
+  try{ await db.collection('projectLeads').doc(id).delete(); toast('تم سحب اهتمامك'); }catch(e){ console.error(e); toast('تعذر الحذف', 4000); }
+}
+function leadOpen(pid){
+  const p = pjList.find(x => x.id === pid); if(!p || p.active === false){ toast('المشروع غير متاح'); return; }
+  ld = { pid, name: '', phone: '', time: '', note: '', consent: false, done: null }; leadRender(); $('leadOverlay').classList.add('show');
+}
+function leadClose(){ $('leadOverlay').classList.remove('show'); ld = null; }
+function leadRender(){
+  if(!ld) return; const p = pjList.find(x => x.id === ld.pid) || {}, dn = pjDevName(p);
+  if(ld.done){ $('ldForm').innerHTML = '<div class="rq-done"><div class="ok">✅</div><h3>وصل اهتمامك</h3><div>رقم الطلب</div><div class="rq-ref">' + esc(ld.done.ref) + '</div><div class="picker-hint">سيتواصل معك ' + esc(dn || 'المطور') + ' على ' + esc(ld.done.phone) + '. تتابع طلبك وتسحبه متى شئت من «طلباتي».</div><div class="modal-actions"><button class="btn-save" id="ldDone" type="button">تم</button></div></div>'; return; }
+  $('ldForm').innerHTML = '<div class="rq-sum"><b>' + esc(p.name || '') + '</b>' + (dn ? '<br>المطور: ' + esc(dn) : '') + '</div>'
+    + '<div class="field"><label>الاسم</label><input type="text" id="ldName" maxlength="60" value="' + esc(ld.name) + '"></div>'
+    + '<div class="field"><label>رقم الجوال</label><input type="text" id="ldPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx" value="' + esc(ld.phone) + '"></div>'
+    + '<div class="field"><label>أنسب وقت للتواصل (اختياري)</label><select id="ldTime"><option value="">أي وقت</option><option' + (ld.time === 'صباحاً' ? ' selected' : '') + '>صباحاً</option><option' + (ld.time === 'مساءً' ? ' selected' : '') + '>مساءً</option></select></div>'
+    + '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="ldNote" maxlength="200" value="' + esc(ld.note) + '"></div>'
+    + '<div class="field"><label class="oath-check"><input type="checkbox" id="ldConsent"' + (ld.consent ? ' checked' : '') + '> ' + esc(LEAD_CONSENT) + '</label></div>'
+    + '<div class="picker-hint">لا نطلب راتبك ولا رقم هويتك. اطّلع على <a class="lnk" data-legal="terms">الشروط</a> و<a class="lnk" data-legal="privacy">الخصوصية</a>.</div>'
+    + '<div class="modal-actions"><button class="btn-cancel" id="ldCancel" type="button">إلغاء</button><button class="btn-save" id="ldSend" type="button">إرسال اهتمامي</button></div>';
+}
+async function leadSend(){
+  if(!ld) return; const p = pjList.find(x => x.id === ld.pid);
+  const name = $('ldName').value.trim(), phone = cleanPhone($('ldPhone').value.trim());
+  if(name.length < 2){ toast('اكتب اسمك'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
+  if(!$('ldConsent').checked){ toast('يلزم الموافقة على مشاركة البيانات لإرسال الطلب', 4000); return; }
+  if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
+  if(!p || p.active === false){ toast('المشروع غير متاح'); return; }
+  if(myLeads.filter(l => l.status === 'new' || l.status === 'progress').length >= 5){ toast('لديك 5 طلبات اهتمام قيد المتابعة. انتظر ردّها أو احذف بعضها من «طلباتي»', 5000); return; }
+  const now = Date.now(), data = { ownerId: uid, status: 'new', consent: true, consentAt: now, consentText: LEAD_CONSENT, name, phone, devId: p.devId, projectId: p.id, projectName: String(p.name || '').slice(0, 120), time: $('ldTime').value, note: $('ldNote').value.trim().slice(0, 200), createdAt: now, updatedAt: now };
+  $('ldSend').disabled = true;
+  try{ const res = await numCreate('projectLeads', data); ld.done = { ref: res.no ? String(res.no) : String(res.id || now).slice(0, 6).toUpperCase(), phone }; leadRender(); }
+  catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الإرسال: انشر قواعد Firebase الجديدة أولاً' : 'تعذر الإرسال، حاول مجدداً', 5000); const b = $('ldSend'); if(b) b.disabled = false; }
+}
+$('leadOverlay').addEventListener('click', e => { if(e.target.closest('#ldBack, #ldCancel, #ldDone')) leadClose(); else if(e.target.closest('#ldSend')) leadSend(); });
+$('leadOverlay').addEventListener('input', e => { if(!ld) return; const m = { ldName: 'name', ldPhone: 'phone', ldNote: 'note' }[e.target.id]; if(m) ld[m] = e.target.value; });
+$('leadOverlay').addEventListener('change', e => { if(!ld) return; if(e.target.id === 'ldTime') ld.time = e.target.value; if(e.target.id === 'ldConsent') ld.consent = e.target.checked; });
+// ----- صندوق العملاء المهتمين (المطور المعتمد: مشاريعه فقط، والإدارة: الكل) -----
+function ensureLeadsSub(){
+  const key = isOwner ? 'all' : (myRole && myRole.role === 'developer' ? 'dev:' + myRole.org : '');
+  if(!key) return false; if(ldUnsub && ldScope === key) return true;
+  if(ldUnsub){ try{ ldUnsub(); }catch{} ldUnsub = null; } ldScope = key;
+  try{ const q = isOwner ? db.collection('projectLeads') : db.collection('projectLeads').where('devId', '==', myRole.org);
+    ldUnsub = q.onSnapshot(sn => { ldItems = sn.docs.map(d => ({ ...d.data(), id: d.id })); ldChanged(); }, e => { console.warn('leads', e); ldItems = []; ldUnsub = null; ldScope = ''; ldChanged(); });
+  }catch(e){ console.warn('leads-start', e); ldUnsub = null; ldScope = ''; }
+  return true;
+}
+function ldChanged(){ try{ if($('leadsOverlay').classList.contains('show')) ldRender(); if(view === 'hub') renderHubExtra(); }catch(e){ console.warn('ldChanged', e); } }
+function ldCard(l){
+  const wa = 'مرحباً ' + l.name + '، بخصوص اهتمامك بمشروع «' + l.projectName + '» عبر تطبيق وسطاء المملكة.';
+  return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(l.name) + '</b><span class="fl-prod">' + esc(l.phone) + ' · ' + esc(leadRef(l)) + ' · ' + finRel(l.createdAt) + '</span></div><span class="rq-st s-' + esc(l.status) + '">' + (RQ_STATUS[l.status] || '') + '</span></div>'
+    + '<div class="fl-note"><b>' + esc(l.projectName) + '</b>' + (l.time ? '<br>الوقت: ' + esc(l.time) : '') + (l.note ? '<br>ملاحظة: ' + esc(l.note) : '') + '<br><small>وافق على مشاركة بياناته: ' + rqDate(l.consentAt) + '</small></div>'
+    + '<div class="ad-actions" style="margin-top:8px"><a href="' + esc(pgWaTo(l.phone, wa)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>واتساب</a><a href="tel:' + esc(cleanPhone(l.phone)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>'
+    + '<div class="ra-st">' + Object.keys(RQ_STATUS).map(k => '<button type="button" data-lst="' + k + '" data-id="' + esc(l.id) + '" class="' + (l.status === k ? 'on' : '') + '">' + RQ_STATUS[k] + '</button>').join('') + '</div>'
+    + (isOwner ? ldOwnerBlock(l) : '') + '</div>';
+}
+// للإدارة: من هو المطور، وهل أُبلغ؟ وزر إحالة واتساب جاهز
+function ldDevPhone(l){ const d = devOf(l.devId) || {}, pj = pjList.find(x => x.id === l.projectId) || {}; return pj.phone || d.phone || ''; }
+function ldNotifyText(l){
+  return ['🙋 عميل مهتم بمشروعك عبر تطبيق وسطاء المملكة', 'رقم الطلب: ' + leadRef(l), 'المشروع: ' + l.projectName, 'الاسم: ' + l.name, 'الجوال: ' + l.phone, l.time ? 'الوقت المناسب: ' + l.time : '', l.note ? 'ملاحظة: ' + l.note : '', 'وافق العميل على مشاركة بياناته معكم.', 'للمتابعة وتحديث الحالة: لوحة المطور في التطبيق', APP_URL].filter(Boolean).join('\n');
+}
+function ldOwnerBlock(l){
+  const d = devOf(l.devId) || {};
+  return '<div class="fl-note" style="margin-top:6px">المطور: <b>' + esc(d.name || l.devId) + '</b> · ' + (l.notifiedAt ? '<span style="color:#245a2c">✓ أُبلغ ' + finRel(l.notifiedAt) + '</span>' : '<span style="color:#a15c00">لم يُبلَّغ بعد</span>') + '</div>'
+    + '<div class="pg-actions pg-row2" style="margin-top:6px"><button type="button" class="main" data-lnotify="' + esc(l.id) + '">📤 أبلغ المطور' + (l.notifiedAt ? ' مجدداً' : '') + '</button><button type="button" data-ldel="' + esc(l.id) + '">🗑 حذف</button></div>';
+}
+function ldRender(){
+  const all = ldItems.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)), cnt = k => k === 'all' ? all.length : (k === 'unn' ? all.filter(l => !l.notifiedAt).length : all.filter(l => l.status === k).length);
+  $('lsFilter').innerHTML = [['all', 'الكل']].concat(isOwner ? [['unn', 'لم يُبلَّغ']] : []).concat(Object.entries(RQ_STATUS)).map(([k, t]) => '<button type="button" data-f="' + k + '" class="' + (ldFilter === k ? 'on' : '') + '">' + t + ' (' + cnt(k) + ')</button>').join('');
+  const list = all.filter(l => ldFilter === 'all' || (ldFilter === 'unn' ? !l.notifiedAt : l.status === ldFilter));
+  $('lsBody').innerHTML = list.length ? list.map(ldCard).join('') : '<div class="hub-intro">' + (all.length ? 'لا طلبات بهذه الحالة.' : 'لا يوجد عملاء مهتمون بعد. يظهرون هنا حين يضغط العميل «أنا مهتم» في صفحة مشروعك.') + '</div>';
+}
+function openLeads(){
+  if(!ensureLeadsSub()){ toast('هذا القسم للمطورين المعتمدين. لتسجيل شركتك اختر «تسجيل مطور جديد».', 5000); return; }
+  ldFilter = 'all'; ldRender(); $('leadsOverlay').classList.add('show');
+}
+$('lsClose').addEventListener('click', () => $('leadsOverlay').classList.remove('show'));
+$('lsFilter').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(b){ ldFilter = b.dataset.f; ldRender(); } });
+$('lsBody').addEventListener('click', async e => {
+  const st = e.target.closest('[data-lst]'), del = e.target.closest('[data-ldel]'), nt = e.target.closest('[data-lnotify]');
+  if(nt){
+    if(!isOwner) return; const l = ldItems.find(x => x.id === nt.dataset.lnotify); if(!l) return;
+    const ph = ldDevPhone(l), msg = ldNotifyText(l);
+    if(!ph) toast('لا رقم جوال لهذا المطور في ملفه. اختر جهة الاتصال يدوياً من واتساب', 5000);
+    window.open(ph ? pgWaTo(ph, msg) : 'https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    try{ await db.collection('projectLeads').doc(l.id).update({ notifiedAt: Date.now(), updatedAt: Date.now() }); }catch(err){ console.warn('lead-notified', err); }
+    return;
+  }
+  if(st){ try{ await db.collection('projectLeads').doc(st.dataset.id).update({ status: st.dataset.lst, updatedAt: Date.now() }); }catch(err){ console.error(err); toast('تعذر تحديث الحالة', 4000); } return; }
+  if(del){ if(!isOwner) return; const l = ldItems.find(x => x.id === del.dataset.ldel); if(!l || !confirm('حذف طلب «' + l.name + '» نهائياً؟')) return; try{ await db.collection('projectLeads').doc(l.id).delete(); toast('تم الحذف'); }catch(err){ console.error(err); toast('تعذر الحذف', 4000); } }
+});
+function hubTick(open, ic, title, a, b){ return '<button type="button" class="fin-ticker" data-open="' + open + '"><span class="stat-ic"><svg class="ic"><use href="#' + ic + '"/></svg></span><span class="ft-body"><b>' + title + '</b><br>' + a + '<small>' + b + '</small></span></button>'; }
+function partnerTickers(hub){
+  let h = '';
+  if(hub === 'dev' && (isOwner || (myRole && myRole.role === 'developer')) && ensureLeadsSub()) h += hubTick('leads', 'i-user', 'العملاء المهتمون', ldItems.filter(l => l.status === 'new').length + ' جديد · ' + ldItems.length + ' الإجمالي' + (isOwner ? ' · ' + ldItems.filter(l => !l.notifiedAt).length + ' لم يُبلَّغ' : ''), isOwner ? 'أبلغ المطور بواتساب جاهز' : 'تواصل وحدّث الحالة');
+  if(isOwner){ ensureRoleAdminSub(); h += hubTick('roles', 'i-user', 'طلبات التسجيل والصلاحيات', rlReqs.filter(r => r.status === 'pending').length + ' جديد · ' + rlRoles.filter(r => r.status === 'active').length + ' صلاحية فعّالة', 'اعتماد المطورين والبنوك'); }
+  return h;
+}
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -4176,6 +4381,7 @@ function openModal(edit){
   $('fNeighborhood').value = edit ? (edit.neighborhood || '') : '';
   $('fArea').value = edit ? (edit.area || '') : '';
   $('fMapLink').value = edit ? (edit.mapLink || '') : '';
+  $('fVideo').value = edit ? (edit.video || '') : ''; videoHint('fVideo', 'fVideoHint');
   $('fPrice').value = edit ? (edit.price || '') : '';
   $('fAgent').value = edit ? (edit.agent || '') : '';
   $('fPhone').value = edit ? (edit.phone || '') : '';
@@ -4262,6 +4468,8 @@ $('saveBtn').addEventListener('click', async () => {
   if(!uid){ toast('تعذر التحقق من الجهاز. حدّث الصفحة وحاول مجدداً'); return; }
   const mapLink = $('fMapLink').value.trim();
   if(mapLink && !safeUrl(mapLink)){ toast('رابط الخريطة يجب أن يبدأ بـ https://'); return; }
+  const vRaw = $('fVideo').value.trim(), vInfo = vRaw ? videoInfo(vRaw) : null;
+  if(vRaw && !vInfo){ toast('رابط الفيديو غير مدعوم. استخدم رابط https من يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف', 5000); return; }
   const source = $('fSource').value, sourceNames = $('fSourceNames').value.trim();
   if(!source && !editingId){ toast('اختر صفة مقدّم الإعلان في حقل «من»'); return; }
   if(source === SOURCE_MULTI && !sourceNames){ toast('اكتب أسماء الوسطاء'); return; }
@@ -4270,7 +4478,7 @@ $('saveBtn').addEventListener('click', async () => {
     type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
-    desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null,
+    desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null, video: vInfo ? vInfo.url : '',
     source, sourceNames: (source === SOURCE_MULTI || source === SOURCE_OTHER) ? sourceNames : ''
   };
   saving = true; $('saveBtn').disabled = true;
@@ -4663,7 +4871,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792836505';
+const APP_VERSION = '1792929165';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
