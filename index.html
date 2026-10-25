@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1792933800">
+<meta name="app-version" content="1792941965">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -764,6 +764,12 @@ body.seeker #seekerRegisterBtn:active,
 .vlabel{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;pointer-events:none}
 .vlink{gap:10px;font-weight:700;font-size:14px}
 .vlink .vplay{pointer-events:none}
+/* ===== رسالة فشل الفيديو ===== */
+.vid-err{padding:14px 8px;text-align:center;max-width:320px}
+.vid-err .ve-ic{font-size:40px;line-height:1.2}
+.vid-err b{display:block;font-size:16px;margin:4px 0 6px;color:var(--forest)}
+.vid-err p{font-size:13px;line-height:1.85;margin:0 0 8px;color:var(--text)}
+.vid-err small{display:block;color:#7a857b;font-size:11px;word-break:break-all}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1322,6 +1328,7 @@ body.seeker #seekerRegisterBtn:active,
       <button class="btn-save" id="vidShareBtn">📤 مشاركة</button>
       <button class="btn-cancel" id="vidSaveBtn">⬇️ حفظ</button>
     </div>
+    <div class="modal-actions" id="vidFailActs" style="display:none;flex-wrap:wrap"><button class="btn-save" id="vidImgBtn" style="flex:1 1 100%">🖼️ أنشئ صورة ترويجية بدلاً منه</button><button class="btn-cancel" id="vidRetryBtn" style="flex:1">🔁 أعد المحاولة</button><button class="btn-cancel" id="vidCopyBtn" style="flex:1;display:none">🔗 انسخ رابط التطبيق</button></div>
     <div class="modal-actions"><button class="btn-cancel" id="vidCloseBtn" style="width:100%">إلغاء</button></div>
   </div>
 </div>
@@ -4069,25 +4076,34 @@ async function prepareMontage(it){
   return { total: total * VSLOW, draw: (x, t) => draw(x, t / VSLOW) };
 }
 
-function pickVideoMime(){
-  if(!window.MediaRecorder) return '';
-  return ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+const VMIMES = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+function videoMimes(){ if(!window.MediaRecorder) return []; return VMIMES.filter(m => { try{ return MediaRecorder.isTypeSupported(m); }catch{ return false; } }); }
+function pickVideoMime(){ return videoMimes()[0] || ''; }
+// ينشئ المسجِّل بأفضل صيغة يقبلها الجهاز فعلاً (بعض الأجهزة تعلن دعم صيغة ثم ترفضها عند الإنشاء) وبجودة أخف إن لزم
+function makeRecorder(stream){
+  let last = null;
+  for(const mime of videoMimes()) for(const opts of [{ mimeType: mime, videoBitsPerSecond: 3500000 }, { mimeType: mime, videoBitsPerSecond: 2000000 }, { mimeType: mime }]){
+    try{ return { rec: new MediaRecorder(stream, opts), mime }; }catch(e){ last = e; }
+  }
+  try{ const rec = new MediaRecorder(stream); return { rec, mime: rec.mimeType || 'video/webm' }; }catch(e){ throw last || e; }
 }
 async function recordMontage(it, canvas, onProgress, state){
-  const m = await prepareMontage(it), mime = pickVideoMime();
-  if(!mime || !canvas.captureStream) throw new Error('unsupported');
+  const m = await prepareMontage(it);
+  if(!window.MediaRecorder || !canvas.captureStream) throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
   const x = canvas.getContext('2d');
   m.draw(x, 0);
   const stream = canvas.captureStream(VFPS);
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3500000 });
-  const chunks = [];
+  let rec, mime;
+  try{ ({ rec, mime } = makeRecorder(stream)); }catch(e){ stream.getTracks().forEach(tr => tr.stop()); throw e; }
+  const chunks = []; let recErr = null;
   rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+  rec.onerror = e => { recErr = (e && e.error) || e || new Error('recorder-error'); };
   const stopped = new Promise(res => { rec.onstop = res; });
   rec.start(300);
   const t0 = performance.now();
   await new Promise(resolve => {
     const tick = () => {
-      if(state.cancelled){ resolve(); return; }
+      if(state.cancelled || recErr){ resolve(); return; }
       const t = (performance.now() - t0) / 1000;
       m.draw(x, Math.min(t, m.total));
       onProgress(Math.min(1, t / m.total));
@@ -4096,30 +4112,49 @@ async function recordMontage(it, canvas, onProgress, state){
     tick();
   });
   await new Promise(r => setTimeout(r, 250));   // لضمان تسجيل الإطار الأخير
-  if(rec.state !== 'inactive') rec.stop();
-  await stopped;
+  if(rec.state !== 'inactive'){ try{ rec.stop(); }catch{} }
+  await Promise.race([stopped, new Promise(r => setTimeout(r, 3000))]);   // لا نعلق إن لم يُطلق الجهاز حدث الانتهاء
   stream.getTracks().forEach(tr => tr.stop());
   if(state.cancelled) return null;
-  const type = mime.split(';')[0];
-  return { blob: new Blob(chunks, { type }), mime: type, total: m.total };
+  if(recErr) throw recErr;
+  const type = String(mime || 'video/webm').split(';')[0], blob = new Blob(chunks, { type });
+  if(blob.size < 20000) throw Object.assign(new Error('empty-recording'), { name: 'EmptyRecording' });   // بعض الأجهزة تُخرج تسجيلاً فارغاً دون خطأ
+  return { blob, mime: type, total: m.total };
 }
 
-let vidBusy = false, vidState = { cancelled: false }, vidUrl = null, vidFile = null;
+let vidBusy = false, vidState = { cancelled: false }, vidUrl = null, vidFile = null, vidItem = null;
+const IN_APP = /FBAN|FBAV|Instagram|Snapchat|MicroMessenger|Line\/|Twitter|Telegram|GSA\/|; wv\)/i.test(navigator.userAgent);
 function closeMontage(){
   vidState.cancelled = true;
   $('videoOverlay').classList.remove('show');
   if(vidUrl){ URL.revokeObjectURL(vidUrl); vidUrl = null; }
-  vidFile = null; $('vidStage').innerHTML = '';
+  vidFile = null; $('vidStage').innerHTML = ''; $('vidFailActs').style.display = 'none';
+}
+// رسالة الفشل بالعربية بحسب نوع الخطأ (بدل إغلاق النافذة بصمت)
+function vidErrText(e){
+  const n = String((e && e.name) || ''), msg = String((e && e.message) || e || '');
+  if(n === 'Unsupported' || n === 'NotSupportedError' || /unsupported/i.test(msg)) return 'هذا المتصفح أو إصدار الجهاز لا يدعم تسجيل الفيديو من داخل الصفحة.' + (IN_APP ? ' يبدو أنك فتحت التطبيق من داخل تطبيق آخر، فافتحه من Safari (آيفون) أو Chrome (أندرويد).' : ' جرّب Safari (آيفون) أو Chrome (أندرويد) بإصدار حديث.');
+  if(n === 'EmptyRecording') return 'لم يتمكن جهازك من تسجيل الفيديو (خرج التسجيل فارغاً). أغلق التطبيقات الأخرى وأعد المحاولة، أو استخدم الصورة الترويجية.';
+  if(n === 'SecurityError') return 'إحدى صور الإعلان من مصدر خارجي لا يسمح بتحويلها إلى فيديو. استخدم الصورة الترويجية، أو أعد رفع صور الإعلان.';
+  if(n === 'QuotaExceededError' || /memory/i.test(msg)) return 'ذاكرة الجهاز لا تكفي لإنشاء الفيديو. أغلق التطبيقات الأخرى وأعد المحاولة.';
+  return 'حدث خطأ غير متوقع أثناء إنشاء الفيديو. أعد المحاولة، أو استخدم الصورة الترويجية.';
+}
+function vidFail(e){
+  console.error('video', e);
+  const n = String((e && e.name) || '');
+  $('vidStage').innerHTML = '<div class="vid-err"><div class="ve-ic">😕</div><b>تعذّر إنشاء الفيديو على هذا الجهاز</b><p>' + esc(vidErrText(e)) + '</p><small dir="ltr">' + esc((n || 'Error') + ': ' + String((e && e.message) || e).slice(0, 80)) + '</small></div>';
+  $('vidBar').style.width = '0'; $('vidStatus').textContent = ''; $('vidDone').style.display = 'none';
+  $('vidFailActs').style.display = 'flex'; $('vidCopyBtn').style.display = (n === 'Unsupported' || n === 'NotSupportedError') ? '' : 'none'; $('vidCloseBtn').textContent = 'إغلاق';
 }
 async function openMontage(it){
   if(vidBusy) return;
-  if(!pickVideoMime() || !HTMLCanvasElement.prototype.captureStream){ toast('متصفحك لا يدعم إنشاء الفيديو. جرّب Safari أو Chrome حديثاً', 5000); return; }
-  vidBusy = true; vidState = { cancelled: false };
+  vidItem = it; vidState = { cancelled: false };
   const stage = $('vidStage'); stage.innerHTML = '';
-  const cv = document.createElement('canvas'); cv.width = VW; cv.height = VH; stage.appendChild(cv);
-  $('vidDone').style.display = 'none'; $('vidBar').style.width = '0'; $('vidCloseBtn').textContent = 'إلغاء';
-  $('vidStatus').textContent = 'جارٍ تجهيز الفيديو... لا تغادر هذه الصفحة حتى يكتمل';
+  $('vidDone').style.display = 'none'; $('vidFailActs').style.display = 'none'; $('vidBar').style.width = '0'; $('vidCloseBtn').textContent = 'إلغاء';
   $('videoOverlay').classList.add('show');
+  if(!videoMimes().length || !HTMLCanvasElement.prototype.captureStream){ vidFail(Object.assign(new Error('unsupported'), { name: 'Unsupported' })); return; }   // لا نغلق النافذة بصمت
+  vidBusy = true; $('vidStatus').textContent = 'جارٍ تجهيز الفيديو... لا تغادر هذه الصفحة حتى يكتمل';
+  const cv = document.createElement('canvas'); cv.width = VW; cv.height = VH; stage.appendChild(cv);
   try{
     const out = await recordMontage(it, cv, p => { $('vidBar').style.width = Math.round(p * 100) + '%'; }, vidState);
     if(!out) return;
@@ -4128,10 +4163,14 @@ async function openMontage(it){
     stage.innerHTML = '';
     const v = document.createElement('video'); v.src = vidUrl; v.controls = true; v.loop = true; v.muted = true; v.autoplay = true; v.playsInline = true; stage.appendChild(v);
     $('vidStatus').textContent = 'جاهز! شاهده ثم شاركه أو احفظه ✅' + (out.mime.includes('webm') ? ' (صيغة WebM، وقد لا يعمل في بعض تطبيقات واتساب)' : '');
+    v.onerror = () => { $('vidStatus').textContent = '⚠️ تعذّرت المعاينة على جهازك. جرّب المشاركة أو الحفظ، أو استخدم الصورة الترويجية.'; };
     $('vidDone').style.display = 'flex'; $('vidCloseBtn').textContent = 'إغلاق';
-  }catch(e){ fail('video', e); $('videoOverlay').classList.remove('show'); }
+  }catch(e){ if(!vidState.cancelled) vidFail(e); }
   finally{ vidBusy = false; }
 }
+$('vidImgBtn').addEventListener('click', () => { const it = vidItem; closeMontage(); if(it) shareListingImage(it); });
+$('vidRetryBtn').addEventListener('click', () => { if(vidItem) openMontage(vidItem); });
+$('vidCopyBtn').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(APP_URL); toast('تم نسخ رابط التطبيق. الصقه في Safari أو Chrome', 4500); }catch{ toast(APP_URL, 6000); } });
 function saveVideo(){
   if(!vidFile) return;
   const a = document.createElement('a'); a.href = vidUrl; a.download = vidFile.name;
@@ -4878,7 +4917,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792933800';
+const APP_VERSION = '1792941965';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
