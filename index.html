@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1792929165">
+<meta name="app-version" content="1792933800">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -1140,7 +1140,7 @@ body.seeker #seekerRegisterBtn:active,
     <div class="picker-hint" id="rrHint">للمطورين العقاريين وموظفي التمويل في البنوك. تراجع الإدارة طلبك قبل منح الصلاحية.</div>
     <div class="field"><label>الاسم</label><input type="text" id="rrName" maxlength="60"></div>
     <div class="field" id="rrRoleWrap"><label>نوع الصلاحية</label><select id="rrRole"><option value="developer">مطور عقاري</option><option value="bank">موظف تمويل في بنك</option></select></div>
-    <div class="field"><label id="rrOrgLbl">اسم الشركة أو البنك</label><input type="text" id="rrOrg" maxlength="80"></div>
+    <div class="field"><label id="rrOrgLbl">اسم الشركة أو البنك</label><input type="text" id="rrOrg" maxlength="80"><datalist id="rrBankList"></datalist></div>
     <div class="field"><label>جوال التواصل</label><input type="text" id="rrPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx"></div>
     <div class="field"><label id="rrLicLbl">رقم السجل التجاري أو الترخيص (اختياري)</label><input type="text" id="rrLicense" maxlength="60" dir="ltr"></div>
     <div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rrNote" maxlength="120"></div>
@@ -1279,7 +1279,7 @@ body.seeker #seekerRegisterBtn:active,
     <button type="button" class="fin-add" id="faAdd">+ إضافة عرض بنك</button>
     <div id="faForm" style="display:none">
       <h3 class="fin-h" id="faFormTitle">عرض جديد</h3>
-      <div class="field"><label>اسم البنك</label><input type="text" id="faBank" maxlength="40" placeholder="مثال: بنك كذا"></div>
+      <div class="field"><label>اسم البنك</label><input type="text" id="faBank" maxlength="40" list="faBankList" placeholder="اكتب أو اختر البنك"><datalist id="faBankList"></datalist></div>
       <div class="field"><label>المنتج (اختياري)</label><input type="text" id="faProduct" maxlength="50" placeholder="مثال: تمويل سكني للمواطنين"></div>
       <div class="field"><label>نسبة الأرباح السنوية (%)</label><input type="text" id="faRate" inputmode="decimal" placeholder="مثال: 4.99">
         <div class="fin-seg" id="faType"><button type="button" data-t="flat">ثابتة (على كامل المبلغ)</button><button type="button" data-t="reduce">متناقصة (على الرصيد)</button></div></div>
@@ -2927,6 +2927,7 @@ function faOpenForm(o){
   $('faBank').value = o ? o.bank : ''; $('faProduct').value = o ? (o.product || '') : ''; $('faRate').value = o ? o.rate : ''; $('faNote').value = o ? (o.note || '') : ''; $('faActive').checked = o ? o.active !== false : true;
   document.querySelectorAll('#faType button').forEach(b => b.classList.toggle('on', b.dataset.t === faType));
   $('faDelete').style.display = o ? '' : 'none'; $('faForm').style.display = ''; $('faAdd').style.display = 'none'; $('faList').style.display = 'none'; $('faFooter').style.display = 'none';
+  fillBankLists();
   if(faScope){ $('faBank').value = faScope; $('faBank').readOnly = true; } else $('faBank').readOnly = false;
   setTimeout(() => $(o ? 'faRate' : 'faBank').focus(), 60);
 }
@@ -3185,11 +3186,15 @@ $('pjDelete').addEventListener('click', async () => {
 // ===== مستشارو البنوك (الخطوة 4): دليل موظفي التمويل مربوط بالنسب والحاسبة والمشاريع =====
 let adList = [], pgAdvBank = '', advCtx = '';
 const adActive = () => adList.filter(a => a.active !== false);
-const bankKey = s => String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/^(?:البنك|المصرف|بنك|مصرف)\s+/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+// البنوك السعودية (تظهر دائماً للعميل حتى قبل إدخال نسبها، وتُدمج مع النسب والمستشارين بالاسم)
+const SAUDI_BANKS = ['البنك الأهلي السعودي', 'مصرف الراجحي', 'بنك الرياض', 'مصرف الإنماء', 'بنك البلاد', 'بنك الجزيرة', 'البنك السعودي الفرنسي', 'البنك السعودي الأول', 'البنك العربي الوطني', 'البنك السعودي للاستثمار', 'بنك الخليج الدولي'];
+const bankNorm = s => String(s || '').replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+const BANK_ALIAS = { 'الاهلي السعودي': 'الاهلي', 'السعودي الفرنسي': 'الفرنسي', 'السعودي الاول': 'ساب', 'الاول': 'ساب', 'السعودي للاستثمار': 'الاستثمار', 'العربي الوطني': 'العربي', 'الخليج الدولي': 'الخليج' };
+const bankKey = s => { const k = bankNorm(s).replace(/^(?:البنك|المصرف|بنك|مصرف)\s+/, '').replace(/\s+/g, ' ').trim().toLowerCase(); return BANK_ALIAS[k] || k; };
 const bankRate = bank => { const k = bankKey(bank), o = finActive().find(x => bankKey(x.bank) === k); return o ? o.rate : null; };
 const advBankCount = bank => adActive().filter(a => bankKey(a.bank) === bankKey(bank)).length;
 const canonBank = b => { const k = bankKey(b), o = finLive.find(x => bankKey(x.bank) === k); return o ? o.bank : b; };   // اسم البنك المعتمد في نسب التمويل
-const knownBanks = () => { const m = new Map(); [...finActive().map(o => o.bank), ...adList.map(a => canonBank(a.bank))].filter(Boolean).forEach(b => { if(!m.has(bankKey(b))) m.set(bankKey(b), b); }); return [...m.values()]; };
+const knownBanks = () => { const m = new Map(); [...finActive().map(o => o.bank), ...adList.map(a => canonBank(a.bank)), ...SAUDI_BANKS].filter(Boolean).forEach(b => { if(!m.has(bankKey(b))) m.set(bankKey(b), b); }); return [...m.values()]; };
 const finAdvBtn = bank => { const n = advBankCount(bank); return n ? '<button type="button" class="fin-admin-btn" data-adv-bank="' + esc(bank) + '">👥 مستشارو البنك (' + n + ')</button>' : ''; };
 function calcCtx(){ return fin.price > 0 ? 'أرغب بالاستفسار عن تمويل عقار بسعر ' + finFmt(fin.price) + ' ريال، دفعة مقدمة ' + finFmt(fin.down) + ' ريال، لمدة ' + fin.years + ' سنة.' : ''; }
 function openAdvisors(bank, ctx, top){ pgAdvBank = bank || ''; advCtx = ctx || ''; pgStack = []; $('pgOverlay').style.zIndex = top ? '49' : '44'; pgOpen('advs'); }
@@ -3278,6 +3283,7 @@ function rqBanks(){
   const P = Math.max(0, rq.price - rq.down), m = new Map();
   finActive().forEach(o => { const k = bankKey(o.bank); if(!m.has(k)) m.set(k, { name: o.bank, offer: o }); });
   adActive().forEach(a => { const k = bankKey(a.bank); if(!m.has(k)) m.set(k, { name: canonBank(a.bank), offer: null }); });
+  SAUDI_BANKS.forEach(n => { const k = bankKey(n); if(!m.has(k)) m.set(k, { name: n, offer: null }); });
   return [...m.values()].map(b => ({ ...b, inst: b.offer && P > 0 ? finCalc(P, rq.years, b.offer.rate, b.offer.type || 'flat').inst : null, n: advBankCount(b.name) }))
     .sort((a, b) => ((a.inst == null) - (b.inst == null)) || ((a.inst || 0) - (b.inst || 0)) || a.name.localeCompare(b.name, 'ar'));
 }
@@ -3588,7 +3594,8 @@ function startMyRole(){
 function showHubRefresh(){ if(hubCur) showHub(hubCur); }
 let pendingPartner = null, rrFixed = null;
 const RR_TXT = { developer: { title: 'تسجيل مطور جديد', hint: 'سجّل شركتك المطورة ليعتمدها فريق المنصة، فتنشر مشاريعك وتستقبل العملاء المهتمين.', org: 'اسم الشركة المطورة', lic: 'رقم السجل التجاري أو الترخيص (اختياري)', pre: 'السجل/الترخيص: ' }, bank: { title: 'تسجيل بنك', hint: 'سجّل بنكك ليعتمدك فريق المنصة، فتدخل نسب التمويل وتضيف مستشاريك.', org: 'اسم البنك', lic: 'المسمى أو الرقم الوظيفي (اختياري)', pre: 'الوظيفة: ' } };
-function rrLabels(){ const T = RR_TXT[$('rrRole').value] || RR_TXT.developer; $('rrOrgLbl').textContent = T.org; $('rrLicLbl').textContent = T.lic; }
+function fillBankLists(){ const o = knownBanks().map(b => '<option value="' + esc(b) + '">').join(''); ['faBankList', 'rrBankList'].forEach(id => { const e = $(id); if(e) e.innerHTML = o; }); }
+function rrLabels(){ const T = RR_TXT[$('rrRole').value] || RR_TXT.developer; $('rrOrgLbl').textContent = T.org; $('rrLicLbl').textContent = T.lic; fillBankLists(); if($('rrRole').value === 'bank') $('rrOrg').setAttribute('list', 'rrBankList'); else $('rrOrg').removeAttribute('list'); }
 function openRoleReq(role){
   role = role === 'developer' || role === 'bank' ? role : null;
   if(!isRegistered()){ pendingPartner = role || 'any'; toast('أنشئ حساباً أولاً ثم أكمل نموذج التسجيل', 4500); openAuth('up'); return; }
@@ -4871,7 +4878,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792929165';
+const APP_VERSION = '1792933800';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
