@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1792941965">
+<meta name="app-version" content="1793076607">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -956,8 +956,9 @@ body.seeker #seekerRegisterBtn:active,
 <div class="overlay show welcome-page" id="welcomeOverlay">
   <header aria-label="وسطاء المملكة"></header>
   <div class="container">
-    <button type="button" class="map-all-btn" id="welcomeLoginBtn">🏢 تسجيل وسيط عقاري</button>
     <button type="button" class="map-all-btn" id="welcomeSeekerBtn">🔎 باحث عن عقار</button>
+    <button type="button" class="map-all-btn" id="welcomeLoginBtn">🏢 تسجيل وسيط عقاري</button>
+    <button type="button" class="map-all-btn" id="welcomeDevBtn">🏗️ تسجيل مطور عقاري</button>
     <div class="footer-row"><a class="link-btn" id="welcomeSupport" href="#" target="_blank" rel="noopener noreferrer">🛠️ الدعم الفني</a><button type="button" class="link-btn" id="welcomeOwnerBtn">الإدارة</button></div>
     <div class="ver" id="appVer2" title="اضغط للتحقق من آخر إصدار"></div>
   </div>
@@ -972,8 +973,8 @@ body.seeker #seekerRegisterBtn:active,
       <div class="field"><label>الاسم الثلاثي (لا يُقبل الاسم المستعار)</label><input type="text" id="jName" placeholder="مثال: محمد عبدالله السالم"></div>
       <div class="field"><label>رقم الجوال</label><input type="text" id="jPhone" placeholder="05xxxxxxxx"></div>
       <div class="field"><label>رقم رخصة التسويق العقاري (فال) — 10 أرقام</label><input type="text" id="jLicense" inputmode="numeric" autocomplete="off" placeholder="مثال: 1100036666"></div>
-      <div class="oath-box">
-        أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة العقار في حال تم البيع داخل القروب أو خارجه بين الأعضاء، والله شهيد على ما أقول.
+      <div class="oath-box" id="jPledge">
+        أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة العقار في حال تم البيع لإدارة وسطاء المملكة، والله شهيد على ما أقول.
       </div>
       <div class="oath-row">
         <label class="oath-check"><input type="checkbox" id="jOath"> موافق</label>
@@ -1124,6 +1125,16 @@ body.seeker #seekerRegisterBtn:active,
   <div class="db-act"><button type="button" id="domainHow">كيف أصلحه؟</button><a id="domainSupport" target="_blank" rel="noopener noreferrer">تواصل مع الدعم</a></div>
 </div>
 
+<!-- التعهد (للعميل أو المطور عند الدخول والتسجيل) -->
+<div class="overlay" id="pledgeOverlay" style="z-index:1003">
+  <div class="modal">
+    <h2 id="plTitle">تعهد</h2>
+    <div class="oath-box" id="plText"></div>
+    <div class="oath-row"><label class="oath-check"><input type="checkbox" id="plCheck"> موافق</label></div>
+    <div class="modal-actions"><button class="btn-cancel" id="plCancel" type="button">رجوع</button><button class="btn-save" id="plOk" type="button">متابعة</button></div>
+  </div>
+</div>
+
 <!-- الحسابات: دخول وإنشاء حساب -->
 <div class="overlay" id="authOverlay" style="z-index:54">
   <div class="modal">
@@ -1150,6 +1161,7 @@ body.seeker #seekerRegisterBtn:active,
     <div class="field"><label>جوال التواصل</label><input type="text" id="rrPhone" inputmode="tel" maxlength="20" placeholder="05xxxxxxxx"></div>
     <div class="field"><label id="rrLicLbl">رقم السجل التجاري أو الترخيص (اختياري)</label><input type="text" id="rrLicense" maxlength="60" dir="ltr"></div>
     <div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rrNote" maxlength="120"></div>
+    <div class="picker-hint">بإرسال الطلب توافق على <a class="lnk" data-legal="terms">الشروط والأحكام</a> و<a class="lnk" data-legal="privacy">سياسة الخصوصية</a>.</div>
     <div class="modal-actions"><button class="btn-cancel" id="rrCancel">إلغاء</button><button class="btn-save" id="rrSend">إرسال الطلب</button></div>
   </div>
 </div>
@@ -1624,6 +1636,7 @@ async function init(){
     startMyRequests();
     startMyLeads();
     startMyRole();
+    syncPledges();
   }catch(e){ fail('init', e); }
 }
 
@@ -3320,7 +3333,7 @@ function rqRender(){
       + '<div class="field"><label>أنسب وقت للتواصل (اختياري)</label><select id="rqTime"><option value="">أي وقت</option><option' + (rq.time === 'صباحاً' ? ' selected' : '') + '>صباحاً</option><option' + (rq.time === 'مساءً' ? ' selected' : '') + '>مساءً</option></select></div>'
       + '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="rqNote" maxlength="160" value="' + esc(rq.note) + '"></div>'
       + '<div class="field"><label class="oath-check"><input type="checkbox" id="rqConsent"' + (rq.consent ? ' checked' : '') + '> ' + RQ_CONSENT + '</label></div>'
-      + '<div class="picker-hint">لا نطلب الراتب ولا رقم الهوية. تستطيع حذف طلبك وسحب موافقتك في أي وقت من «طلباتي». اطّلع على <a class="lnk" data-legal="terms">الشروط</a> و<a class="lnk" data-legal="privacy">الخصوصية</a>.</div>'
+      + '<div class="picker-hint">لا نطلب الراتب ولا رقم الهوية. تستطيع حذف طلبك وسحب موافقتك في أي وقت من «طلباتي». بإرسالك الطلب توافق على <a class="lnk" data-legal="terms">الشروط والأحكام</a> و<a class="lnk" data-legal="privacy">سياسة الخصوصية</a>.</div>'
       + '<div class="modal-actions"><button class="btn-cancel" id="rqPrev">رجوع</button><button class="btn-save" id="rqSend">إرسال الطلب</button></div>';
   }else{
     const d = rq.done, advs = rqAdvisorsFor(d.data), txt = rqSummaryText(d.data, d.ref, false);
@@ -3416,6 +3429,7 @@ async function rqDelete(id){
 // ----- طلبات التمويل (للإدارة) -----
 function ensureReqAdminSub(){
   if(raUnsub || !isOwner) return;
+  ensurePledgesSub();
   try{ raUnsub = db.collection('financeRequests').onSnapshot(sn => { raReqs = sn.docs.map(d => ({ ...d.data(), id: d.id })); raChanged(); }, e => { console.warn('raReqs', e); raReqs = []; raUnsub = null; raChanged(); }); }catch(e){ console.warn('raReqs-start', e); raUnsub = null; }
 }
 function raChanged(){ try{ if($('reqAdminOverlay').classList.contains('show')) raRender(); if(view === 'hub') renderHubExtra(); }catch(e){ console.warn('raChanged', e); } }
@@ -3423,7 +3437,7 @@ function raAdvisorsFor(r){ return rqAdvisorsFor(r); }
 function raCard(r){
   const ref = rqRef(r.id), advs = raAdvisorsFor(r), sum = rqSummaryText(r, ref, true);
   return '<div class="fl-card" data-rid="' + esc(r.id) + '"><div class="fl-top"><div><b class="fl-bank">' + esc(r.name) + '</b><span class="fl-prod">' + esc(r.phone) + ' · ' + ref + ' · ' + finRel(r.createdAt) + '</span></div><span class="rq-st s-' + esc(r.status) + '">' + (RQ_STATUS[r.status] || '') + '</span></div>'
-    + '<div class="fl-note"><b>' + esc(r.subject) + '</b><br>السعر ' + finFmt(r.price) + ' · دفعة ' + finFmt(r.down) + ' · ' + r.years + ' سنة<br>' + (r.anyBank ? 'البنك: غير محدد (اختيار الإدارة)' : 'البنوك: ' + esc((r.banks || []).join('، '))) + (r.time ? '<br>الوقت: ' + esc(r.time) : '') + (r.note ? '<br>ملاحظة: ' + esc(r.note) : '') + '<br><small>وافق على مشاركة بياناته: ' + rqDate(r.consentAt) + '</small></div>'
+    + '<div class="fl-note"><b>' + esc(r.subject) + '</b><br>السعر ' + finFmt(r.price) + ' · دفعة ' + finFmt(r.down) + ' · ' + r.years + ' سنة<br>' + (r.anyBank ? 'البنك: غير محدد (اختيار الإدارة)' : 'البنوك: ' + esc((r.banks || []).join('، '))) + (r.time ? '<br>الوقت: ' + esc(r.time) : '') + (r.note ? '<br>ملاحظة: ' + esc(r.note) : '') + '<br><small>وافق على مشاركة بياناته: ' + rqDate(r.consentAt) + '</small><br><small>' + plTag(r.ownerId, 'customer') + '</small></div>'
     + '<div class="ad-actions" style="margin-top:8px"><a href="' + esc(pgWaTo(r.phone, 'مرحباً ' + r.name + '، بخصوص طلب التمويل رقم ' + ref + ' عبر تطبيق وسطاء المملكة.')) + '" target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-chat"/></svg>واتساب العميل</a><a href="tel:' + esc(cleanPhone(r.phone)) + '"><svg class="ic"><use href="#i-phone"/></svg>اتصال</a></div>'
     + '<div class="ra-st">' + Object.keys(RQ_STATUS).map(k => '<button type="button" data-st="' + k + '" data-id="' + esc(r.id) + '" class="' + (r.status === k ? 'on' : '') + '">' + RQ_STATUS[k] + '</button>').join('') + '</div>'
     + (advs.length ? '<div class="hub-h" style="margin:10px 0 4px">إحالة إلى مستشار' + (r.anyBank || !(r.banks || []).length ? ' (أقل نسب)' : '') + '</div><div class="ad-actions ra-refer">' + advs.map(a => '<a href="' + esc(pgWaTo(a.phone, sum)) + '" target="_blank" rel="noopener noreferrer">💬 ' + esc(a.name) + ' · ' + esc(canonBank(a.bank)) + '</a>').join('') + '</div>' : '')
@@ -3459,6 +3473,10 @@ $('raBody').addEventListener('click', async e => {
 });
 
 // ===== التدشين الرسمي (الخطوة 6): حسابات وصلاحيات وشروط وخصوصية =====
+// ثلاثة تعهدات مستقلة عن الشروط والأحكام، لكل فئة صيغتها ومدخلها: الوسيط (نموذج العضوية)، والعميل (باحث عن عقار)، والمطور (تسجيل مطور)
+const PLEDGE_MEMBER = 'أتعهد أنا الوسيط العقاري بدفع نسبة (0.5)% من قيمة العقار في حال تم البيع لإدارة وسطاء المملكة، والله شهيد على ما أقول.';
+const PLEDGE_CUSTOMER = 'أتعهد أنا العميل بدفع نسبة (0.5)% من قيمة العقار في حال تم الشراء لإدارة وسطاء المملكة، والله شهيد على ما أقول.';
+const PLEDGE_DEVELOPER = 'أتعهد أنا المطور العقاري بدفع نسبة (1)% من قيمة العقار في حال تم البيع لإدارة وسطاء المملكة، والله شهيد على ما أقول.';
 const LEGAL_VER = '2026-10', LEGAL_DRAFT = true;   // LEGAL_DRAFT: اجعلها false بعد المراجعة القانونية
 const LEGAL = {
   terms: { title: 'الشروط والأحكام', secs: [
@@ -3473,7 +3491,7 @@ const LEGAL = {
     ['9. التعديل والنظام المطبّق', ['يجوز تحديث هذه الشروط، واستمرار استخدامك بعد التحديث يعني قبولك لها.', 'تخضع هذه الشروط لأنظمة المملكة العربية السعودية، وتختص الجهات القضائية المختصة فيها بالنظر في أي نزاع.']]
   ] },
   privacy: { title: 'سياسة الخصوصية', secs: [
-    ['1. البيانات التي نجمعها', ['بيانات الحساب: البريد الإلكتروني والاسم عند إنشاء حساب.', 'بيانات الطلبات: الاسم ورقم الجوال وبيانات العقار والتمويل (السعر والدفعة والمدة) والوقت المفضل للتواصل والملاحظة ووقت موافقتك.', 'بيانات الوسطاء: الاسم والجوال ورقم الترخيص عند طلب العضوية.', 'بيانات تقنية: معرّف مجهول للجهاز، وتفضيلاتك (المفضلة وآخر بحث) تُحفظ في متصفحك.', 'لا نطلب راتبك ولا رقم هويتك.']],
+    ['1. البيانات التي نجمعها', ['بيانات الحساب: البريد الإلكتروني والاسم عند إنشاء حساب.', 'إقرار التعهد (للعميل والمطور): نوعه ونسبته ونصه ووقت موافقتك مع معرّف حسابك.', 'بيانات الطلبات: الاسم ورقم الجوال وبيانات العقار والتمويل (السعر والدفعة والمدة) والوقت المفضل للتواصل والملاحظة ووقت موافقتك.', 'بيانات الوسطاء: الاسم والجوال ورقم الترخيص عند طلب العضوية.', 'بيانات تقنية: معرّف مجهول للجهاز، وتفضيلاتك (المفضلة وآخر بحث) تُحفظ في متصفحك.', 'لا نطلب راتبك ولا رقم هويتك.']],
     ['2. لماذا نستخدمها', ['لتشغيل الخدمة، وللتواصل معك بخصوص طلبك، ولتحسين المنصة، وللالتزام بالأنظمة.']],
     ['3. مع من نشاركها', ['لا نبيع بياناتك. لا يطّلع على طلبك إلا أنت وإدارة المنصة، ولا نشاركه مع بنك أو مستشار إلا من اخترتَهم أو من تُحيل الإدارة طلبك إليهم بموافقتك. وطلب الاهتمام بمشروع يصل إلى المطور صاحب المشروع بموافقتك.', 'نستخدم خدمات Google Firebase لاستضافة البيانات وتسجيل الدخول.']],
     ['4. مدة الاحتفاظ والحذف', ['نحتفظ بالبيانات بالقدر اللازم لتقديم الخدمة. تستطيع حذف طلباتك وحسابك وبياناتك في أي وقت من «حسابي» ← «حذف حسابي وبياناتي».']],
@@ -3484,6 +3502,7 @@ const LEGAL = {
     ['9. التواصل والتحديث', ['لأي استفسار أو طلب بخصوص بياناتك تواصل مع الدعم. قد نحدّث هذه السياسة، وسنعرض تاريخ آخر تحديث.']]
   ] }
 };
+{ const e = $('jPledge'); if(e) e.textContent = PLEDGE_MEMBER; }
 function pgLegal(kind){
   const L = LEGAL[kind] || LEGAL.terms;
   return { title: L.title, html: (LEGAL_DRAFT ? '<div class="hub-intro" style="margin-bottom:10px">نسخة مبدئية قيد المراجعة القانونية، وقد تتغير قبل الإطلاق الرسمي.</div>' : '')
@@ -3605,6 +3624,7 @@ function fillBankLists(){ const o = knownBanks().map(b => '<option value="' + es
 function rrLabels(){ const T = RR_TXT[$('rrRole').value] || RR_TXT.developer; $('rrOrgLbl').textContent = T.org; $('rrLicLbl').textContent = T.lic; fillBankLists(); if($('rrRole').value === 'bank') $('rrOrg').setAttribute('list', 'rrBankList'); else $('rrOrg').removeAttribute('list'); }
 function openRoleReq(role){
   role = role === 'developer' || role === 'bank' ? role : null;
+  if(role === 'developer' && !pledged('developer')){ askPledge('developer').then(ok => { if(ok) openRoleReq('developer'); }); return; }   // تعهد المطور قبل التسجيل
   if(!isRegistered()){ pendingPartner = role || 'any'; toast('أنشئ حساباً أولاً ثم أكمل نموذج التسجيل', 4500); openAuth('up'); return; }
   if(myRole){ toast('لديك صلاحية شريك معتمدة'); openPortal(); return; }
   if(myRoleReq && myRoleReq.status === 'pending'){ toast('طلبك قيد المراجعة من الإدارة. سنتواصل معك', 4500); return; }
@@ -3620,6 +3640,7 @@ async function rrSend(){
   if(!u || !isRegistered()){ toast('أنشئ حساباً أولاً'); return; }
   if(name.length < 2){ toast('اكتب اسمك'); return; } if(org.length < 2){ toast(role === 'bank' ? 'اكتب اسم البنك' : 'اكتب اسم الشركة المطورة'); return; } if(!phone){ toast('اكتب رقم جوال صحيح'); return; }
   const now = Date.now(); $('rrSend').disabled = true;
+  if(role === 'developer' && !pledged('developer')){ if(!(await askPledge('developer'))){ $('rrSend').disabled = false; return; } }
   const lic = $('rrLicense').value.trim(), note = [lic ? (RR_TXT[role] || RR_TXT.developer).pre + lic : '', $('rrNote').value.trim()].filter(Boolean).join(' | ').slice(0, 200);
   try{ if(myRoleReq && myRoleReq.status === 'approved'){ try{ await db.collection('roleRequests').doc(u.uid).delete(); }catch(e0){ console.warn('rr-old', e0); } }   // صلاحية سابقة أُلغيت: نبدأ طلباً جديداً
     await db.collection('roleRequests').doc(u.uid).set({ role, org, phone, note, name, email: u.email || '', status: 'pending', createdAt: now, updatedAt: now }); $('roleReqOverlay').classList.remove('show'); toast('وصل طلب التسجيل ✅ ستراجعه الإدارة وتتواصل معك', 5000); }
@@ -3646,6 +3667,7 @@ function openScoped(k){
 let rlReqs = [], rlRoles = [], rlSub = false;
 function ensureRoleAdminSub(){
   if(rlSub || !isOwner) return; rlSub = true;
+  ensurePledgesSub();
   try{
     db.collection('roleRequests').onSnapshot(sn => { rlReqs = sn.docs.map(d => ({ ...d.data(), id: d.id })); rlChanged(); }, e => { console.warn('rlReqs', e); rlReqs = []; rlSub = false; });
     db.collection('roles').onSnapshot(sn => { rlRoles = sn.docs.map(d => ({ ...d.data(), id: d.id })); rlChanged(); }, e => { console.warn('rlRoles', e); rlRoles = []; });
@@ -3660,7 +3682,7 @@ function rlRender(){
       ? '<select class="pg-sel rl-sel" data-rl-dev="' + esc(r.id) + '"><option value="__new__">إنشاء ملف مطور جديد باسم «' + esc(r.org) + '»</option>' + dvList.map(d => '<option value="' + esc(d.id) + '">ربط بالمطور: ' + esc(d.name) + '</option>').join('') + '</select>'
       : '<input type="text" class="rl-sel" data-rl-bank="' + esc(r.id) + '" list="rlBankList" value="' + esc(canonBank(r.org)) + '" maxlength="40" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid var(--field-line);background:var(--field)"><datalist id="rlBankList">' + knownBanks().map(b => '<option value="' + esc(b) + '">').join('') + '</datalist>')
       + '<div class="rl-row"><button type="button" class="btn-save" data-rl-ok="' + esc(r.id) + '">اعتماد</button><button type="button" class="btn-cancel" data-rl-no="' + esc(r.id) + '">رفض</button></div>';
-    return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(r.name) + '</b><span class="fl-prod">' + esc(r.email || '') + ' · ' + esc(r.phone) + '</span></div><span class="rq-st ' + (r.status === 'pending' ? 's-new' : 's-closed') + '">' + (dev ? 'مطور' : 'بنك') + '</span></div><div class="fl-note">' + esc(r.org) + (r.note ? '<br>' + esc(r.note) : '') + '<br><small>' + finRel(r.createdAt) + '</small></div>' + ctl + '</div>';
+    return '<div class="fl-card"><div class="fl-top"><div><b class="fl-bank">' + esc(r.name) + '</b><span class="fl-prod">' + esc(r.email || '') + ' · ' + esc(r.phone) + '</span></div><span class="rq-st ' + (r.status === 'pending' ? 's-new' : 's-closed') + '">' + (dev ? 'مطور' : 'بنك') + '</span></div><div class="fl-note">' + esc(r.org) + (r.note ? '<br>' + esc(r.note) : '') + '<br><small>' + finRel(r.createdAt) + '</small>' + (dev ? '<br><small>' + plTag(r.id, 'developer') + '</small>' : '') + '</div>' + ctl + '</div>';
   };
   const act = rlRoles.filter(r => r.status === 'active');
   $('rlBody').innerHTML = '<div class="hub-h">طلبات الصلاحية (' + rlReqs.filter(r => r.status === 'pending').length + ' جديد)</div>' + (pend.length ? pend.map(card).join('') : '<div class="hub-intro">لا توجد طلبات.</div>')
@@ -3844,7 +3866,7 @@ function leadRender(){
     + '<div class="field"><label>أنسب وقت للتواصل (اختياري)</label><select id="ldTime"><option value="">أي وقت</option><option' + (ld.time === 'صباحاً' ? ' selected' : '') + '>صباحاً</option><option' + (ld.time === 'مساءً' ? ' selected' : '') + '>مساءً</option></select></div>'
     + '<div class="field"><label>ملاحظة (اختياري)</label><input type="text" id="ldNote" maxlength="200" value="' + esc(ld.note) + '"></div>'
     + '<div class="field"><label class="oath-check"><input type="checkbox" id="ldConsent"' + (ld.consent ? ' checked' : '') + '> ' + esc(LEAD_CONSENT) + '</label></div>'
-    + '<div class="picker-hint">لا نطلب راتبك ولا رقم هويتك. اطّلع على <a class="lnk" data-legal="terms">الشروط</a> و<a class="lnk" data-legal="privacy">الخصوصية</a>.</div>'
+    + '<div class="picker-hint">لا نطلب راتبك ولا رقم هويتك. بإرسالك الطلب توافق على <a class="lnk" data-legal="terms">الشروط والأحكام</a> و<a class="lnk" data-legal="privacy">سياسة الخصوصية</a>.</div>'
     + '<div class="modal-actions"><button class="btn-cancel" id="ldCancel" type="button">إلغاء</button><button class="btn-save" id="ldSend" type="button">إرسال اهتمامي</button></div>';
 }
 async function leadSend(){
@@ -3924,6 +3946,47 @@ function partnerTickers(hub){
   if(isOwner){ ensureRoleAdminSub(); h += hubTick('roles', 'i-user', 'طلبات التسجيل والصلاحيات', rlReqs.filter(r => r.status === 'pending').length + ' جديد · ' + rlRoles.filter(r => r.status === 'active').length + ' صلاحية فعّالة', 'اعتماد المطورين والبنوك'); }
   return h;
 }
+
+// ===== التعهدات: العميل (0.5%) عند الدخول، والمطور (1%) عند التسجيل. تعهد الوسيط في نموذج عضويته =====
+const PLEDGES = { customer: { title: 'تعهد العميل', text: PLEDGE_CUSTOMER, rate: 0.5, ok: 'دخول' }, developer: { title: 'تعهد المطور', text: PLEDGE_DEVELOPER, rate: 1, ok: 'متابعة التسجيل' } };
+const PLEDGE_LS = 'wasata_pledges_v1';
+let plResolve = null, plKind = '', plMap = {}, plSub = false;
+function pledgeStore(){ try{ return JSON.parse(localStorage.getItem(PLEDGE_LS) || '{}') || {}; }catch{ return {}; } }
+const pledged = kind => !!pledgeStore()[kind];
+function askPledge(kind){
+  const P = PLEDGES[kind]; if(!P) return Promise.resolve(true);
+  if(plResolve){ try{ plResolve(false); }catch{} }
+  return new Promise(res => { plResolve = res; plKind = kind; $('plTitle').textContent = P.title; $('plText').textContent = P.text; $('plCheck').checked = false; $('plOk').textContent = P.ok; $('pledgeOverlay').classList.add('show'); });
+}
+function plClose(ok){
+  $('pledgeOverlay').classList.remove('show'); const r = plResolve; plResolve = null;
+  if(ok){ const st = pledgeStore(); st[plKind] = { at: Date.now(), uid: '', synced: false }; try{ localStorage.setItem(PLEDGE_LS, JSON.stringify(st)); }catch{} syncPledges(); }
+  if(r) r(!!ok);
+}
+$('plOk').addEventListener('click', () => { if(!$('plCheck').checked){ toast('يجب الموافقة على التعهد للمتابعة'); return; } plClose(true); });
+$('plCancel').addEventListener('click', () => plClose(false));
+// تسجيل الإقرار في Firebase (يُعاد المحاولة لاحقاً إن تعذّر الآن)
+async function syncPledges(){
+  if(!db || !uid) return; const st = pledgeStore(); let changed = false;
+  for(const kind of Object.keys(st)){
+    const P = PLEDGES[kind]; if(!P || (st[kind].synced && st[kind].uid === uid)) continue;
+    try{ await db.collection('pledges').doc(uid + '_' + kind).set({ ownerId: uid, kind, rate: P.rate, text: P.text, at: st[kind].at }); st[kind].synced = true; st[kind].uid = uid; changed = true; }
+    catch(e){ console.warn('pledge-sync', kind, e); }
+  }
+  if(changed){ try{ localStorage.setItem(PLEDGE_LS, JSON.stringify(st)); }catch{} }
+}
+// من دخل سابقاً باحثاً قبل هذا التحديث: يتعهد مرة واحدة، وإن رفض عاد إلى صفحة الترحيب
+function enforceEntryPledge(){
+  if(isOwner || !isSeeker() || pledged('customer') || pledged('developer')) return;
+  askPledge('customer').then(ok => { if(!ok){ localStorage.removeItem(SEEKER_KEY); gateChosen = false; applyMode(); showWelcome(); } });
+}
+setTimeout(enforceEntryPledge, 300);
+// الإدارة: هل تعهّد صاحب الطلب؟
+function ensurePledgesSub(){
+  if(plSub || !isOwner) return; plSub = true;
+  try{ db.collection('pledges').onSnapshot(sn => { plMap = {}; sn.docs.forEach(d => { plMap[d.id] = d.data(); }); try{ if($('roleAdminOverlay').classList.contains('show')) rlRender(); if($('reqAdminOverlay').classList.contains('show')) raRender(); }catch{} }, e => { console.warn('pledges', e); plMap = {}; plSub = false; }); }catch(e){ plSub = false; }
+}
+const plTag = (u, kind) => { const x = plMap[u + '_' + kind]; return x ? '<span style="color:#245a2c">☑️ تعهد ' + (kind === 'developer' ? 'المطور' : 'العميل') + ' (' + x.rate + '%) · ' + rqDate(x.at) + '</span>' : '<span style="color:#a15c00">⚠️ لا تعهد مسجَّل</span>'; };
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -4746,7 +4809,8 @@ function enterAsSeeker(){
 }
 // واجهة الترحيب: تسجيل الدخول (شاشة الطلب) أو باحث عن عقار (تصفّح فوري)
 $('welcomeLoginBtn').addEventListener('click', () => { gateChosen = true; showGate(); if(!localStorage.getItem(REQ_KEY)) showGateForm(); });
-$('welcomeSeekerBtn').addEventListener('click', enterAsSeeker);
+$('welcomeSeekerBtn').addEventListener('click', async () => { if(pledged('customer') || await askPledge('customer')) enterAsSeeker(); });   // العميل يتعهد عند الدخول
+$('welcomeDevBtn').addEventListener('click', async () => { if(!pledged('developer') && !(await askPledge('developer'))) return; enterAsSeeker(); setTimeout(() => openRoleReq('developer'), 500); });   // المطور: تعهد ثم تسجيل
 $('gateBackBtn').addEventListener('click', () => { if(isSeeker()){ hideGate(); return; } gateChosen = false; showWelcome(); });   // الباحث يرجع لتصفحه، وغيره للترحيب
 $('welcomeSupport').href = 'https://wa.me/' + SUPPORT_PHONE;
 $('termsIconBtn').addEventListener('click', () => $('termsOverlay').classList.add('show'));
@@ -4917,7 +4981,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1792941965';
+const APP_VERSION = '1793076607';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
