@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta name="app-version" content="1793076607">
+<meta name="app-version" content="1793332060">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>وسطاء المملكة</title>
@@ -770,6 +770,27 @@ body.seeker #seekerRegisterBtn:active,
 .vid-err b{display:block;font-size:16px;margin:4px 0 6px;color:var(--forest)}
 .vid-err p{font-size:13px;line-height:1.85;margin:0 0 8px;color:var(--text)}
 .vid-err small{display:block;color:#7a857b;font-size:11px;word-break:break-all}
+/* ===== أزرار دائرية واضحة: الرجوع (سهم)، والقائمة (خطوط ونقاط)، والمفضلة (نجمة) ===== */
+.lib-back,.gate-back,#allMapBack,.seeker-back{width:42px;height:42px;padding:0;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(0,0,0,.07);color:var(--forest);font-size:0;flex:none;-webkit-tap-highlight-color:transparent}
+.lib-back .ic,.gate-back .ic,#allMapBack .ic,.seeker-back .ic{width:22px;height:22px;stroke-width:2.4}
+.lib-back .ic,.gate-back .ic,#allMapBack .ic,.seeker-back .ic,.menu-dot .ic,.pv-back .ic{pointer-events:none}
+.gate-back{margin:0 0 10px}
+body .seeker-back{top:0;bottom:14px;right:12px;margin:auto 0;width:40px;height:40px;background:rgba(255,255,255,.93);color:var(--petrol);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.allmap-bar #allMapBack{background:rgba(255,255,255,.14);color:#e6e3da}
+body .menu-dot{width:44px;height:44px;border-radius:50%;font-size:0}
+.menu-dot .ic{width:26px;height:26px;stroke-width:2.2}
+.card .btn-fav{display:flex;align-items:center;justify-content:center}
+.btn-fav .ic{width:19px;height:19px}
+.btn-fav .ic.on{fill:#e0a92c;stroke:#e0a92c}
+#photoViewer{background:#000;z-index:1004;align-items:stretch;justify-content:stretch}
+#photoViewer.show{display:block}
+.pv-track{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pv-track::-webkit-scrollbar{display:none}
+.pv-slide{flex:0 0 100%;height:100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
+.pv-slide img{max-width:100%;max-height:100%;object-fit:contain;touch-action:pan-x pinch-zoom}
+.pv-count{position:absolute;left:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);color:#9aa0a6;font-size:14px;direction:ltr}
+.pv-back{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);width:54px;height:54px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(38,38,38,.92);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.pv-back .ic{width:24px;height:24px;stroke-width:2.4}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -783,6 +804,9 @@ body.seeker #seekerRegisterBtn:active,
 <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2.2" class="cut"/><circle cx="16" cy="12" r="2.2" class="cut"/><circle cx="9" cy="18" r="2.2" class="cut"/></symbol>
 <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 1 1 12 0v6l1.6 2H4.4L6 17z"/><path d="M10 21a2 2 0 0 0 4 0"/></symbol>
 <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5S4 15.6 4 9.8A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 8 2.2c0 5.8-8 10.7-8 10.7z"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6 6.9 19.3l1-5.7-4.1-4 5.7-.8z"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h11M4 12h11M4 17h11"/><circle cx="19.5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="19.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="19.5" cy="17" r="1.2" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5"/></symbol>
 <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10v10h4.2v-6h4.6v6h4.2V10"/></symbol>
 <symbol id="i-house" viewBox="0 0 24 24"><path d="M2.8 12.2L12 4l9.2 8.2"/><path d="M5 10.8V20h14v-9.2"/><path d="M10 20v-5.2h4V20"/><path d="M15.6 7V4.6h2v4.2"/></symbol>
@@ -817,7 +841,7 @@ body.seeker #seekerRegisterBtn:active,
 </div>
 
 <header aria-label="وسطاء المملكة"></header>
-<button class="menu-dot" id="menuDotBtn" aria-label="القائمة">⋯</button>
+<button class="menu-dot" id="menuDotBtn" aria-label="القائمة"><svg class="ic"><use href="#i-menu"/></svg></button>
 
 <div class="container">
   <button class="add-btn" id="openAddBtn">+ إضافة جديد</button>
@@ -825,7 +849,7 @@ body.seeker #seekerRegisterBtn:active,
   <div id="homeButtons">
     <div class="seeker-bar">
       <button class="add-btn" id="seekerRegisterBtn"><svg class="ic"><use href="#i-building"/></svg> تسجيل وسيط عقاري<svg class="ic seek-chev"><use href="#i-chev"/></svg></button>
-      <button type="button" class="seeker-back" id="seekerBackBtn">→ رجوع</button>
+      <button type="button" class="seeker-back" id="seekerBackBtn" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
     </div>
     <form class="home-search" id="homeSearchForm" autocomplete="off">
       <button type="submit" class="hs-btn" aria-label="بحث"><svg class="ic"><use href="#i-search"/></svg></button>
@@ -854,7 +878,7 @@ body.seeker #seekerRegisterBtn:active,
 
   <div id="hubView" style="display:none">
     <div class="lib-header">
-      <button class="lib-back" id="hubBackBtn">→ رجوع</button>
+      <button class="lib-back" id="hubBackBtn" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
       <h2 class="lib-title" id="hubTitle">القسم</h2>
     </div>
     <div class="hub-intro" id="hubIntro"></div>
@@ -863,7 +887,7 @@ body.seeker #seekerRegisterBtn:active,
   </div>
   <div id="libraryView" style="display:none">
     <div class="lib-header">
-      <button class="lib-back" id="libBackBtn">→ رجوع</button>
+      <button class="lib-back" id="libBackBtn" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
       <h2 class="lib-title" id="libTitle">مكتبة العروض</h2>
     </div>
     <div class="lib-tabs" id="libTabs"><button type="button" data-l="all">الكل</button><button type="button" data-l="عرض">العروض</button><button type="button" data-l="طلب">الطلبات</button></div>
@@ -880,7 +904,7 @@ body.seeker #seekerRegisterBtn:active,
           <option value="high">الأعلى سعراً</option>
           <option value="low">الأقل سعراً</option>
         </select>
-        <button type="button" class="fav-toggle" id="fltFav">🤍 المفضلة</button>
+        <button type="button" class="fav-toggle" id="fltFav">☆ المفضلة</button>
       </div>
       <div class="filter-row" style="margin-top:8px">
         <button type="button" class="fav-toggle" id="fltArchive">📦 الأرشيف</button>
@@ -894,7 +918,7 @@ body.seeker #seekerRegisterBtn:active,
 
   <div id="joinRequestsView" style="display:none">
     <div class="lib-header">
-      <button class="lib-back" id="joinBackBtn">→ رجوع</button>
+      <button class="lib-back" id="joinBackBtn" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
       <h2 class="lib-title">طلبات الانضمام</h2>
     </div>
     <div id="joinListArea" class="loading">جاري التحميل...</div>
@@ -928,7 +952,7 @@ body.seeker #seekerRegisterBtn:active,
     <div class="field"><label>الوسيط</label><input type="text" id="fAgent" placeholder="اسم الوسيط"></div>
     <div class="field"><label>رقم الجوال</label><input type="text" id="fPhone" placeholder="05xxxxxxxx"></div>
     <div class="field"><label>التفاصيل</label><textarea id="fDesc" placeholder="عدد الغرف، ملاحظات إضافية..."></textarea></div>
-    <div class="field"><label>الصور (حتى 4 صور)</label><input type="file" id="fImage" accept="image/*" multiple><div class="img-preview-row" id="fImagePreview"></div></div>
+    <div class="field"><label>الصور (حتى 6 صور)</label><input type="file" id="fImage" accept="image/*" multiple><div class="img-preview-row" id="fImagePreview"></div></div>
     <div class="field"><label>🎬 فيديو ترويجي (اختياري، مع الصور أو بدونها)</label><input type="text" id="fVideo" dir="ltr" maxlength="400" placeholder="الصق رابط الفيديو: يوتيوب، تيك توك، إنستغرام، سناب، قوقل درايف..."><div class="picker-hint" id="fVideoHint">يظهر الفيديو أول شريحة في معرض إعلانك.</div></div>
     <div class="modal-actions">
       <button class="btn-cancel" id="cancelBtn">إلغاء</button>
@@ -966,7 +990,7 @@ body.seeker #seekerRegisterBtn:active,
 
 <div class="overlay gate-overlay" id="joinOverlay">
   <div class="modal">
-    <button type="button" class="gate-back" id="gateBackBtn">→ رجوع</button>
+    <button type="button" class="gate-back" id="gateBackBtn" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
     <h2>الدخول إلى وسطاء المملكة</h2>
     <div id="gateForm">
       <p style="font-size:13px;color:var(--muted);margin:-6px 0 12px">الدخول خاص بالوسطاء العقاريين الحاصلين على رخصة فال فقط</p>
@@ -1045,7 +1069,7 @@ body.seeker #seekerRegisterBtn:active,
 
 <!-- خريطة كل العروض والطلبات -->
 <div class="allmap" id="allMapView">
-  <div class="allmap-bar"><button id="allMapBack">→ رجوع</button><div class="allmap-title">🗺️ خريطة العروض والطلبات</div></div>
+  <div class="allmap-bar"><button id="allMapBack" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button><div class="allmap-title">🗺️ خريطة العروض والطلبات</div></div>
   <div class="allmap-filters">
     <button class="chip active" data-f="all">الكل</button>
     <button class="chip" data-f="عرض">🟢 العروض</button>
@@ -1059,7 +1083,7 @@ body.seeker #seekerRegisterBtn:active,
 <nav class="bottom-nav" id="bottomNav" aria-label="التنقل">
   <button type="button" data-nav="acct"><span class="bn-i"><svg class="ic"><use href="#i-user"/></svg></span><span class="bn-t">حسابي</span></button>
   <button type="button" data-nav="notif"><span class="bn-i"><svg class="ic"><use href="#i-bell"/></svg></span><span class="bn-t">الإشعارات</span><span class="bn-dot" id="navDot"></span></button>
-  <button type="button" data-nav="fav"><span class="bn-i"><svg class="ic"><use href="#i-heart"/></svg></span><span class="bn-t">المفضلة</span></button>
+  <button type="button" data-nav="fav"><span class="bn-i"><svg class="ic"><use href="#i-star"/></svg></span><span class="bn-t">المفضلة</span></button>
   <button type="button" data-nav="search"><span class="bn-i"><svg class="ic"><use href="#i-search"/></svg></span><span class="bn-t">البحث</span></button>
   <button type="button" data-nav="home" class="on"><span class="bn-i"><svg class="ic"><use href="#i-home"/></svg></span><span class="bn-t">الرئيسية</span></button>
 </nav>
@@ -1125,6 +1149,13 @@ body.seeker #seekerRegisterBtn:active,
   <div class="db-act"><button type="button" id="domainHow">كيف أصلحه؟</button><a id="domainSupport" target="_blank" rel="noopener noreferrer">تواصل مع الدعم</a></div>
 </div>
 
+<!-- عارض الصور بملء الشاشة -->
+<div class="overlay" id="photoViewer">
+  <div class="pv-track" id="pvTrack"></div>
+  <div class="pv-count" id="pvCount"></div>
+  <button type="button" class="pv-back" id="pvBack" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button>
+</div>
+
 <!-- التعهد (للعميل أو المطور عند الدخول والتسجيل) -->
 <div class="overlay" id="pledgeOverlay" style="z-index:1003">
   <div class="modal">
@@ -1177,7 +1208,7 @@ body.seeker #seekerRegisterBtn:active,
 <!-- رحلة العميل: طلب تمويل بموافقة صريحة -->
 <div class="overlay" id="reqOverlay" style="z-index:52">
   <div class="modal pg">
-    <div class="pg-bar"><button class="lib-back" id="reqBack" type="button">→ رجوع</button><h2 id="reqTitle">طلب تمويل</h2></div>
+    <div class="pg-bar"><button class="lib-back" id="reqBack" type="button" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button><h2 id="reqTitle">طلب تمويل</h2></div>
     <div class="rq-steps" id="rqSteps"></div>
     <div id="reqBody"></div>
   </div>
@@ -1212,7 +1243,7 @@ body.seeker #seekerRegisterBtn:active,
 <!-- المطورون والمشاريع: صفحات العرض -->
 <div class="overlay" id="pgOverlay" style="z-index:44">
   <div class="modal pg">
-    <div class="pg-bar"><button class="lib-back" id="pgBack" type="button">→ رجوع</button><h2 id="pgTitle">المشاريع</h2></div>
+    <div class="pg-bar"><button class="lib-back" id="pgBack" type="button" aria-label="رجوع"><svg class="ic"><use href="#i-back"/></svg></button><h2 id="pgTitle">المشاريع</h2></div>
     <div id="pgBody"></div>
   </div>
 </div>
@@ -1255,7 +1286,7 @@ body.seeker #seekerRegisterBtn:active,
       <div class="field"><label>المميزات (افصل بينها بفاصلة)</label><input type="text" id="pjFeatures" maxlength="300" placeholder="مثال: مسبح، نادٍ رياضي، مواقف"></div>
       <div class="field"><label>رابط الموقع على الخريطة (اختياري)</label><input type="text" id="pjMap" maxlength="400" placeholder="https://maps.google.com/..."></div>
       <div class="field"><label>جوال خاص بالمشروع (اختياري، وإلا يُستخدم جوال المطور)</label><input type="text" id="pjPhone" inputmode="tel" maxlength="20"></div>
-      <div class="field"><label>الصور (حتى 4)</label><input type="file" id="pjImgFile" accept="image/*" multiple><div class="pg-prev" id="pjImgPrev"></div></div>
+      <div class="field"><label>الصور (حتى 6)</label><input type="file" id="pjImgFile" accept="image/*" multiple><div class="pg-prev" id="pjImgPrev"></div></div>
       <div class="field"><label>🎬 فيديو ترويجي للمشروع (اختياري)</label><input type="text" id="pjVideo" dir="ltr" maxlength="400" placeholder="رابط يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف"><div class="picker-hint" id="pjVideoHint"></div></div>
       <div class="field"><label class="oath-check"><input type="checkbox" id="pjActive" checked> فعّال ويظهر للجميع</label></div>
       <div class="modal-actions"><button class="btn-cancel" id="pjCancel">إلغاء</button><button class="btn-save" id="pjSave">حفظ</button></div>
@@ -1447,7 +1478,7 @@ const CITY_REGION = {}; CITY_GROUPS.forEach(([r, cs]) => cs.forEach(c => { CITY_
 const cityOptionsHTML = () => CITY_GROUPS.map(([r, cs]) => '<optgroup label="' + r + '">' + cs.map(c => '<option>' + c + '</option>').join('') + '</optgroup>').join('') + '<option>أخرى</option>';
 const SUPPORT_PHONE = '966505550531';
 const $ = id => document.getElementById(id);
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 6;
 let favs = [], favOnly = false;
 try{ favs = JSON.parse(localStorage.getItem('wasata_favs') || '[]'); }catch{ favs = []; }
 function saveFavs(){ try{ localStorage.setItem('wasata_favs', JSON.stringify(favs)); }catch{} }
@@ -1654,7 +1685,7 @@ function cardHTML(it, ctx){
   const shareText = `🏢 ${it.propertyType || 'عقار'} ${it.type === 'طلب' ? 'مطلوب' : 'للعرض'} - ${it.city}${it.neighborhood ? ' / حي ' + it.neighborhood : ''}\n${it.area ? '📐 المساحة: ' + it.area + '\n' : ''}${it.price ? '💰 ' + it.price + '\n' : ''}${it.desc ? it.desc + '\n' : ''}${it.video && videoInfo(it.video) ? '🎬 فيديو: ' + it.video + '\n' : ''}${it.code ? '🔖 رقم الإعلان: \u200E' + it.code + '\u200E\n' : ''}\nعبر تطبيق وسطاء المملكة\nhttps://otbi531-stack.github.io/Wasata-/`;
   let actions = '';
   if(active){
-    actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favs.includes(it.id) ? '❤️' : '🤍'}</button>`;
+    actions += `<button class="btn-small btn-fav" data-act="fav" data-id="${id}" aria-label="المفضلة">${favSvg(favs.includes(it.id))}</button>`;
     actions += `<a class="btn-small btn-share" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">📤 مشاركة</a>`;
     { const pn = priceNum(it.price); if(it.type !== 'طلب' && pn && pn >= 150000 && !/إيجار|ايجار|سنوي|شهري|\/سنة|\/شهر/.test(it.price || '')) actions += `<button class="btn-small btn-img" data-act="fin" data-id="${id}" aria-label="احسب التمويل">🏦</button>`; }
   actions += `<button class="btn-small btn-img" data-act="img" data-id="${id}" aria-label="مشاركة كصورة">🖼️</button>`;
@@ -1737,7 +1768,7 @@ function render(){
     rows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }
   if(!rows.length){
-    area.innerHTML = `<div class="empty">${memberMode ? 'لا توجد إعلانات في هذا القسم' : (favOnly ? 'لا توجد إعلانات في المفضلة بعد ❤️' : (showArchive ? 'لا توجد إعلانات في الأرشيف 📦' : 'لا توجد نتائج مطابقة لبحثك 🔍'))}</div>`;
+    area.innerHTML = `<div class="empty">${memberMode ? 'لا توجد إعلانات في هذا القسم' : (favOnly ? 'لا توجد إعلانات في المفضلة بعد ⭐' : (showArchive ? 'لا توجد إعلانات في الأرشيف 📦' : 'لا توجد نتائج مطابقة لبحثك 🔍'))}</div>`;
     observeViews(); return;
   }
   const deals = {}; listings.forEach(l => { if(l.sold && l.ownerId) deals[l.ownerId] = (deals[l.ownerId] || 0) + 1; });
@@ -1926,7 +1957,7 @@ function renderSavedBanner(){
 }
 function openSavedSearch(){
   $('fltCity').value = savedSearch.city || ''; $('fltType').value = savedSearch.type || ''; $('fltSearch').value = savedSearch.q || '';
-  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
+  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '☆ المفضلة';
   savedSearch.since = Date.now(); persistSaved();
   showLibrary(savedSearch.lib);
 }
@@ -2071,7 +2102,7 @@ function focusListing(id){
   const it = listings.find(x => x.id === id); if(!it) return;
   closeAllMap();
   $('fltCity').value = ''; $('fltType').value = ''; $('fltSearch').value = '';
-  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '🤍 المفضلة';
+  favOnly = false; showArchive = false; $('fltFav').classList.remove('active'); $('fltFav').textContent = '☆ المفضلة';
   showLibrary(it.type === 'طلب' ? 'طلب' : 'عرض');
   setTimeout(() => {
     const c = document.querySelector(`#listArea .card[data-lid="${CSS.escape(id)}"]`);
@@ -2662,7 +2693,7 @@ function advFilter(rows){
 function updateAdvBar(){ const n = memberMode ? 0 : advCount(); $('advBar').style.display = n ? 'flex' : 'none'; $('advCount').textContent = n; }
 function updateNavDot(){ try{ const on = savedSearch && savedMatches().length ? 'block' : 'none'; const n = savedSearch ? savedMatches().length : 0; $('navDot').style.display = on; $('bellDot').style.display = on; $('bellCount').textContent = n; $('bellCount').style.display = n ? '' : 'none'; }catch{} }
 function setNav(k){ document.querySelectorAll('#bottomNav button').forEach(b => b.classList.toggle('on', b.dataset.nav === k)); }
-function setFavUI(){ $('fltFav').classList.toggle('active', favOnly); $('fltFav').textContent = favOnly ? '❤️ المفضلة' : '🤍 المفضلة'; }
+function setFavUI(){ $('fltFav').classList.toggle('active', favOnly); $('fltFav').textContent = favOnly ? '★ المفضلة' : '☆ المفضلة'; }
 function goSearch(o){
   o = o || {};
   adv = { kind: o.kind || '', src: '', pMin: 0, pMax: 0, aMin: 0, aMax: 0 };
@@ -2718,7 +2749,7 @@ function openNotif(){
     : '<div class="nt-card">🔔 <b>لا يوجد بحث محفوظ</b><br>افتح أي مكتبة واضغط «حفظ هذا البحث»، فيخبرك التطبيق بالجديد عند دخولك.</div>';
   $('notifBody').innerHTML = saved
     + '<div class="nt-card">🆕 <b>آخر 24 ساعة</b><br>' + day + ' إعلان جديد<br><button type="button" data-n="new">تصفح الأحدث</button></div>'
-    + '<div class="nt-card">❤️ <b>مفضلتك</b><br>' + nf + ' إعلان<br><button type="button" data-n="fav">فتح المفضلة</button></div>'
+    + '<div class="nt-card">⭐ <b>مفضلتك</b><br>' + nf + ' إعلان<br><button type="button" data-n="fav">فتح المفضلة</button></div>'
     + '<div class="nt-card" style="color:var(--muted)">الإشعارات الفورية على الجوال قريباً بإذن الله.</div>';
   $('notifOverlay').classList.add('show');
 }
@@ -2778,7 +2809,7 @@ const HUBS = {
       { ic: 'i-search', t: 'ابحث عن عقار', d: 'بحث نصي بالحي والمدينة ورقم الإعلان', run: () => goSearch({ focus: true }) },
       { ic: 'i-sliders', t: 'تصفية متقدمة', d: 'النوع والمدينة والسعر والمساحة ومصدر الإعلان', run: () => openAdvSheet() },
       { ic: 'i-map', t: 'الخريطة', d: 'مواقع الإعلانات على الخريطة', run: () => $('openAllMapBtn').click() },
-      { ic: 'i-heart', t: 'المفضلة', d: 'إعلاناتك المحفوظة للرجوع إليها', run: () => goSearch({ fav: true }) },
+      { ic: 'i-star', t: 'المفضلة', d: 'إعلاناتك المحفوظة للرجوع إليها', run: () => goSearch({ fav: true }) },
       { ic: 'i-bell', t: 'الإشعارات والبحث المحفوظ', d: 'نبّهني عند صدور إعلان جديد يطابق بحثي', run: () => openNotif() }
     ]],
     ['الإجراءات', [
@@ -3169,8 +3200,9 @@ async function pjSave(){
   if(mapLink && !safeUrl(mapLink)){ toast('رابط الخريطة يجب أن يبدأ بـ https://'); return; }
   const phone = phoneRaw ? cleanPhone(phoneRaw) : ''; if(phoneRaw && !phone){ toast('رقم الجوال غير صحيح'); return; }
   const vRaw = $('pjVideo').value.trim(), vInfo = vRaw ? videoInfo(vRaw) : null; if(vRaw && !vInfo){ toast('رابط الفيديو غير مدعوم. استخدم رابط https من يوتيوب أو تيك توك أو إنستغرام أو سناب أو قوقل درايف', 5000); return; }
+  { const pb = pjImgs.slice(0, 6).reduce((a, x) => a + x.length, 0); if(pb > 1000000){ toast('حجم الصور كبير على المشروع. احذف صورة أو اثنتين', 5500); return; } }
   const data = { devId, devName: (devOf(devId) || {}).name || '', name, city, neighborhood: $('pjHood').value.trim(), status: $('pjStatus').value, types: pjTypesSel.slice(), priceFrom, priceTo, areaFrom, areaTo, handover: $('pjHandover').value.trim(), desc: $('pjDesc').value.trim(),
-    features: $('pjFeatures').value.split(/[،,\n]/).map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12), mapLink, phone, images: pjImgs.slice(0, 4), video: vInfo ? vInfo.url : '', active: $('pjActive').checked, updatedAt: Date.now() };
+    features: $('pjFeatures').value.split(/[،,\n]/).map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12), mapLink, phone, images: pjImgs.slice(0, 6), video: vInfo ? vInfo.url : '', active: $('pjActive').checked, updatedAt: Date.now() };
   $('pjSave').disabled = true;
   try{ if(pjEditId) await db.collection('projects').doc(pjEditId).update(data); else await db.collection('projects').add({ ...data, createdAt: Date.now() }); toast('تم الحفظ ✅'); dpShowList(); }
   catch(e){ console.error(e); toast(/permission/i.test(String((e && e.code) || e)) ? 'تعذر الحفظ: انشر قواعد Firebase الجديدة أولاً' : (/too large|size|exceed/i.test(String(e && e.message)) ? 'الصور كبيرة، قلّل عددها' : 'تعذر الحفظ'), 5000); }
@@ -3185,8 +3217,8 @@ $('dpClose').addEventListener('click', () => $('dpAdminOverlay').classList.remov
 $('dvLogoFile').addEventListener('change', async e => { const f = (e.target.files || [])[0]; if(!f) return; try{ dvLogo = await compressFile(f, 320, 40000); renderDvLogo(); }catch{ toast('تعذر قراءة الصورة'); } e.target.value = ''; });
 $('dvLogoPrev').addEventListener('click', e => { if(e.target.closest('[data-rm]')){ dvLogo = ''; renderDvLogo(); } });
 $('pjImgFile').addEventListener('change', async e => {
-  const files = Array.from(e.target.files || []), room = 4 - pjImgs.length;
-  if(room <= 0){ toast('الحد الأقصى 4 صور'); e.target.value = ''; return; }
+  const files = Array.from(e.target.files || []), room = 6 - pjImgs.length;
+  if(room <= 0){ toast('الحد الأقصى 6 صور'); e.target.value = ''; return; }
   for(const f of files.slice(0, room)){ try{ pjImgs.push(await compressFile(f)); }catch{ toast('تعذر قراءة إحدى الصور'); } }
   if(files.length > room) toast('تم أخذ أول ' + room + ' صور فقط'); renderPjImgs(); e.target.value = '';
 });
@@ -3987,6 +4019,26 @@ function ensurePledgesSub(){
   try{ db.collection('pledges').onSnapshot(sn => { plMap = {}; sn.docs.forEach(d => { plMap[d.id] = d.data(); }); try{ if($('roleAdminOverlay').classList.contains('show')) rlRender(); if($('reqAdminOverlay').classList.contains('show')) raRender(); }catch{} }, e => { console.warn('pledges', e); plMap = {}; plSub = false; }); }catch(e){ plSub = false; }
 }
 const plTag = (u, kind) => { const x = plMap[u + '_' + kind]; return x ? '<span style="color:#245a2c">☑️ تعهد ' + (kind === 'developer' ? 'المطور' : 'العميل') + ' (' + x.rate + '%) · ' + rqDate(x.at) + '</span>' : '<span style="color:#a15c00">⚠️ لا تعهد مسجَّل</span>'; };
+
+// ===== المفضلة (نجمة) + عارض الصور (زر رجوع سفلي وعدّاد) =====
+function favSvg(on){ return '<svg class="ic' + (on ? ' on' : '') + '"><use href="#i-star"/></svg>'; }
+function pvIndex(){ const t = $('pvTrack'); return Math.min(Math.max(t.children.length - 1, 0), Math.max(0, Math.round(Math.abs(t.scrollLeft) / (t.clientWidth || 1)))); }
+function pvUpdate(){ $('pvCount').textContent = ($('pvTrack').children.length ? pvIndex() + 1 : 0) + ' | ' + $('pvTrack').children.length; }
+function openPhotoViewer(srcs, start){
+  if(!srcs.length) return;
+  $('pvTrack').innerHTML = srcs.map(u => '<div class="pv-slide"><img src="' + esc(u) + '" alt="صورة"></div>').join('');
+  $('photoViewer').classList.add('show');
+  requestAnimationFrame(() => { const sl = $('pvTrack').children[start || 0]; if(sl) sl.scrollIntoView({ inline: 'center', block: 'nearest' }); pvUpdate(); });
+}
+function closePhotoViewer(){ $('photoViewer').classList.remove('show'); $('pvTrack').innerHTML = ''; }
+$('pvTrack').addEventListener('scroll', pvUpdate, { passive: true });
+$('pvBack').addEventListener('click', closePhotoViewer);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('photoViewer').classList.contains('show')) closePhotoViewer(); });
+document.addEventListener('click', e => {
+  const img = e.target.closest('.gallery img, .pg-gal img, .card > img'); if(!img || $('photoViewer').contains(img)) return;
+  const box = img.closest('.gallery, .pg-gal'), imgs = box ? [...box.querySelectorAll('img')] : [img];
+  openPhotoViewer(imgs.map(x => x.getAttribute('src')), Math.max(0, imgs.indexOf(img)));
+});
 $('impPreviewBtn').addEventListener('click', impPreview);
 $('impPublishBtn').addEventListener('click', impPublish);
 $('impUndoBtn').addEventListener('click', impUndo);
@@ -4535,7 +4587,7 @@ $('fltSort').addEventListener('change', render);
 $('fltFav').addEventListener('click', () => {
   favOnly = !favOnly;
   $('fltFav').classList.toggle('active', favOnly);
-  $('fltFav').textContent = favOnly ? '❤️ المفضلة' : '🤍 المفضلة';
+  $('fltFav').textContent = favOnly ? '★ المفضلة' : '☆ المفضلة';
   render();
 });
 $('cancelBtn').addEventListener('click', closeModal);
@@ -4551,6 +4603,7 @@ function compressFile(f, maxW, maxLen){
       c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
       let q = .7, d = c.toDataURL('image/jpeg', q);
       while(d.length > (maxLen || 150000) && q > .25){ q -= .1; d = c.toDataURL('image/jpeg', q); }
+      let sc = s; while(d.length > (maxLen || 150000) && sc > .3){ sc *= .85; c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); d = c.toDataURL('image/jpeg', .5); }   // صورة شديدة التفاصيل: نصغّر أبعادها بدل خفض جودة الباقي
       URL.revokeObjectURL(url);
       resolve(d);
     };
@@ -4583,11 +4636,12 @@ $('saveBtn').addEventListener('click', async () => {
   if(!source && !editingId){ toast('اختر صفة مقدّم الإعلان في حقل «من»'); return; }
   if(source === SOURCE_MULTI && !sourceNames){ toast('اكتب أسماء الوسطاء'); return; }
   if(source === SOURCE_OTHER && !sourceNames){ toast('اكتب صفة مقدّم الإعلان في الحقل الظاهر'); return; }
+  { const ib = formImages.reduce((a, x) => a + x.length, 0); if(ib > 1000000){ toast('حجم الصور كبير على الإعلان. احذف صورة أو اثنتين ثم انشر', 5500); return; } }
   const item = {
     type: $('fListingType').value, propertyType: $('fPropertyType').value, city: $('fCity').value,
     neighborhood: $('fNeighborhood').value.trim(), area: $('fArea').value.trim(), mapLink,
     price: $('fPrice').value.trim(), agent: $('fAgent').value.trim(), phone: $('fPhone').value.trim(),
-    desc: $('fDesc').value.trim(), images: formImages, image: formImages[0] || null, video: vInfo ? vInfo.url : '',
+    desc: $('fDesc').value.trim(), images: formImages, image: null, video: vInfo ? vInfo.url : '',
     source, sourceNames: (source === SOURCE_MULTI || source === SOURCE_OTHER) ? sourceNames : ''
   };
   saving = true; $('saveBtn').disabled = true;
@@ -4931,7 +4985,7 @@ $('menuReportsBtn').addEventListener('click', () => {
   $('reportsOverlay').classList.add('show');
 });
 document.addEventListener('click', e => {
-  if(!$('menuDropdown').contains(e.target) && e.target !== $('menuDotBtn')){ $('menuDropdown').classList.remove('show'); }
+  if(!$('menuDropdown').contains(e.target) && !e.target.closest('#menuDotBtn')){ $('menuDropdown').classList.remove('show'); }
 });
 $('supportLink').addEventListener('click', () => $('menuDropdown').classList.remove('show'));
 
@@ -4971,7 +5025,7 @@ function downloadBackup(){
   const data = listings.map(it => ({
     "المعرف": it.id, "نوع الإعلان": it.type || 'عرض', "نوع العقار": it.propertyType || '', "المدينة": it.city || '',
     "الحي": it.neighborhood || '', "المساحة": it.area || '', "قوقل ماب": it.mapLink || '', "المطلوب": it.price || '',
-    "الوسيط": it.agent || '', "رقم الجوال": it.phone || '', "التفاصيل": it.desc || '', "يوجد صورة": it.image ? 'نعم' : 'لا'
+    "الوسيط": it.agent || '', "رقم الجوال": it.phone || '', "التفاصيل": it.desc || '', "يوجد صورة": imagesOf(it).length ? 'نعم' : 'لا'
   }));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
@@ -4981,7 +5035,7 @@ function downloadBackup(){
 }
 
 // التحديث التلقائي: يفحص إن كان هناك إصدار أحدث ويُحمّله بدون أي تسجيل جديد
-const APP_VERSION = '1793076607';
+const APP_VERSION = '1793332060';
 async function checkForUpdate(manual){
   try{
     const r = await fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store', headers: { Range: 'bytes=0-4095' } });   // أول 4KB تكفي لقراءة رقم الإصدار (الصفحة كبيرة)
